@@ -2,7 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const http = require("http");
 const cron = require("node-cron");
-
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
 const config = require("./config");
 const { fetchOfficial } = require("./sources/official");
 const { fetchGovOpenData } = require("./sources/govOpenData");
