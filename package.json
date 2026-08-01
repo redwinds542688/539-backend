@@ -1,6 +1,7 @@
 {
   "name": "539-results-sync",
   "version": "1.0.0",
+  "engines": { "node": "20.x" },
   "description": "自動抓取今彩539開獎號碼、交叉比對3個來源後寫入 data/results.json",
   "main": "src/index.js",
   "type": "commonjs",
