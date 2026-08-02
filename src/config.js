@@ -8,7 +8,7 @@ module.exports = {
     "45 21 * * *",
     "0 22 * * *",
   ],
-  requestTimeoutMs: 15000,
+  requestTimeoutMs: 30000,
   requireAllThreeMatch: true,
   apiPort: process.env.PORT || 3939,
 };
