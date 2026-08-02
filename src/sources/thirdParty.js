@@ -4,7 +4,7 @@ const cheerio = require("cheerio");
 async function fetchThirdParty(timeoutMs) {
   const url = "https://www.pilio.idv.tw/lto539/list.asp";
   const res = await axios.get(url, { timeout: timeoutMs, responseType: "arraybuffer" });
-  const html = res.data.toString("big5");
+  const html = new TextDecoder("big5").decode(res.data);
   const $ = cheerio.load(html);
 
   let date = null;
