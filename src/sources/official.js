@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { normalizeDate } = require("../util/date");
 
 async function fetchOfficial(timeoutMs) {
   const url = "https://lotto.family.net.tw/";
@@ -9,11 +10,12 @@ async function fetchOfficial(timeoutMs) {
   if (!dateMatch) {
     throw new Error("找不到今彩539的開獎日期，網站版型可能已改版");
   }
-  const rocYear = parseInt(dateMatch[1], 10);
-  const month = parseInt(dateMatch[2], 10);
-  const day = parseInt(dateMatch[3], 10);
-  const year = rocYear + 1911;
-  const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  // 官網日期是民國格式（例："115/8/14"），統一交給 normalizeDate 換算成
+  // 西元補0的 YYYY-MM-DD，跟其他兩個來源用同一套格式才能正確比對。
+  const date = normalizeDate(`${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`);
+  if (!date) {
+    throw new Error("今彩539開獎日期格式無法解析，網站版型可能已改版");
+  }
 
   const afterText = text.slice(dateMatch.index, dateMatch.index + 500);
   const numMatch = afterText.match(/大小排序：\s*([\d\s]{10,40})/);
