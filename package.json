@@ -7,7 +7,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/index.js",
-    "run-once": "node src/index.js --once"
+    "run-once": "node src/index.js --once",
+    "test": "node test/smoke.js && node test/cloudDb.js"
   },
   "dependencies": {
     "axios": "^1.7.7",
