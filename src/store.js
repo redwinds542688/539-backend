@@ -22,26 +22,42 @@
 const fs = require("fs");
 const path = require("path");
 const { normalizeDate, normalizeNumbers, weekdayOf } = require("./utils/dateUtils");
+const { getGame, validateNumbers } = require("./games");
 
-// 把任何一筆記錄整理成 App 需要的標準格式，格式不對回傳 null。
-// 舊版檔案裡沒有 weekday 的記錄，會在這裡被自動補上。
-function normalizeRecord(record) {
+// 把任何一筆記錄整理成 App 需要的標準格式，格式不對（或號碼不符合
+// 該玩法的規則）回傳 null。舊版檔案裡沒有 weekday 的記錄，會在這裡
+// 被自動補上。
+function normalizeRecord(record, game = getGame("539")) {
   if (!record) return null;
   const date = normalizeDate(record.date);
   const numbers = normalizeNumbers(record.numbers);
-  if (!date || numbers.length !== 5) return null;
-  return { date, weekday: record.weekday || weekdayOf(date), numbers };
+  if (!date) return null;
+
+  let special = null;
+  if (game.hasSpecial && record.special !== null && record.special !== undefined) {
+    const parsed = parseInt(record.special, 10);
+    special = Number.isFinite(parsed) ? parsed : null;
+  }
+
+  // 號碼個數／範圍不符就整筆丟掉——寫錯開獎號碼比「今天沒更新」
+  // 嚴重得多，寧可不寫也不要寫錯的。
+  if (validateNumbers(game, numbers, special)) return null;
+
+  const out = { date, weekday: record.weekday || weekdayOf(date), numbers };
+  if (game.hasSpecial && special !== null) out.special = special;
+  return out;
 }
 
 function createStore(outputFile, options = {}) {
   const keepLatest = options.keepLatest || 400;
+  const game = options.game || getGame("539");
 
   function readAll() {
     if (!fs.existsSync(outputFile)) return [];
     try {
       const parsed = JSON.parse(fs.readFileSync(outputFile, "utf8"));
       if (!Array.isArray(parsed)) return [];
-      return parsed.map(normalizeRecord).filter(Boolean);
+      return parsed.map((r) => normalizeRecord(r, game)).filter(Boolean);
     } catch {
       // 檔案毀損（例如上次寫入寫到一半被中斷）時當作空的重來，
       // 不要讓整個服務起不來——反正開機的 seeding 會再從雲端補回來。
@@ -62,10 +78,16 @@ function createStore(outputFile, options = {}) {
     return trimmed;
   }
 
+  // 兩筆記錄是不是同一組開獎結果（號碼＋特別號都一樣）。
+  function sameDraw(a, b) {
+    if (a.numbers.join(",") !== b.numbers.join(",")) return false;
+    return (a.special === undefined ? null : a.special) === (b.special === undefined ? null : b.special);
+  }
+
   // 合併單筆（排程抓到的最新一期）。
   // 回傳 { changed, reason }，changed=false 代表檔案完全沒動。
-  function upsert(date, numbers) {
-    const incoming = normalizeRecord({ date, numbers });
+  function upsert(date, numbers, special) {
+    const incoming = normalizeRecord({ date, numbers, special }, game);
     if (!incoming) return { changed: false, reason: "資料格式不正確，未寫入" };
 
     const existing = readAll();
@@ -77,7 +99,7 @@ function createStore(outputFile, options = {}) {
       return { changed: true, reason: "新增一期" };
     }
 
-    if (existing[index].numbers.join(",") === incoming.numbers.join(",")) {
+    if (sameDraw(existing[index], incoming)) {
       return { changed: false, reason: "這期資料已存在且號碼相同" };
     }
 
@@ -96,13 +118,13 @@ function createStore(outputFile, options = {}) {
     let added = 0;
     let corrected = 0;
     for (const raw of records) {
-      const incoming = normalizeRecord(raw);
+      const incoming = normalizeRecord(raw, game);
       if (!incoming) continue;
       const current = byDate.get(incoming.date);
       if (!current) {
         byDate.set(incoming.date, incoming);
         added += 1;
-      } else if (current.numbers.join(",") !== incoming.numbers.join(",")) {
+      } else if (!sameDraw(current, incoming)) {
         byDate.set(incoming.date, incoming);
         corrected += 1;
       }
@@ -121,7 +143,7 @@ function createStore(outputFile, options = {}) {
     return all.length ? all[all.length - 1] : null;
   }
 
-  return { readAll, writeAll, upsert, mergeMany, latest, outputFile };
+  return { readAll, writeAll, upsert, mergeMany, latest, outputFile, game };
 }
 
 module.exports = { createStore, normalizeRecord };

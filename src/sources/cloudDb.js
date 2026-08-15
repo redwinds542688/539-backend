@@ -21,6 +21,7 @@
 
 const axios = require("axios");
 const { normalizeDate, normalizeNumbers, weekdayOf } = require("../utils/dateUtils");
+const { getGame, validateNumbers } = require("../games");
 
 // 依照 App 裡的註解（見 539app.html 的 fetchSingleGameCloudLatest()）記載的
 // 規格，這裡把三個容易踩錯的點寫清楚，避免之後又改回錯的寫法：
@@ -58,14 +59,32 @@ async function requestDraws(options, limit) {
   const raw = Array.isArray(res.data) ? res.data : (res.data && res.data.draws) || [];
   if (!Array.isArray(raw)) return [];
 
+  // 玩法規則（號碼個數／範圍／有沒有特別號）。沒有指定時預設今彩539，
+  // 維持原本只服務 539 時的行為。注意上面的 game 是「查詢用的中文
+  // 玩法名稱」，這裡的 rules 是「驗證用的規則物件」，兩者不同。
+  const rules = options.gameRules || getGame("539");
+
   const records = [];
   for (const row of raw) {
     if (!row) continue;
     const date = normalizeDate(row.draw_date);
     const numbers = normalizeNumbers(row.numbers);
-    // 號碼數量不對的資料列直接跳過，不要讓半筆壞資料汙染整批歷史。
-    if (!date || numbers.length !== 5) continue;
-    records.push({ date, weekday: weekdayOf(date), numbers });
+    if (!date) continue;
+
+    // 特別號只有大樂透／六合彩用得到；539 跟天天樂的 special_number
+    // 是空字串，parseInt 會得到 NaN，這裡統一轉成 null。
+    let special = null;
+    if (rules.hasSpecial) {
+      const parsed = parseInt(row.special_number, 10);
+      special = Number.isFinite(parsed) ? parsed : null;
+    }
+
+    // 不符合這個玩法規則的資料列直接跳過，不要讓半筆壞資料汙染整批歷史。
+    if (validateNumbers(rules, numbers, special)) continue;
+
+    const record = { date, weekday: weekdayOf(date), numbers };
+    if (rules.hasSpecial && special !== null) record.special = special;
+    records.push(record);
   }
 
   // 依日期由舊到新排序，跟 data/results.json 以及 App 端的
@@ -81,13 +100,15 @@ async function fetchCloudDb(timeoutMs, options = {}) {
   if (records.length === 0) {
     // 這裡標記 __noRetry：雲端「確實連上了、只是沒有資料」，
     // 重試幾次結果都一樣，不需要浪費時間退避重試。
-    const err = new Error("雲端資料庫沒有今彩539的資料");
+    const err = new Error(`雲端資料庫沒有${options.game || DEFAULT_GAME}的資料`);
     err.__noRetry = true;
     throw err;
   }
 
   const latest = records[records.length - 1];
-  return { source: "cloudDb", date: latest.date, numbers: latest.numbers };
+  const result = { source: "cloudDb", date: latest.date, numbers: latest.numbers };
+  if (latest.special !== undefined) result.special = latest.special;
+  return result;
 }
 
 // 重建歷史用：一次取回最近 limit 期，回傳已正規化、由舊到新排序的陣列。

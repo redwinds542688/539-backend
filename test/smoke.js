@@ -13,6 +13,7 @@ const path = require("path");
 const { normalizeDate, weekdayOf, normalizeNumbers } = require("../src/utils/dateUtils");
 const { crossCheck } = require("../src/crossCheck");
 const { createStore } = require("../src/store");
+const { getGame, validateNumbers, validateDate } = require("../src/games");
 
 let passed = 0;
 function test(name, fn) {
@@ -125,6 +126,44 @@ test("號碼數量不對的來源不列入統計", () => {
   assert.strictEqual(check.matched, false, "只有一個來源合法，不該達到門檻 2");
 });
 
+console.log("\n[games 號碼/日期驗證]");
+
+test("539：5 個號碼、範圍 1~39", () => {
+  const g = getGame("539");
+  assert.strictEqual(validateNumbers(g, [7, 19, 21, 25, 34], null), null);
+  assert.ok(validateNumbers(g, [7, 19, 21, 25], null), "只有 4 個號碼應該被擋");
+  assert.ok(validateNumbers(g, [7, 19, 21, 25, 40], null), "40 超出 1~39 應該被擋");
+  assert.ok(validateNumbers(g, [0, 19, 21, 25, 34], null), "0 應該被擋");
+  assert.ok(validateNumbers(g, [-3, 19, 21, 25, 34], null), "負數應該被擋");
+});
+
+test("大樂透：6 個號碼、範圍 1~49、特別號 1~49", () => {
+  const g = getGame("lotto");
+  assert.strictEqual(validateNumbers(g, [5, 12, 25, 33, 34, 35], 27), null);
+  assert.ok(validateNumbers(g, [5, 12, 25, 33, 34], 27), "只有 5 個號碼應該被擋");
+  assert.ok(validateNumbers(g, [5, 12, 25, 33, 34, 50], 27), "50 超出範圍應該被擋");
+  assert.ok(validateNumbers(g, [5, 12, 25, 33, 34, 35], 50), "特別號 50 超出範圍應該被擋");
+});
+
+test("重複號碼會被擋下（去重後個數不足）", () => {
+  const g = getGame("539");
+  // normalizeNumbers 會去重，[7,7,19,21,25] 去重後只剩 4 個
+  assert.ok(validateNumbers(g, normalizeNumbers([7, 7, 19, 21, 25]), null));
+});
+
+test("未來的日期會被擋下", () => {
+  const now = Date.parse("2026-08-15T00:00:00Z");
+  assert.strictEqual(validateDate("2026-08-14", { now }), null);
+  assert.strictEqual(validateDate("2026-08-15", { now }), null);
+  assert.ok(validateDate("2026-09-01", { now }), "未來日期應該被擋");
+});
+
+test("過舊的日期會被擋下", () => {
+  const now = Date.parse("2026-08-15T00:00:00Z");
+  assert.ok(validateDate("2015-01-01", { now }), "10 年前的日期應該被擋");
+  assert.strictEqual(validateDate("2024-01-01", { now }), null, "2 年前還在容許範圍");
+});
+
 console.log("\n[store]");
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "539-store-"));
@@ -198,6 +237,44 @@ test("舊格式（沒有 weekday）讀取時自動補上", () => {
     "utf8"
   );
   assert.strictEqual(store.readAll()[0].weekday, "五");
+});
+
+console.log("\n[store 多玩法]");
+
+const lottoFile = path.join(tmpDir, "data", "results-lotto.json");
+const lottoStore = createStore(lottoFile, { keepLatest: 10, game: getGame("lotto") });
+
+test("大樂透寫入時保留特別號", () => {
+  const r = lottoStore.upsert("2026-08-14", [5, 12, 25, 33, 34, 35], 27);
+  assert.strictEqual(r.changed, true);
+  assert.deepStrictEqual(lottoStore.latest(), {
+    date: "2026-08-14",
+    weekday: "五",
+    numbers: [5, 12, 25, 33, 34, 35],
+    special: 27,
+  });
+});
+
+test("只有特別號不同也算校正、要覆蓋", () => {
+  const r = lottoStore.upsert("2026-08-14", [5, 12, 25, 33, 34, 35], 28);
+  assert.strictEqual(r.changed, true, "特別號變了就該覆蓋");
+  assert.strictEqual(lottoStore.latest().special, 28);
+});
+
+test("不符合玩法規則的號碼不會被寫入", () => {
+  // 大樂透是 6 個號碼，傳 5 個應該整筆被拒絕
+  const r = lottoStore.upsert("2026-08-15", [5, 12, 25, 33, 34]);
+  assert.strictEqual(r.changed, false);
+  assert.strictEqual(lottoStore.latest().date, "2026-08-14", "不該新增 08-15");
+});
+
+test("超出範圍的號碼不會被寫入", () => {
+  const r = lottoStore.upsert("2026-08-15", [5, 12, 25, 33, 34, 50], 27);
+  assert.strictEqual(r.changed, false, "50 超出 1~49 應該被拒絕");
+});
+
+test("539 的 store 不會產生 special 欄位", () => {
+  assert.strictEqual("special" in store.readAll()[0], false);
 });
 
 fs.rmSync(tmpDir, { recursive: true, force: true });

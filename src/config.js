@@ -34,10 +34,25 @@ module.exports = {
 
   apiPort: process.env.PORT || 3939,
 
+  // 除了今彩539（由三個爬蟲＋雲端交叉比對）之外，其餘三個玩法要不要
+  // 也從雲端資料庫鏡像一份到這個後端。
+  //
+  // 為什麼要做：App 目前只有 539 會去讀後端（loadData()，539app.html:5705），
+  // 天天樂／六合彩／大樂透都只能用寫死在 HTML 裡的 EMBEDDED_*_DATA，
+  // 每次有新開獎都要手動改 HTML 再把整個檔案複製到手機上（交接說明
+  // 10.1 節那筆加州天天樂就是這樣手動加進去的）。後端把四個玩法都
+  // 鏡像好，App 之後就能改成統一從後端讀，不用再手動維護內嵌資料。
+  //
+  // 這幾個玩法沒有獨立的爬蟲來源，資料完全來自雲端資料庫，所以不做
+  // 交叉比對——雲端資料庫本身寫入前已經比對過（agreeing_sources 欄位）。
+  mirrorGames: ["daily", "mark6", "lotto"],
+
   // 樂透雲端資料庫（唯一有完整歷史的地方，由使用者電腦上的
   // lottery_scraper.py 負責寫入，這個服務只讀不寫）。
   cloudDb: {
-    baseUrl: "https://hearty-vitality-production-0687.up.railway.app/draws",
+    // 可以用環境變數 CLOUD_DB_URL 覆寫，方便本機測試時指向假伺服器，
+    // 或是之後雲端搬家時不用改程式碼、直接在 Railway 改環境變數即可。
+    baseUrl: process.env.CLOUD_DB_URL || "https://hearty-vitality-production-0687.up.railway.app/draws",
     game: "今彩539",
     // 開機時要從雲端拉回多少期來重建 data/results.json。
     // Railway 的容器檔案系統是暫時性的，每次重新部署檔案就消失，

@@ -12,9 +12,26 @@ const { fetchCloudDb, fetchCloudHistory } = require("./sources/cloudDb");
 const { crossCheck } = require("./crossCheck");
 const { createStore } = require("./store");
 const { withRetry } = require("./utils/retry");
+const { getGame, validateDate } = require("./games");
 
 const OUTPUT_FILE = path.resolve(__dirname, config.outputPath);
+const DATA_DIR = path.dirname(OUTPUT_FILE);
 const store = createStore(OUTPUT_FILE, { keepLatest: config.keepLatest });
+
+// 其餘三個玩法（天天樂／六合彩／大樂透）的儲存區。這幾個沒有獨立
+// 爬蟲，資料完全從雲端資料庫鏡像過來，所以不進交叉比對流程。
+const mirrorStores = new Map();
+for (const key of config.mirrorGames || []) {
+  const game = getGame(key);
+  if (!game) {
+    console.warn(`⚠️ 設定裡的 mirrorGames 有不認識的玩法代號：${key}，已略過`);
+    continue;
+  }
+  mirrorStores.set(
+    key,
+    createStore(path.join(DATA_DIR, game.file), { keepLatest: config.keepLatest, game })
+  );
+}
 
 function log(...args) {
   console.log(`[${new Date().toISOString()}]`, ...args);
@@ -75,6 +92,41 @@ async function seedFromCloud() {
   }
 }
 
+// 把其餘三個玩法（天天樂／六合彩／大樂透）從雲端資料庫鏡像下來。
+// 這幾個玩法沒有獨立的爬蟲來源，資料完全來自雲端資料庫，所以不做
+// 交叉比對——雲端資料庫寫入前本身已經比對過（agreeing_sources 欄位）。
+async function mirrorOtherGames() {
+  if (mirrorStores.size === 0) return [];
+
+  const jobs = [...mirrorStores.entries()].map(async ([key, gameStore]) => {
+    const game = gameStore.game;
+    try {
+      const records = await fetchCloudHistory(
+        config.cloudDb.seedLimit || config.keepLatest,
+        config.requestTimeoutMs,
+        { baseUrl: config.cloudDb.baseUrl, game: game.cloudName, gameRules: game }
+      );
+
+      if (records.length === 0) {
+        log(`ℹ️ 雲端沒有${game.label}的資料，略過`);
+        return { game: key, ok: true, added: 0, corrected: 0, total: gameStore.readAll().length };
+      }
+
+      const result = gameStore.mergeMany(records);
+      if (result.changed) {
+        log(`☁️ ${game.label}：新增 ${result.added} 期、校正 ${result.corrected} 期，共 ${result.total} 期`);
+      }
+      return { game: key, ok: true, ...result };
+    } catch (err) {
+      // 單一玩法失敗不影響其他玩法，也不影響 539 的主流程。
+      log(`⚠️ 鏡像${game.label}失敗（不影響其他玩法）:`, err.message);
+      return { game: key, ok: false, error: err.message };
+    }
+  });
+
+  return Promise.all(jobs);
+}
+
 async function runOnce(options = {}) {
   log("===== 開始更新今彩539資料 =====");
 
@@ -98,6 +150,7 @@ async function runOnce(options = {}) {
   // 因為門檻沒過而沒寫入，App 至少還是拿得到完整的過往資料。
   // （開機那一次已經在 main() 裡單獨補過，用 skipSeed 避免重複打一次雲端）
   const seed = options.skipSeed ? null : await seedFromCloud();
+  const mirrored = options.skipSeed ? null : await mirrorOtherGames();
 
   const check = crossCheck(results, config.minAgreeingSources);
 
@@ -110,6 +163,7 @@ async function runOnce(options = {}) {
     ),
     tally: check.tally,
     seeded: seed,
+    mirrored,
   };
 
   if (!check.matched) {
@@ -119,6 +173,17 @@ async function runOnce(options = {}) {
   }
 
   const { date, numbers } = check.agreed;
+
+  // 就算多個來源「一致」，也可能一起錯（例如都解析到頁面上的「下期
+  // 開獎日」）。寫入前再擋一次明顯不合理的日期，避免把還沒開獎的
+  // 日期寫進去——App 顯示出來會非常誤導。
+  const dateProblem = validateDate(date);
+  if (dateProblem) {
+    log(`⚠️ 本次不更新最新一期：${dateProblem}`);
+    lastRun = { ...summary, updated: false, reason: dateProblem };
+    return { updated: false, reason: dateProblem, ...summary };
+  }
+
   log(`✅ 比對成功（${check.reason}）：${date} → ${numbers.join(",")}`);
 
   const write = store.upsert(date, numbers);
@@ -187,6 +252,17 @@ function startServer(port) {
         earliest: all.length ? all[0] : null,
         minAgreeingSources: config.minAgreeingSources,
         cronSchedule: config.cronSchedule,
+        // 其餘三個玩法的鏡像狀態，一眼看出每個玩法各有幾期、最新到哪天
+        mirrors: [...mirrorStores.entries()].map(([key, gameStore]) => {
+          const records = gameStore.readAll();
+          return {
+            game: key,
+            label: gameStore.game.label,
+            url: `/data/${gameStore.game.file}`,
+            totalRecords: records.length,
+            latest: records.length ? records[records.length - 1] : null,
+          };
+        }),
         lastRun,
       });
       return;
@@ -205,6 +281,20 @@ function startServer(port) {
       } catch (err) {
         sendJson(res, 500, { ok: false, error: String((err && err.message) || err) });
       }
+      return;
+    }
+
+    // 其餘三個玩法的資料端點（/data/results-daily.json 等）。
+    // 539 維持原本的 /data/results.json 不變，因為 App 寫死了那個路徑。
+    const mirrorHit = [...mirrorStores.values()].find(
+      (gameStore) => pathname === `/data/${gameStore.game.file}`
+    );
+    if (mirrorHit) {
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+      });
+      res.end(JSON.stringify(mirrorHit.readAll()));
       return;
     }
 
@@ -245,6 +335,7 @@ async function main() {
   // 開機先補一次雲端歷史，讓剛部署完的容器立刻就有完整資料可供
   // App 讀取，不用等到第一個排程時間。
   await seedFromCloud();
+  await mirrorOtherGames();
   runOnce({ skipSeed: true }).catch((err) => log("啟動時執行發生未預期錯誤:", err));
 }
 

@@ -13,6 +13,7 @@
 const assert = require("assert");
 const http = require("http");
 const { fetchCloudDb, fetchCloudHistory } = require("../src/sources/cloudDb");
+const { getGame } = require("../src/games");
 
 let passed = 0;
 async function test(name, fn) {
@@ -156,6 +157,65 @@ async function main() {
     const mock = await startMockCloud((req, res) => jsonResponse(res, 500, { error: "boom" }));
     try {
       await assert.rejects(() => fetchCloudHistory(400, 5000, { baseUrl: mock.baseUrl }));
+    } finally {
+      await mock.close();
+    }
+  });
+
+  await test("大樂透：6 個號碼 + 特別號都要正確解析", async () => {
+    const mock = await startMockCloud((req, res) =>
+      jsonResponse(res, 200, [
+        {
+          draw_date: "2026-08-14",
+          numbers: "05 12 25 33 34 35",
+          special_number: "27",
+          agreeing_sources: 3,
+        },
+      ])
+    );
+    try {
+      const records = await fetchCloudHistory(400, 5000, {
+        baseUrl: mock.baseUrl,
+        game: "大樂透",
+        gameRules: getGame("lotto"),
+      });
+      assert.deepStrictEqual(records[0], {
+        date: "2026-08-14",
+        weekday: "五",
+        numbers: [5, 12, 25, 33, 34, 35],
+        special: 27,
+      });
+    } finally {
+      await mock.close();
+    }
+  });
+
+  await test("用 539 的規則去讀大樂透資料會整批被擋（號碼個數不符）", async () => {
+    const mock = await startMockCloud((req, res) =>
+      jsonResponse(res, 200, [
+        { draw_date: "2026-08-14", numbers: "05 12 25 33 34 35", special_number: "27" },
+      ])
+    );
+    try {
+      // 沒有傳 gameRules 就會套用 539 的規則（5 個號碼），
+      // 6 個號碼的大樂透資料應該全部被過濾掉，不會混進 539 的檔案。
+      const records = await fetchCloudHistory(400, 5000, { baseUrl: mock.baseUrl });
+      assert.deepStrictEqual(records, []);
+    } finally {
+      await mock.close();
+    }
+  });
+
+  await test("超出範圍的號碼會被過濾掉", async () => {
+    const mock = await startMockCloud((req, res) =>
+      jsonResponse(res, 200, [
+        { draw_date: "2026-08-14", numbers: "07 19 21 25 34" },
+        { draw_date: "2026-08-13", numbers: "07 19 21 25 40" }, // 40 超出 539 的 1~39
+      ])
+    );
+    try {
+      const records = await fetchCloudHistory(400, 5000, { baseUrl: mock.baseUrl });
+      assert.deepStrictEqual(records.map((r) => r.date), ["2026-08-14"]);
     } finally {
       await mock.close();
     }
