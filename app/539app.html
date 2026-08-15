@@ -6023,10 +6023,22 @@ async function boot(){
       if(refreshBtn.classList.contains("spinning")) return;
       refreshBtn.classList.add("spinning");
       try{
-        const controller = new AbortController();
-        const timeoutId = setTimeout(function(){ controller.abort(); }, 20000);
-        const res = await fetch(BACKEND_REFRESH_URL, { method: "POST", signal: controller.signal });
-        clearTimeout(timeoutId);
+        // 這裡原本是用 AbortController 的 signal 做 20 秒逾時控制，但那正是
+        // 讀雲端資料庫那段（見 fetchSingleGameCloudLatest() 裡的完整說明）
+        // 早就踩過的坑：某些 Android System WebView 版本（使用者是用
+        // content:// 開啟本機檔案，走的是系統內建 WebView，不是完整版
+        // Chrome），fetch() 只要帶了 signal 參數就會誤拋 DataCloneError。
+        // 那次只修了讀雲端資料庫那一處，這個「觸發後端重新抓取」的呼叫
+        // 被漏掉了，症狀特別隱蔽：下面的 catch 只印一行 warning 就繼續往下
+        // 跑 loadData()，畫面上「更新」鍵照樣轉一圈、照樣重新載入資料，
+        // 看起來完全正常，實際上這個 POST 從來沒有真的送出去過，後端
+        // 一次也沒有被觸發，讀到的永遠是後端上一次排程寫的舊檔案。
+        // 修法跟當初一樣：改用 Promise.race 做逾時，不把 signal 傳給 fetch()。
+        const fetchPromise = fetch(BACKEND_REFRESH_URL, { method: "POST" });
+        const timeoutPromise = new Promise(function(_, reject){
+          setTimeout(function(){ reject(new Error("timeout")); }, 20000);
+        });
+        const res = await Promise.race([fetchPromise, timeoutPromise]);
         const result = await res.json();
         if(!result.ok){
           console.warn("539-backend 更新失敗：", result.error || result.reason);
