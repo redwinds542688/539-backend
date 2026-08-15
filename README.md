@@ -39,6 +39,10 @@ App 另外會讀一個**跟這個 repo 無關**的樂透雲端資料庫 `https:/
 樂透雲端資料庫 ┘ ────── 開機／每次排程補齊完整歷史 ──────┘
 ```
 
+App 端四個玩法都會讀對應的端點，讀不到就退回 HTML 裡的內嵌資料
+（`loadData()` 與 `loadOtherGamesFromBackend()`），所以**不再需要為了新開獎
+手動修改 `539app.html` 的內嵌資料**。
+
 **為什麼要從雲端資料庫補齊歷史**：Railway 的容器檔案系統是暫時性的，
 每次重新部署 `data/results.json` 就整個消失，而排程一次只會寫入最新
 一期，靠自己累積要好幾個月才會有堪用的歷史（而且下次部署又歸零）。
@@ -48,7 +52,10 @@ App 另外會讀一個**跟這個 repo 無關**的樂透雲端資料庫 `https:/
 
 | 端點 | 用途 |
 |---|---|
-| `GET /data/results.json` | App 讀取用。回傳 `[{date, weekday, numbers}]`，由舊到新排序（App 用 `data[length-1]` 取最新）。沒有資料時回 `[]`（200） |
+| `GET /data/results.json` | 今彩539。回傳 `[{date, weekday, numbers}]`，由舊到新排序（App 用 `data[length-1]` 取最新）。沒有資料時回 `[]`（200） |
+| `GET /data/results-daily.json` | 加州天天樂（從雲端資料庫鏡像） |
+| `GET /data/results-mark6.json` | 香港六合彩（含 `special` 特別號） |
+| `GET /data/results-lotto.json` | 大樂透（含 `special` 特別號） |
 | `POST /api/refresh` | 觸發重新抓取。回應含每個來源各自抓到什麼、比對統計 |
 | `GET /api/health` | 存活檢查 |
 | `GET /api/status` | 診斷用：目前有幾期、最新／最舊一期、上次執行時每個來源的結果 |
@@ -61,6 +68,21 @@ App 另外會讀一個**跟這個 repo 無關**的樂透雲端資料庫 `https:/
 | `cronTimezone` | 排程時區，**必須是 `Asia/Taipei`**，否則會照容器的 UTC 跑，晚 8 小時 |
 | `cloudDb.seedLimit` | 開機時從雲端拉回多少期重建歷史 |
 | `cloudDb.useAsSource` | 是否把雲端資料庫也當成第 4 個交叉比對來源 |
+| `mirrorGames` | 要從雲端鏡像哪些玩法（539 以外的三個） |
+
+環境變數 `CLOUD_DB_URL` 可覆寫雲端資料庫網址（測試或搬家用）。
+
+### 四個玩法的號碼規則
+
+`src/games.js` 裡的規則是掃過 App 內嵌資料共 1111 筆真實開獎紀錄統計出來的，
+用來擋掉「來源解析錯誤但格式看起來正常」的資料：
+
+| 玩法 | 號碼個數 | 範圍 | 特別號 |
+|---|---|---|---|
+| 今彩539 | 5 | 1~39 | 無 |
+| 加州天天樂 | 5 | 1~39 | 無 |
+| 香港六合彩 | 6 | 1~49 | 1~49 |
+| 大樂透 | 6 | 1~49 | 1~49 |
 
 ## 後端指令
 

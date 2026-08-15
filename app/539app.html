@@ -5717,6 +5717,99 @@ async function loadData(){
     if(typeof window.__reapplyNumPicked === "function") window.__reapplyNumPicked();
     if(typeof window.__reapplyMagnifierState === "function") requestAnimationFrame(window.__reapplyMagnifierState);
   }
+
+  // 539 抓完之後，順便把其餘三個玩法也從後端更新一次（見下方說明）。
+  // 不 await，讓 539 的畫面先出來，其他玩法在背景更新完再自己重畫。
+  loadOtherGamesFromBackend();
+}
+
+// 其餘三個玩法（天天樂／六合彩／大樂透）從後端更新。
+//
+// 【為什麼要有這個函式】
+// 原本只有 539 會去讀後端（上面的 loadData()），另外三個玩法完全靠
+// 寫死在這個 HTML 裡的 EMBEDDED_DAILY_DATA／EMBEDDED_MARK6_DATA／
+// EMBEDDED_LOTTO_DATA，所以每次那三種彩券有新開獎，都得手動改這個
+// HTML 的內嵌資料、再把整個 6800 行的檔案重新複製到手機上替換。
+// 後端現在會把四個玩法都從樂透雲端資料庫鏡像下來，這裡把那三個也
+// 接上，就不用再手動維護內嵌資料了。
+//
+// 【為什麼是「就地置換陣列內容」而不是重新指派變數】
+// EMBEDDED_DAILY_DATA 這幾個是 const，而且整個檔案有二十幾處直接
+// 引用它們（切換玩法的 currentAllData、syncLotteryLocalDB()、
+// exportLotteryDatabaseAsFile()、getCloudGameMap()、
+// manualUpsertDrawRecord() 會直接 push 進去……）。重新指派變數
+// 這些地方全都要跟著改，漏一處就會出現「有的功能看到新資料、
+// 有的還是舊資料」的詭異狀況。改成用 length=0 + push 就地置換
+// 內容，陣列本身還是同一個物件，所有既有引用自動吃到新資料，
+// 一處都不用動。
+//
+// 【為什麼是合併而不是直接覆蓋】
+// 萬一雲端資料庫的歷史比內嵌資料短（例如雲端只留最近 N 期），
+// 直接覆蓋會讓使用者原本看得到的舊資料憑空消失。改成以日期為
+// key 合併：後端有的以後端為準（雲端校正過的號碼要生效），
+// 後端沒有但內嵌有的保留下來。
+async function loadOtherGamesFromBackend(){
+  const BACKEND_BASE = "https://539-backend-production.up.railway.app/data/";
+  const targets = [
+    { key: "daily", file: "results-daily.json", arr: EMBEDDED_DAILY_DATA },
+    { key: "mark6", file: "results-mark6.json", arr: EMBEDDED_MARK6_DATA },
+    { key: "lotto", file: "results-lotto.json", arr: EMBEDDED_LOTTO_DATA },
+  ];
+
+  let anyUpdated = false;
+
+  await Promise.all(targets.map(async function(t){
+    try{
+      // 逾時一律用 Promise.race，不要用 AbortController 的 signal——
+      // 某些 Android System WebView 版本帶 signal 會誤拋 DataCloneError
+      // （這個檔案已經為了同一個問題修過兩次，見 fetchSingleGameCloudLatest()
+      // 跟「更新」鍵那段的說明）。
+      const fetchPromise = fetch(BACKEND_BASE + t.file, {cache:"no-store"});
+      const timeoutPromise = new Promise(function(_, reject){
+        setTimeout(function(){ reject(new Error("timeout")); }, 10000);
+      });
+      const res = await Promise.race([fetchPromise, timeoutPromise]);
+      if(!res.ok) return;
+      const data = await res.json();
+      if(!Array.isArray(data) || data.length === 0) return;
+
+      // 以日期為 key 合併，後端優先。
+      const byDate = new Map();
+      t.arr.forEach(function(r){ byDate.set(r.date, r); });
+      data.forEach(function(r){
+        if(!r || !r.date || !Array.isArray(r.numbers)) return;
+        byDate.set(r.date, r);
+      });
+
+      const merged = Array.from(byDate.values()).sort(function(a, b){
+        return a.date.localeCompare(b.date);
+      });
+
+      // 就地置換內容（見上面的說明），保持陣列物件本身不變。
+      t.arr.length = 0;
+      Array.prototype.push.apply(t.arr, merged);
+      anyUpdated = true;
+    }catch(e){
+      // 單一玩法失敗就維持原本的內嵌資料，不影響其他玩法，
+      // 也不影響 539——完全連不到後端時行為跟改動前一模一樣。
+      console.warn("從後端更新" + (GAME_LABELS[t.key] || t.key) + "失敗，改用內嵌資料。", e);
+    }
+  }));
+
+  // 如果使用者當下正在看的就是這三個玩法之一，資料換過了要重畫，
+  // 否則畫面會停在剛才用舊資料算出來的版本。正在看 539 就不用動
+  // （上面的 loadData() 已經處理過 539 的重畫）。
+  if(anyUpdated && currentGameKey !== "539"){
+    const updatedArr = (currentGameKey === "daily") ? EMBEDDED_DAILY_DATA
+                     : (currentGameKey === "mark6") ? EMBEDDED_MARK6_DATA
+                     : (currentGameKey === "lotto") ? EMBEDDED_LOTTO_DATA : null;
+    if(updatedArr){
+      currentAllData = updatedArr;
+      buildPanels(updatedArr, currentBlanks);
+      if(typeof window.__reapplyNumPicked === "function") window.__reapplyNumPicked();
+      if(typeof window.__reapplyMagnifierState === "function") requestAnimationFrame(window.__reapplyMagnifierState);
+    }
+  }
 }
 
 // 放大鏡開著的時候，把瀏覽器原生的雙指縮放擋掉，改用放大鏡自己實作的
