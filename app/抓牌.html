@@ -20,6 +20,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventLi
      3.(2026-09-07) 全頁只有四顆按鍵：精簡版CSS把第一顆(#bug-log-fab 瓢蟲/Ai)整個隱藏了。改成只在主頁隱藏，全頁/抓牌首頁狀態下顯示，恢復完整版的五顆。
      4.(2026-09-07) 整份程式改以完整版「彩卷最新版_0907_0228」為底重建(C式定位/合匯/差數、E式、搜期、統計表等全部同步)，再把列印版專屬的東西搬回來：PWA/SW、直向擋板、尺寸鍵＋印單鍵(雙擊存檔)、列印版CSS；C式/定期退出後一律回主頁。
      5.(2026-09-07) 全頁第一顆改為「抓牌」：雙擊＝進入C式差數(完整版那套)；長按仍開錯誤紀錄檢視器；單擊不再下載紀錄。
+     64.(2026-09-08) 六合彩/大樂透下桿拖到底平滑滑動時，A/B固定框只框到第6格：改成涵蓋整列含第7格特別號(與原本A/B列塗色範圍一致)。
      63.(2026-09-08) 六合彩/大樂透第7格(特別號欄)在定期/C式被切掉一截：#panels先縮到整個螢幕寬，但.scroller只有內容寬98.7%且會裁切，表格右緣一律少3~5px(539則是最後一欄右框線不見)。改成.scroller寬度定好後#panels再依框寬-1px重算X縮放，右框線回來。
      62.(2026-09-08) Ai鍵圖示連2px內距也填滿(亮燈改用圖片上方的2px黃色outline)；Ai欄左上的彩球圖高度不變、向左拉伸到欄位左緣不留白(寬=框寬-右側4px、靠左)。
      61.(2026-09-08) 左下第一顆Ai鍵：圖示由固定54×27置中改成拉伸補滿整顆按鍵(object-fit:fill、留2px內距顯示亮燈框)，按鍵尺寸不變。
@@ -4430,7 +4431,7 @@ const lr=lim.getBoundingClientRect();if(lr.height<=0)return false;this.yLimit=lr
 try{const __t=(typeof findCModeTargetRows==="function")?findCModeTargetRows():null;const __cc=(typeof cModeColCount==="function")?cModeColCount():5;
 const __bg=getComputedStyle(document.documentElement).getPropertyValue("--mark-predict-color").trim()||"#FFCC1A";const __bd=getComputedStyle(document.documentElement).getPropertyValue("--mark-line-color").trim()||"#3B82F6";
 let __ov=document.getElementById("c-drag-scroll-ab");if(__ov)__ov.remove();__ov=document.createElement("div");__ov.id="c-drag-scroll-ab";Object.assign(__ov.style,{position:"fixed",left:"0",top:"0",width:"0",height:"0",pointerEvents:"none",zIndex:"8600"});
-[__t&&__t.bRow,__t&&__t.aRow].forEach(function(tr){if(!tr)return;const cells=Array.prototype.slice.call(tr.querySelectorAll("td.num")).slice(0,__cc);if(!cells.length)return;const f=cells[0].getBoundingClientRect(),l=cells[cells.length-1].getBoundingClientRect();if(f.height<=0)return;
+[__t&&__t.bRow,__t&&__t.aRow].forEach(function(tr){if(!tr)return;/* 第64條：固定框涵蓋整列所有號碼格(含六合彩/大樂透第7格特別號)，與renderCModeOverlayForRow塗色範圍一致，不再只取前cModeColCount()欄 */const cells=Array.prototype.slice.call(tr.querySelectorAll("td.num"));if(!cells.length)return;const f=cells[0].getBoundingClientRect(),l=cells[cells.length-1].getBoundingClientRect();if(f.height<=0)return;
 const geo={position:"fixed",left:f.left+"px",top:f.top+"px",width:(l.right-f.left)+"px",height:f.height+"px",boxSizing:"border-box",pointerEvents:"none"};
 const fill=document.createElement("div");Object.assign(fill.style,geo,{background:__bg,opacity:"0.35"});__ov.appendChild(fill);
 const frame=document.createElement("div");Object.assign(frame.style,geo,{boxShadow:"inset 0 0 0 1.5px "+__bd});__ov.appendChild(frame)});
