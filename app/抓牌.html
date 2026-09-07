@@ -20,6 +20,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventLi
      3.(2026-09-07) 全頁只有四顆按鍵：精簡版CSS把第一顆(#bug-log-fab 瓢蟲/Ai)整個隱藏了。改成只在主頁隱藏，全頁/抓牌首頁狀態下顯示，恢復完整版的五顆。
      4.(2026-09-07) 整份程式改以完整版「彩卷最新版_0907_0228」為底重建(C式定位/合匯/差數、E式、搜期、統計表等全部同步)，再把列印版專屬的東西搬回來：PWA/SW、直向擋板、尺寸鍵＋印單鍵(雙擊存檔)、列印版CSS；C式/定期退出後一律回主頁。
      5.(2026-09-07) 全頁第一顆改為「抓牌」：雙擊＝進入C式差數(完整版那套)；長按仍開錯誤紀錄檢視器；單擊不再下載紀錄。
+     59.(2026-09-08) 使用者截圖：平滑滑動時灰底A/B列跟著內容滑走、桿子又藏起來，看起來像整個畫面被推掉。改成滑動期間A/B列用固定在螢幕原位的半透明框(#c-drag-scroll-ab)顯示、號碼從底下流過；A/B圖釘與紅弧線不再藏(迴圈暫停所以留在原位)；只藏格子之間的連線。放手對齊後移除固定框、重新上色。
      58.(2026-09-08) 第57條的回溯改成平滑：超出14/17後表格跟著手指位移(translateY，沿用捲動鍵的備列/對齊那套，window.__cModeDragScroll)，跨過半列才切換被佔用列，放手才對齊整列並重搜；進行中桿子/弧線/連線先藏(body.c-drag-scroll)。備列失敗才退回逐列跳。
      57.(2026-09-07) 下桿拖到底還繼續拖＝回溯：下桿在14再往上拖，手指每多過一列就用捲動鍵那套回溯邏輯k+1(原第16期變空白、15變16、14變15…)；下桿在17再往下拖則k-1(最小0)。對稱：手指在14上方往回下移立刻k-1、在17下方往回上移立刻k+1；k到上下限多拖的不算(橡皮筋)。桿子不動、動的是視窗內容，放手照常重搜；退出C式歸零、表格重畫後重套(cModeDragScrollAtLimit)。只在C式生效，E式等距不變。
      56.(2026-09-07) 效能優化(Claude Code實測)：開機/切回App/退出模式時的整頁重複排版——applyDesktopScrollerWidth加「輸入簽名」快取(輸入與自己寫的行內樣式沒變就跳過)、buildPanels後先套#panels zoom再量球列寬(少一次zoom=1的整頁排版)、開機的IndexedDB全量重寫改成閒置時執行。無頭Chromium 412×915實測：開機JS觸發的整頁強制排版3次→1次、長任務總時長(6倍CPU節流)3.7秒→約2秒；畫面像素與改前完全相同。
@@ -154,6 +155,10 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
   只餵手指Y(這期間cModePeriodFromClientY會把備列的多餘列算進去，所以不能再用period)；手指回到限位列中心±半列內→api.end()立刻對齊、
   桿子恢復正常；放手finalizeCModeDragEnd()開頭先api.end()再重搜。進行中body加c-drag-scroll：CSS藏桿子/弧線/連線，renderCModeArcLoop
   跳過量測。備列失敗(begin回false)才退回第57條的逐列跳。
+  第59條(使用者截圖回報「畫面變成這樣」)：滑動時灰底A/B列是塗在格子上的inline樣式，會跟著內容滑走，加上桿子藏起來，看起來像整個畫面
+  被推走。改成begin()時先量A/B列的格子矩形，建一個position:fixed的#c-drag-scroll-ab(每列一個35%透明的底色層＋一個1.5px綠框層，
+  顏色沿用--mark-predict-color/--mark-line-color)固定在螢幕原位，再clearCModeCellColors()清掉格子上的塗色；A/B圖釘(#c-mode-a/b-handle)
+  與紅弧線(#c-mode-arc-svg)不再用CSS藏，因renderCModeArcLoop暫停所以自然留在原位。end()移除固定框，refreshCModeFraming()重新上色。
 
 【★2026-09-07：下桿拖到底還繼續拖＝回溯（第57條，cModeDragScrollAtLimit）】
   需求(使用者)：下桿最小14、最大17。下桿在14時再往上拖，要出現「捲動鍵裡手指下滑」的效果——原第16期那列消失成空白、
@@ -2255,8 +2260,8 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   body.c-ding-entering .scroller, body.c-ding-entering #panels{ will-change:transform; }
   /* 2026-09-06：Ai框紅色圖釘雙擊「框住16期」模式：拖曳桿(上/下桿紅色↕鈕)、上下桿紅色弧線、E式中桿硬幣暫時隱藏；綠色錨定列由JS清掉(renderCModeOverlayForRow在此模式下直接return) */
   body.c-mode-pin-frame #c-mode-a-handle, body.c-mode-pin-frame #c-mode-b-handle, body.c-mode-pin-frame #c-mode-arc-svg, body.c-mode-pin-frame #e-mode-a-coin{ display:none !important; }
-  /* 第58條：下桿拖到底的平滑捲動進行中(body.c-drag-scroll)，桿子/弧線/連線先藏起來，放手對齊後再重畫 */
-  body.c-drag-scroll #c-mode-a-handle, body.c-drag-scroll #c-mode-b-handle, body.c-drag-scroll #c-mode-arc-svg, body.c-drag-scroll #c-mode-ding-lines-svg, body.c-drag-scroll #c-mode-ding-arcs-svg, body.c-drag-scroll #c-mode-ding-auto-drag-lines-svg, body.c-drag-scroll #c-mode-drag-lines-svg, body.c-drag-scroll #connect-svg{ display:none !important; }
+  /* 第58條：下桿拖到底的平滑捲動進行中(body.c-drag-scroll)，格子之間的連線先藏起來；A/B圖釘與紅弧線因迴圈暫停會留在原位(第59條)，放手對齊後再重畫 */
+  body.c-drag-scroll #c-mode-ding-lines-svg, body.c-drag-scroll #c-mode-ding-arcs-svg, body.c-drag-scroll #c-mode-ding-auto-drag-lines-svg, body.c-drag-scroll #c-mode-drag-lines-svg, body.c-drag-scroll #connect-svg{ display:none !important; }
   /* 2026-09-06：「捲動」鍵啟動狀態改由換圖表示，不再畫黃框 */
   /* 2026-09-06：圖釘模式下標定號碼連線(走勢線/同列弧線)、標定拖牌連線、合匯拖曳比對線、E式九宮連線也全部隱藏；原上中下桿裡的號碼文字顏色恢復正常(去掉錨定列殘留的num-marked黃字) */
   body.c-mode-pin-frame #c-mode-ding-lines-svg, body.c-mode-pin-frame #c-mode-ding-arcs-svg, body.c-mode-pin-frame #c-mode-ding-auto-drag-lines-svg, body.c-mode-pin-frame #c-mode-drag-lines-svg, body.c-mode-pin-frame #e-mode-nine-line-lines-svg{ display:none !important; }
@@ -4412,8 +4417,17 @@ begin:function(clientY,limitRowPos){if(this.active)return false;try{tableEl=find
 const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"});if(!vp)return false;
 const visibleRows=Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(tr){return tr.style.display!=="none"});const lim=visibleRows[limitRowPos-1];if(!lim)return false;
 const lr=lim.getBoundingClientRect();if(lr.height<=0)return false;this.yLimit=lr.top+lr.height/2;this.limit=limitRowPos;
+/* 第59條：A/B錨定列改成固定在螢幕原位的半透明框(號碼從底下流過)，原本塗在格子上的灰底/綠框先清掉，免得跟著內容滑走 */
+try{const __t=(typeof findCModeTargetRows==="function")?findCModeTargetRows():null;const __cc=(typeof cModeColCount==="function")?cModeColCount():5;
+const __bg=getComputedStyle(document.documentElement).getPropertyValue("--mark-predict-color").trim()||"#FFCC1A";const __bd=getComputedStyle(document.documentElement).getPropertyValue("--mark-line-color").trim()||"#3B82F6";
+let __ov=document.getElementById("c-drag-scroll-ab");if(__ov)__ov.remove();__ov=document.createElement("div");__ov.id="c-drag-scroll-ab";Object.assign(__ov.style,{position:"fixed",left:"0",top:"0",width:"0",height:"0",pointerEvents:"none",zIndex:"8600"});
+[__t&&__t.bRow,__t&&__t.aRow].forEach(function(tr){if(!tr)return;const cells=Array.prototype.slice.call(tr.querySelectorAll("td.num")).slice(0,__cc);if(!cells.length)return;const f=cells[0].getBoundingClientRect(),l=cells[cells.length-1].getBoundingClientRect();if(f.height<=0)return;
+const geo={position:"fixed",left:f.left+"px",top:f.top+"px",width:(l.right-f.left)+"px",height:f.height+"px",boxSizing:"border-box",pointerEvents:"none"};
+const fill=document.createElement("div");Object.assign(fill.style,geo,{background:__bg,opacity:"0.35"});__ov.appendChild(fill);
+const frame=document.createElement("div");Object.assign(frame.style,geo,{boxShadow:"inset 0 0 0 1.5px "+__bd});__ov.appendChild(frame)});
+document.body.appendChild(__ov);if(typeof clearCModeCellColors==="function")clearCModeCellColors()}catch(e){logEvent("拖桿捲動","AB固定框建立失敗:"+(e&&e.message?e.message:e))}
 if(!prepare())return false;if(tableEl){tableEl.style.willChange="transform";tableEl.style.transition="none"}if(scEl){scOverflowBackup=scEl.style.overflow;scEl.style.overflow="hidden"}setT(baseT,false);
-document.body.classList.add("c-drag-scroll");this.active=true;logEvent("拖桿捲動","平滑開始 限位列="+limitRowPos+" yLimit="+Math.round(this.yLimit)+" k0="+kNow+" maxK="+maxK);return true}catch(e){logEvent("拖桿捲動","平滑開始失敗:"+(e&&e.message?e.message:e));return false}},
+document.body.classList.add("c-drag-scroll");this.active=true;logEvent("拖桿捲動","平滑開始 限位列="+limitRowPos+" yLimit="+Math.round(this.yLimit)+" k0="+kNow+" maxK="+maxK);return true}catch(e){logEvent("拖桿捲動","平滑開始失敗:"+(e&&e.message?e.message:e));{const __ov=document.getElementById("c-drag-scroll-ab");if(__ov)__ov.remove()}return false}},
 excessRows:function(clientY){return(this.yLimit-clientY)/Math.max(1,rowVis)},
 move:function(clientY){if(!this.active)return;const ratio=rowLocal/Math.max(1,rowVis);const k0=Math.max(0,Math.min(maxK,cModeScrollOffset));const base0=baseT;
 let pos=base0+(this.yLimit-clientY)*ratio;const minT=base0-k0*rowLocal,maxT=base0+(maxK-k0)*rowLocal;
@@ -4422,7 +4436,7 @@ const k=Math.max(0,Math.min(maxK,Math.round(k0+(pos-base0)/rowLocal)));if(k!==kN
 end:function(){if(!this.active)return;this.active=false;const k=kNow;cModeScrollOffset=k;
 document.querySelectorAll("table.road tr.c-scroll-peek").forEach(function(tr){tr.classList.remove("c-scroll-peek")});
 const el=tableEl;if(el){el.style.willChange="";el.style.transition="";el.style.transform=""}if(scEl){scEl.style.overflow=scOverflowBackup}
-try{applyCModeScrollOffset(k)}catch(e){}document.body.classList.remove("c-drag-scroll");
+try{applyCModeScrollOffset(k)}catch(e){}document.body.classList.remove("c-drag-scroll");{const __ov=document.getElementById("c-drag-scroll-ab");if(__ov)__ov.remove()}
 try{if(typeof refreshCModeFraming==="function")refreshCModeFraming()}catch(e){}logEvent("拖桿捲動","平滑對齊 回溯="+k)}};
 function bind(sc){if(!sc||sc.__cScrollBound)return;sc.__cScrollBound=true;sc.addEventListener("touchstart",onStart,{passive:true});sc.addEventListener("touchmove",onMove,{passive:false});sc.addEventListener("touchend",onEnd,{passive:true});sc.addEventListener("touchcancel",onEnd,{passive:true})}document.addEventListener("DOMContentLoaded",function(){bind(document.querySelector(".scroller"))});if(document.readyState!=="loading")bind(document.querySelector(".scroller"))})();
 /* 2026-09-06：捲動鍵開啟期間，被鎖按鍵的長按(touchstart起算)也一併擋掉——document捕獲階段先攔，不讓attachCSubModeLongPress的touchstart跑到 */document.addEventListener("touchstart",function(e){const __b0=e.target&&e.target.closest?e.target.closest("button"):null;/* 抓牌版(2026-09-07 第29條)：表格開著時，除了上下桿與表格本身，畫面上任何觸碰＝先把表關掉，這一次觸碰後續的click/雙擊/長按全部吞掉 */if(cModeActive&&cModeAnyStatTableOpen()&&!cModeInsideStatTable(e.target)&&!cModeIsDragHandle(e.target,e.touches&&e.touches[0])){logEvent("統計表","觸碰畫面→關閉表格 target="+(e.target&&e.target.tagName)+"#"+(e.target&&e.target.id||"")+"."+(e.target&&e.target.className&&String(e.target.className).slice(0,40)||""));closeAllCSubModePopups();/* 第32條：捲動鍵本身例外——關表但不吞後續click，雙擊捲動鍵才能一氣呵成開啟 */if(!(e.target&&e.target.closest&&e.target.closest(".ai-box-pin-btn")))cModeStatCloseSwallowUntil=Date.now()+700;logEvent("統計表","觸碰畫面→關閉表格");e.stopImmediatePropagation();return}if(cModeStatCloseSwallowing()&&__b0){e.stopImmediatePropagation();return}/* 抓牌版(2026-09-07 第30條)：捲動鍵開啟期間，觸碰點落在捲動區(紅框#c-mode-pin-frame-box)外的任何位置＝關閉捲動鍵，並吞掉這次觸碰後續的click/雙擊/長按 */if(typeof cModePinFrameActive!=="undefined"&&cModePinFrameActive&&cModeActive){const __fb=document.getElementById("c-mode-pin-frame-box");const __t=e.touches&&e.touches[0];let __inside=false;if(__fb&&__t){const __r=__fb.getBoundingClientRect();__inside=__t.clientX>=__r.left&&__t.clientX<=__r.right&&__t.clientY>=__r.top&&__t.clientY<=__r.bottom}if(!__inside){logEvent("捲動","觸碰捲動區外→關閉捲動鍵");toggleCModePinFrame();cModeStatCloseSwallowUntil=Date.now()+700;e.stopImmediatePropagation();return}}if(typeof cModePinFrameActive==="undefined"||!cModePinFrameActive)return;const b=__b0;if(!b)return;if(b.id==="float-save-btn"||b.id==="float-back-btn"||b.id==="fullpage-btn"||b.id==="pin-btn"||b.id==="home-exit-btn"){e.stopImmediatePropagation()}},{capture:true,passive:true});
