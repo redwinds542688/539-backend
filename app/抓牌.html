@@ -20,6 +20,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventLi
      3.(2026-09-07) 全頁只有四顆按鍵：精簡版CSS把第一顆(#bug-log-fab 瓢蟲/Ai)整個隱藏了。改成只在主頁隱藏，全頁/抓牌首頁狀態下顯示，恢復完整版的五顆。
      4.(2026-09-07) 整份程式改以完整版「彩卷最新版_0907_0228」為底重建(C式定位/合匯/差數、E式、搜期、統計表等全部同步)，再把列印版專屬的東西搬回來：PWA/SW、直向擋板、尺寸鍵＋印單鍵(雙擊存檔)、列印版CSS；C式/定期退出後一律回主頁。
      5.(2026-09-07) 全頁第一顆改為「抓牌」：雙擊＝進入C式差數(完整版那套)；長按仍開錯誤紀錄檢視器；單擊不再下載紀錄。
+     61.(2026-09-08) 左下第一顆Ai鍵：圖示由固定54×27置中改成拉伸補滿整顆按鍵(object-fit:fill、留2px內距顯示亮燈框)，按鍵尺寸不變。
      60.(2026-09-08) 捲動鍵功能拿掉：因為第57~59條已用「下桿拖到底」做到同樣的回溯，Ai欄那顆捲動鍵不再需要——雙擊不再開啟捲動區(toggleCModePinFrame與捲動區手勢保留為死碼，其中bindCModeScrollGesture仍供拖桿平滑API使用)，按鈕圖片換成使用者提供的「539彩球」(開/關兩張舊圖移除，檔案小約11KB)。
      59.(2026-09-08) 使用者截圖：平滑滑動時灰底A/B列跟著內容滑走、桿子又藏起來，看起來像整個畫面被推掉。改成滑動期間A/B列用固定在螢幕原位的半透明框(#c-drag-scroll-ab)顯示、號碼從底下流過；A/B圖釘與紅弧線不再藏(迴圈暫停所以留在原位)；只藏格子之間的連線。放手對齊後移除固定框、重新上色。
      58.(2026-09-08) 第57條的回溯改成平滑：超出14/17後表格跟著手指位移(translateY，沿用捲動鍵的備列/對齊那套，window.__cModeDragScroll)，跨過半列才切換被佔用列，放手才對齊整列並重搜；進行中桿子/弧線/連線先藏(body.c-drag-scroll)。備列失敗才退回逐列跳。
@@ -93,7 +94,8 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventLi
   /* 第14/15條：新Ai圖是橫式2:1；按鍵尺寸不可變(維持完整版的寬17.6vw×高31px)，圖示固定高27px、寬54px置中，不撐大按鍵 */
   #bug-log-fab{ -webkit-touch-callout:none !important; -webkit-user-select:none !important; user-select:none !important; touch-action:manipulation !important; }
   #bug-log-fab img{ pointer-events:none !important; -webkit-touch-callout:none !important; -webkit-user-drag:none !important; user-select:none !important; }/* 第19條：長按不再跳出瀏覽器的圖片選單 */
-  #bug-log-fab .zhuapai-ai-icon{ width:54px !important; height:27px !important; max-width:100% !important; object-fit:contain !important; border-radius:5px !important; display:block !important; flex:none !important; }
+  /* 第61條(2026-09-08)：Ai圖示拉伸補滿整顆按鍵(object-fit:fill)，只留2px內距讓亮燈(黃底)的框還看得到；按鍵尺寸不變 */
+  #bug-log-fab .zhuapai-ai-icon{ width:100% !important; height:100% !important; max-width:100% !important; object-fit:fill !important; border-radius:0 !important; padding:2px !important; box-sizing:border-box !important; display:block !important; flex:none !important; }
   #bug-log-fab .fullpage-mode-label{ font-size:30px !important; line-height:31px !important; font-weight:700 !important; display:block !important; white-space:nowrap !important; transform:scaleX(1.12); transform-origin:center; }
   /* 「印」按鍵置中放大填滿原本兩顆按鍵的區域，不留空洞 */
   .hero-actions, .hero-btn-row{ justify-content:center; }
