@@ -1,9 +1,9 @@
-# 抓牌 網址版（PWA）
+# 抓牌終極 網址版（PWA）
 
 這個資料夾是 GitHub Pages 的發佈根目錄。
 
 - `index.html`：與 `../app/抓牌.html` 完全相同的副本。**每次更新 app/抓牌.html 後，記得複製一份過來**（`cp app/抓牌.html docs/index.html`）。
-- `manifest.json`：App 名稱「抓牌」、直向、standalone（沒有瀏覽器網址列）。
+- `manifest.json`：App 名稱「抓牌終極」、直向、standalone（沒有瀏覽器網址列）。
 - `sw.js`：離線快取。index.html 網路優先（上線就拿最新版），圖示快取優先，雲端 data.json 等跨網域請求不攔。要強制所有手機更新時改 `CACHE` 版本字串。
 - `icons/`：由使用者提供的「手抓 539彩球」圖產生：192／512（any）、192／512（maskable，四周留 10% 安全區）、apple-touch-icon 180。
 

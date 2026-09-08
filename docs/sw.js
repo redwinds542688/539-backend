@@ -2,7 +2,7 @@
    策略：index.html 用「網路優先、離線才用快取」（確保每次上線都拿到最新版程式）；
    manifest／圖示用「快取優先」；跨網域請求（GitHub raw 的 data.json 等）一律不攔、不快取。
    要強制所有裝置更新時，改下面的 CACHE 版本字串即可。 */
-const CACHE = "zhuapai-v1";
+const CACHE = "zhuapai-v2";
 const SHELL = ["./", "./index.html", "./manifest.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png",
   "./icons/icon-192-maskable.png", "./icons/icon-512-maskable.png"];
