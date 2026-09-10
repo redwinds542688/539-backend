@@ -980,6 +980,21 @@ transform:scaleY(FULLPAGE_SHEET_HEIGHT_SCALE=0.99)、transform-origin左上，�
         (切回App/按更新鍵時的loadData()仍會正常重讀)。
      3. boot()結尾的buildPanels改成「資料筆數/最新日期/空白期數有變才重畫」(bootBuiltSignature)，
         開機不再重畫兩次表格。
+【全頁開獎單四邊無縫原則(2026-09-10 第110~113條定案)】
+開獎單在全頁系統(pinch-fullscreen-mode)裡，不論最小尺寸或兩指放大到任何倍率，四邊都要貼齊顯示邊界，不留任何空白：
+  上＝上紅線底邊(getFullPageTopBound())、下＝下紅線頂邊(#bottom-frame-line-wrap)、左右＝螢幕兩緣(0 與 innerWidth)。
+實作分四層，改任何一層都要顧到其他層：
+  1. 寬度(最小尺寸)：body.pinch-fullscreen-mode .scroller 左右外距為0、applyDesktopScrollerWidth()在全頁模式的
+     scrollerBorderWidth=0(不預留框線)，#panels的zoom算到剛好塞滿整個螢幕寬。
+  2. 高度(最小尺寸)：stretchFullPageSheetToRedLine()把#panels用scaleY拉伸到上紅線底邊～下紅線頂邊；
+     全頁.scroller的padding-bottom=0(不留內距)。
+  3. 捲動夾限(放大後)：水平用clampFullPageScrollX()以#panels左右緣為邊界(不是#page-zoom-wrap，wrap比開獎單寬)；
+     垂直用clampFullPageScrollY()，FULLPAGE_BOTTOM_EXTRA_RATIO=0(捲到底不多留)。捏合touchmove、scroll事件夾限、
+     applyPageZoom()的spacer三處都走同一套。
+  4. 邊線：左右邊線是#fullpage-edge-line-left/right兩個固定定位元素貼在螢幕兩緣，高度由syncFullPageFunctionZoneOutline()
+     設為上紅線底邊～下紅線頂邊；不能再畫在#panels外側(會被貼齊的開獎單推到螢幕外)。
+禁止事項：不要在全頁模式給.scroller/#panels/#page-zoom-wrap加任何外距、內距、框線或「保留幾%」的緩衝——
+  最小尺寸看不出來的幾px，兩指放大5倍後都會變成明顯留白(第110~113條全部是這種來源)。
 【全頁系統紅線(2026-08-29)】打叉下方的白線改成紅線：body.pinch-fullscreen-mode #game-539-content的
 border-top跟#full-page-function-zone-outline的border都改#ff0000。漂浮按鍵上方新增一條紅線：借用既有的
 #bottom-frame-line-wrap，在pinch-fullscreen-mode下display:block、紅底、高3px，top由positionPinOnScreen()
