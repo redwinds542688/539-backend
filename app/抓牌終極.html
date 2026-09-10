@@ -20,6 +20,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventLi
      3.(2026-09-07) 全頁只有四顆按鍵：精簡版CSS把第一顆(#bug-log-fab 瓢蟲/Ai)整個隱藏了。改成只在主頁隱藏，全頁/抓牌首頁狀態下顯示，恢復完整版的五顆。
      4.(2026-09-07) 整份程式改以完整版「彩卷最新版_0907_0228」為底重建(C式定位/合匯/差數、E式、搜期、統計表等全部同步)，再把列印版專屬的東西搬回來：PWA/SW、直向擋板、尺寸鍵＋印單鍵(雙擊存檔)、列印版CSS；C式/定期退出後一律回主頁。
      5.(2026-09-07) 全頁第一顆改為「抓牌」：雙擊＝進入C式差數(完整版那套)；長按仍開錯誤紀錄檢視器；單擊不再下載紀錄。
+     115.(2026-09-10) 暗色系全頁四條框線用同一段規則統一#555(三個程式一致)；抓牌終極/主程式另補全頁.scroller暗色底。
      114.(2026-09-10) 亮色系全頁四邊框線看不見：上外框底邊/頂部線/下紅線/左右邊線原本都是白色，跟白底開獎單同色。比照暗色系(#555)，亮色系四條線統一改#888中灰，只鎖pinch-fullscreen-mode且非theme-dark。
      113.(2026-09-10) 放到最大捲到底時底下留白太多：FULLPAGE_BOTTOM_EXTRA_RATIO(捲到底保留開獎單高度1%)只在放大後才看得到、且跟著倍率放大(5倍約39px)。改為0，clampFullPageScrollY()與applyPageZoom()的spacer都不再多留，最後一列底邊直接貼下紅線；全頁.scroller的padding-bottom也由1px改0(放大後會變成一條暗縫)。
      112.(2026-09-10) 全頁左右邊線：新增#fullpage-edge-line-left/right兩個固定定位元素貼在螢幕最左/最右(跟上下紅線同一套)，高度＝上紅線底邊到下紅線頂邊、粗細3px同頂/底線，亮色白/暗色灰，縮放不影響。
@@ -994,6 +995,9 @@ transform:scaleY(FULLPAGE_SHEET_HEIGHT_SCALE=0.99)、transform-origin左上，�
      applyPageZoom()的spacer三處都走同一套。
   4. 邊線：左右邊線是#fullpage-edge-line-left/right兩個固定定位元素貼在螢幕兩緣，高度由syncFullPageFunctionZoneOutline()
      設為上紅線底邊～下紅線頂邊；不能畫在#panels外側(會被貼齊的開獎單推到螢幕外)。
+  5. 框線顏色(第114條)：四條線(上外框底邊#full-page-function-zone-outline、頂部線#fullpage-header-line、下紅線#bottom-frame-line-wrap、
+     左右邊線#fullpage-edge-line-left/right)一律同色同粗(3px)：暗色系#555(配#0a0a0a底)、亮色系#888(配白底/#e9e9e9底)，
+     兩套都用body.pinch-fullscreen-mode(.theme-dark / :not(.theme-dark))鎖定。不可用白色或跟開獎單底色同色的顏色，否則線看不見。
 禁止事項：不要在全頁模式給.scroller/#panels/#page-zoom-wrap加任何外距、內距、框線或「保留幾%」的緩衝——
   最小尺寸看不出來的幾px，兩指放大5倍後都會變成明顯留白(第110~113條全部是這種來源)。
 【全頁系統紅線(2026-08-29)】打叉下方的白線改成紅線：body.pinch-fullscreen-mode #game-539-content的
@@ -2517,6 +2521,13 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   body.pinch-fullscreen-mode:not(.theme-dark) #fullpage-header-line{ background:#888; }
   body.pinch-fullscreen-mode:not(.theme-dark) #bottom-frame-line-wrap{ background:#888; }
   body.pinch-fullscreen-mode:not(.theme-dark) #fullpage-edge-line-left, body.pinch-fullscreen-mode:not(.theme-dark) #fullpage-edge-line-right{ background:#888; }
+  /* 第115條(2026-09-10)：暗色系全頁四條框線也用同一段規則統一成#555(三個程式一致)：抓牌終極/主程式原本頂部線與上外框底邊是白色、下紅線被暗色遮罩規則蓋成底色看不見。
+     用body.theme-dark.pinch-fullscreen-mode三層鎖定，特異度高於各自原本的暗色系規則 */
+  body.theme-dark.pinch-fullscreen-mode #full-page-function-zone-outline{ border-bottom-color:#555 !important; }
+  body.theme-dark.pinch-fullscreen-mode #fullpage-header-line{ background:#555 !important; }
+  body.theme-dark.pinch-fullscreen-mode #bottom-frame-line-wrap{ background:#555 !important; }
+  body.theme-dark.pinch-fullscreen-mode #fullpage-edge-line-left, body.theme-dark.pinch-fullscreen-mode #fullpage-edge-line-right{ background:#555 !important; }
+  body.theme-dark.pinch-fullscreen-mode .scroller{ background:#121212; } /* 第115條：全頁.scroller白底在暗色系蓋成底色(差數版早有同一條，底色#0a0a0a) */
   /* 全頁開獎單：每個panel底下補一條跟表格同色的底線，確保最後一列的下邊框一定看得到；
      底線下方再由.scroller的1px白色padding形成「開獎單底下留白1px」 */
   body.pinch-fullscreen-mode .panel{
