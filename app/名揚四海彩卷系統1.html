@@ -814,6 +814,16 @@ transform:scaleY(FULLPAGE_SHEET_HEIGHT_SCALE=0.99)、transform-origin左上，�
      兩套都用body.pinch-fullscreen-mode(.theme-dark / :not(.theme-dark))鎖定。不可用白色或跟開獎單底色同色的顏色，否則線看不見。
 禁止事項：不要在全頁模式給.scroller/#panels/#page-zoom-wrap加任何外距、內距、框線或「保留幾%」的緩衝——
   最小尺寸看不出來的幾px，兩指放大5倍後都會變成明顯留白(第110~113條全部是這種來源)。
+【Ai欄(#c-ding-ai-box)左邊格線與下方黑色留白說明(2026-09-10 第117條)】
+真正的「日期欄左邊格線」在哪：table.road td.day原本沒有border-left，即使補上(見下方CSS)，也會被蓋在表格
+上方、z-index:2、背景不透明的Ai欄(#c-ding-ai-box)整片蓋住，螢幕上完全看不到。真正生效、使用者看得到的線
+是畫在Ai欄自己的border-right(box-sizing:border-box，不改變框寬72px)，顏色跟其他格線一致：亮色#bbb、
+暗色#555。除錯時可用瓢蟲(#bug-log-fab)長按抓「左欄底部橫線探測」記錄，看#c-ding-ai-box那行的border值，
+讀到0px代表當下這份檔案是第117條之前的舊版，不是新bug。
+Ai欄下方大片黑色是正常現象，不是留白bug：#c-ding-ai-box的背景故意跟頁面底色同色(暗色系本檔案
+#121212、亮色#e9e9e9的話會是白灰底不會黑，但暗色系兩者都是深黑/深灰系)，球圖示與捲動鍵下方在
+還沒有搜期結果(renderCModeAiColumnList還沒填球)時只是純色色塊，跟外面的頁面背景幾乎融成一片，
+用眼睛看會覺得「這一大塊都是空的」，但這是設計本來就這樣、不需要修。
 【全頁系統紅線(2026-08-29)】打叉下方的白線改成紅線：body.pinch-fullscreen-mode #game-539-content的
 border-top跟#full-page-function-zone-outline的border都改#ff0000。漂浮按鍵上方新增一條紅線：借用既有的
 #bottom-frame-line-wrap，在pinch-fullscreen-mode下display:block、紅底、高3px，top由positionPinOnScreen()
