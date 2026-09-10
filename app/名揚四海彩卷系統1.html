@@ -28,6 +28,7 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
   2. 最小尺寸右邊留白：全頁.scroller左右外距歸0、applyDesktopScrollerWidth()在全頁不預留3px框線(scrollerBorderWidth=0)。
   3. 左右邊線：新增#fullpage-edge-line-left/right固定定位元素貼在螢幕兩緣，高度由syncFullPageFunctionZoneOutline()設為上紅線底邊～下紅線頂邊，3px同頂/底線。
   4. 放到最大底下留白：FULLPAGE_BOTTOM_EXTRA_RATIO由0.01改0、全頁.scroller的padding-bottom由1px改0。
+  5. 亮色系四邊框線由白色改#888中灰(白底上看得見)，暗色系維持#555。
   設計原則見下方「全頁開獎單四邊無縫原則」。】
 
 【★2026-09-08：效能優化二（Claude Code 無頭 Chromium 實測，412×915 手機視窗、4倍CPU節流）】
@@ -2315,6 +2316,13 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   #fullpage-edge-line-right{ right:0; }
   body.pinch-fullscreen-mode #fullpage-edge-line-left, body.pinch-fullscreen-mode #fullpage-edge-line-right{ display:block; }
   body.theme-dark #fullpage-edge-line-left, body.theme-dark #fullpage-edge-line-right{ background:#555; }
+  /* 第114條(2026-09-10)：亮色系全頁四邊框線原本是白色(#fff)，跟白底開獎單同色、跟#e9e9e9灰底也幾乎沒差，四條線等於看不見。
+     比照暗色系(#555線配#0a0a0a底)，亮色系四條線(上紅線外框底邊、頂部線、下紅線、左右邊線)統一改成#888中灰，白底/灰底上都看得清楚；
+     只鎖全頁模式且非暗色系，抓牌首頁狀態(#bottom-frame-line-wrap當遮罩用)不受影響 */
+  body.pinch-fullscreen-mode:not(.theme-dark) #full-page-function-zone-outline{ border-bottom-color:#888; }
+  body.pinch-fullscreen-mode:not(.theme-dark) #fullpage-header-line{ background:#888; }
+  body.pinch-fullscreen-mode:not(.theme-dark) #bottom-frame-line-wrap{ background:#888; }
+  body.pinch-fullscreen-mode:not(.theme-dark) #fullpage-edge-line-left, body.pinch-fullscreen-mode:not(.theme-dark) #fullpage-edge-line-right{ background:#888; }
   /* 全頁開獎單：每個panel底下補一條跟表格同色的底線，確保最後一列的下邊框一定看得到；
      底線下方再由.scroller的1px白色padding形成「開獎單底下留白1px」 */
   body.pinch-fullscreen-mode .panel{

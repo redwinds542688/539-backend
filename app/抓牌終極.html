@@ -20,6 +20,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventLi
      3.(2026-09-07) 全頁只有四顆按鍵：精簡版CSS把第一顆(#bug-log-fab 瓢蟲/Ai)整個隱藏了。改成只在主頁隱藏，全頁/抓牌首頁狀態下顯示，恢復完整版的五顆。
      4.(2026-09-07) 整份程式改以完整版「彩卷最新版_0907_0228」為底重建(C式定位/合匯/差數、E式、搜期、統計表等全部同步)，再把列印版專屬的東西搬回來：PWA/SW、直向擋板、尺寸鍵＋印單鍵(雙擊存檔)、列印版CSS；C式/定期退出後一律回主頁。
      5.(2026-09-07) 全頁第一顆改為「抓牌」：雙擊＝進入C式差數(完整版那套)；長按仍開錯誤紀錄檢視器；單擊不再下載紀錄。
+     114.(2026-09-10) 亮色系全頁四邊框線看不見：上外框底邊/頂部線/下紅線/左右邊線原本都是白色，跟白底開獎單同色。比照暗色系(#555)，亮色系四條線統一改#888中灰，只鎖pinch-fullscreen-mode且非theme-dark。
      113.(2026-09-10) 放到最大捲到底時底下留白太多：FULLPAGE_BOTTOM_EXTRA_RATIO(捲到底保留開獎單高度1%)只在放大後才看得到、且跟著倍率放大(5倍約39px)。改為0，clampFullPageScrollY()與applyPageZoom()的spacer都不再多留，最後一列底邊直接貼下紅線；全頁.scroller的padding-bottom也由1px改0(放大後會變成一條暗縫)。
      112.(2026-09-10) 全頁左右邊線：新增#fullpage-edge-line-left/right兩個固定定位元素貼在螢幕最左/最右(跟上下紅線同一套)，高度＝上紅線底邊到下紅線頂邊、粗細3px同頂/底線，亮色白/暗色灰，縮放不影響。
      111.(2026-09-10) 開獎單縮到最小時右邊仍留白：全頁模式.scroller左右0.5%外距歸0、applyDesktopScrollerWidth()在全頁不再預留3px框線寬(scrollerBorderWidth=0)，開獎單左右兩緣直接貼齊螢幕邊界；其他畫面(首頁/C式/定期)維持原本外距與預留。
@@ -2509,6 +2510,13 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   #fullpage-edge-line-right{ right:0; }
   body.pinch-fullscreen-mode #fullpage-edge-line-left, body.pinch-fullscreen-mode #fullpage-edge-line-right{ display:block; }
   body.theme-dark #fullpage-edge-line-left, body.theme-dark #fullpage-edge-line-right{ background:#555; }
+  /* 第114條(2026-09-10)：亮色系全頁四邊框線原本是白色(#fff)，跟白底開獎單同色、跟#e9e9e9灰底也幾乎沒差，四條線等於看不見。
+     比照暗色系(#555線配#0a0a0a底)，亮色系四條線(上紅線外框底邊、頂部線、下紅線、左右邊線)統一改成#888中灰，白底/灰底上都看得清楚；
+     只鎖全頁模式且非暗色系，抓牌首頁狀態(#bottom-frame-line-wrap當遮罩用)不受影響 */
+  body.pinch-fullscreen-mode:not(.theme-dark) #full-page-function-zone-outline{ border-bottom-color:#888; }
+  body.pinch-fullscreen-mode:not(.theme-dark) #fullpage-header-line{ background:#888; }
+  body.pinch-fullscreen-mode:not(.theme-dark) #bottom-frame-line-wrap{ background:#888; }
+  body.pinch-fullscreen-mode:not(.theme-dark) #fullpage-edge-line-left, body.pinch-fullscreen-mode:not(.theme-dark) #fullpage-edge-line-right{ background:#888; }
   /* 全頁開獎單：每個panel底下補一條跟表格同色的底線，確保最後一列的下邊框一定看得到；
      底線下方再由.scroller的1px白色padding形成「開獎單底下留白1px」 */
   body.pinch-fullscreen-mode .panel{
