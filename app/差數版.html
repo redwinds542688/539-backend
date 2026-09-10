@@ -20,6 +20,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventLi
      3.(2026-09-07) 全頁只有四顆按鍵：精簡版CSS把第一顆(#bug-log-fab 瓢蟲/Ai)整個隱藏了。改成只在主頁隱藏，全頁/抓牌首頁狀態下顯示，恢復完整版的五顆。
      4.(2026-09-07) 整份程式改以完整版「彩卷最新版_0907_0228」為底重建(C式定位/合匯/差數、E式、搜期、統計表等全部同步)，再把列印版專屬的東西搬回來：PWA/SW、直向擋板、尺寸鍵＋印單鍵(雙擊存檔)、列印版CSS；C式/定期退出後一律回主頁。
      5.(2026-09-07) 全頁第一顆改為「抓牌」：雙擊＝進入C式差數(完整版那套)；長按仍開錯誤紀錄檢視器；單擊不再下載紀錄。
+     113.(2026-09-10) 放到最大捲到底時底下留白太多：FULLPAGE_BOTTOM_EXTRA_RATIO(捲到底保留開獎單高度1%)只在放大後才看得到、且跟著倍率放大(5倍約39px)。改為0，clampFullPageScrollY()與applyPageZoom()的spacer都不再多留，最後一列底邊直接貼下紅線；全頁.scroller的padding-bottom也由1px改0(放大後會變成一條暗縫)。
      112.(2026-09-10) 使用者回報左邊的線不見了：第111條貼齊兩緣後#panels外側的box-shadow邊線落到螢幕外。改成新增#fullpage-edge-line-left/right兩個固定定位元素貼在螢幕最左/最右(跟上下紅線同一套)，高度＝上紅線底邊到下紅線頂邊、粗細3px同頂/底線，亮色白/暗色灰，縮放不影響；#panels的box-shadow邊線取消。
      111.(2026-09-10) 開獎單縮到最小時右邊仍留白：全頁模式.scroller左右0.5%外距歸0、applyDesktopScrollerWidth()在全頁不再預留3px框線寬(scrollerBorderWidth=0)，開獎單左右兩緣直接貼齊螢幕邊界；其他畫面(首頁/C式/定期)維持原本外距與預留。左右白邊線(box-shadow畫在#panels外側)因此落在螢幕外看不到。
      110.(2026-09-10) 全頁開獎單放到最大時右邊留白：水平捲動上限原本用#page-zoom-wrap右緣，wrap比開獎單寬(.scroller左右0.5%外距＋3px框線預留)，5倍後右邊約27px、左邊約10px空白。三處夾限(捏合touchmove、scroll事件)改用新函式clampFullPageScrollX()，以#panels左右緣為邊界，放大後往右捲到底＝最後一欄貼齊螢幕右緣、往左捲到底＝第一欄貼齊左緣；最小尺寸版面不變。
@@ -2497,7 +2498,7 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
      全頁模式整頁本來就是靠外層捲動，這裡把.scroller的裁切關掉並多留一點下邊距，讓底線完整顯示 */
   body.pinch-fullscreen-mode .scroller{
     overflow:visible !important;
-    padding-bottom:1px;
+    padding-bottom:0; /* 第113條：原1px，放大後跟著放大(5倍=5px)在最後一列底線與下紅線之間留一條暗縫；overflow已是visible不需要靠內距防裁切，歸0 */
     background:#ffffff;
     border-radius:0;
   }
@@ -3948,7 +3949,7 @@ window.fitFullSheetToFrame=fitFullSheetToFrame;
    讓開獎單回到自然版面，再套用全頁系統(pinch-fullscreen-mode)的版面規則。從抓牌首頁做手勢縮放時由setupPageZoom()呼叫。 */
 /* 全頁系統的垂直捲動夾限：不管放大到多少，開獎單頂邊不能低於上紅線(打叉下方)、底邊不能高於下紅線，
    兩線之間永遠被開獎單填滿、不會露出灰底留白。放大手勢跟一般捲動都要經過這裡。 */
-const FULLPAGE_BOTTOM_EXTRA_RATIO=0.01;window.FULLPAGE_BOTTOM_EXTRA_RATIO=FULLPAGE_BOTTOM_EXTRA_RATIO;/* 全頁系統捲到底時，最後一列下方保留開獎單高度的1%再碰到下紅線。這段在setupImageView()的函式作用域裡，外面的applyPageZoom()要透過window.取用 */
+const FULLPAGE_BOTTOM_EXTRA_RATIO=0;window.FULLPAGE_BOTTOM_EXTRA_RATIO=FULLPAGE_BOTTOM_EXTRA_RATIO;/* 第113條(2026-09-10)：原本0.01(捲到底時最後一列下方保留開獎單高度1%)，最小尺寸時開獎單被拉伸到剛好貼下紅線所以看不出來，放大後這1%跟著放大(5倍時約39px)，變成底下一大塊留白。改為0＝最後一列底邊直接貼到下紅線 *//* 全頁系統捲到底時，最後一列下方保留開獎單高度的1%再碰到下紅線。這段在setupImageView()的函式作用域裡，外面的applyPageZoom()要透過window.取用 */
 /* 全頁系統開獎單的上邊界：上紅線(功能區外框底邊＝彩卷按鍵正下方)的底邊，開獎單頂邊緊貼這裡 */
 function getFullPageTopBound(){const outlineEl=document.getElementById("full-page-function-zone-outline");if(outlineEl&&outlineEl.getBoundingClientRect().height>0)return outlineEl.getBoundingClientRect().bottom;const homeFixedTopEl=document.getElementById("home-fixed-top");return homeFixedTopEl?homeFixedTopEl.getBoundingClientRect().bottom+3:0}
 window.getFullPageTopBound=getFullPageTopBound;
