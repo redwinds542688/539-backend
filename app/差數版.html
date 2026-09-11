@@ -3051,6 +3051,11 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
     border-right:1px solid #bbb !important; border-bottom:1px solid #bbb !important;
     position:relative;
   }
+  /* 第118條(2026-09-10)：暗色系標定號碼格(第一招雙擊/其他招式共用的num-marked)右邊與下面格線是白色(#bbb)，跟暗色系其餘格線(#555)不同色，
+     使用者截圖回報在全頁看到標記格旁邊有一條突兀的亮白線。原因：上面這條規則寫死#bbb且加!important，暗色系原本只改一般格子的
+     border-right-color(沒加!important)蓋不過去。這裡另外針對暗色系補上!important覆蓋，跟其餘格線同色 */
+  body.theme-dark table.road td.num.num-marked{ border-right-color:#555 !important; border-bottom-color:#555 !important; }
+
   table.road td.num.num-marked.num-marked-click::before{
     content:"";
     position:absolute;
