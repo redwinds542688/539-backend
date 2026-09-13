@@ -60,7 +60,7 @@
     { name: "投票:每份表前5顆+回溯32次", opts: { predictMode: "gapvote", gapVoteTop: 5, steps: 32, spareRows: 48 } },
     { name: "anchor 記錄1/2/3/5以主角計", opts: { predictMode: "anchor", fieldCountMode: "subjects" } },
     { name: "anchor 回溯32次", opts: { predictMode: "anchor", steps: 32, spareRows: 48 } },
-    { name: "anchor 錨定期也回測(N-1起)", opts: { predictMode: "anchor", anchorRows: 0 } },
+    { name: "anchor 舊定義(跳過N-1,回溯N-2起)", opts: { predictMode: "anchor", anchorRows: 1 } },
     { name: "field 機率相乘", opts: { predictMode: "field" } },
     { name: "condition 同條件命中率", opts: { predictMode: "condition" } },
     { name: "top 最高值篩選", opts: { predictMode: "top" } },

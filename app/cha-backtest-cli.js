@@ -89,7 +89,7 @@ function printReport(result) {
     "  掃描=" + o.sweepCount + "位置  顯示區=" + o.windowSize + "期  備用列=" + o.spareRows + "期  偏移=" + offsetsOn.join(","));
   console.log("列號：備用列 " + result.frame.spareRowNo[0] + "~" + result.frame.spareRowNo[1] + "、顯示區 " +
     result.frame.visibleRowNo[0] + "~" + result.frame.visibleRowNo[1] + "、空白第 1 列 " + (result.frame.visibleRowNo[1] + 1) +
-    "   預測期=第 " + result.frame.targetRowNo + " 列  錨定期=第 " + result.frame.anchorRowNo + " 列  回溯=" + result.frame.stepsRun + "次（下桿從第 " +
+    "   預測期(錨定期)=第 " + result.frame.targetRowNo + " 列  回溯=" + result.frame.stepsRun + "次（下桿從第 " +
     result.frame.firstLowerRowNo + " 列往上到第 " + result.frame.lastLowerRowNo + " 列）");
   console.log("");
   console.log("回溯  列號 日期        上桿位置        備用  預期的果(號碼×次數)                          真實的果             命中");

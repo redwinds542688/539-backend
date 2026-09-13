@@ -216,17 +216,17 @@ test("backtest：回溯 16 次，每次下桿在倒數第 t 期", () => {
   }
   const r = Cha.backtest(rows);
   assert.equal(r.records.length, 16);
-  // 預測期第 49 列、錨定期第 48 列（不回測）、回溯第 47..32 列
+  // 下桿第 49 列 = 預測期 = 錨定期、回溯第 48..33 列（N-1 … N-16）
   assert.deepEqual(r.frame, {
     visibleStart: 44, visibleEnd: 59, spareStart: 12, spareEnd: 43, targetIdx: 60, targetRowNo: 49,
-    anchorIdx: 59, anchorRowNo: 48, anchorRows: 1,
-    firstLowerIdx: 58, lastLowerIdx: 43, firstLowerRowNo: 47, lastLowerRowNo: 32,
+    anchorIdx: 60, anchorRowNo: 49, anchorRows: 0,
+    firstLowerIdx: 59, lastLowerIdx: 44, firstLowerRowNo: 48, lastLowerRowNo: 33,
     spareRowNo: [1, 32], visibleRowNo: [33, 48], stepsRequested: 16, stepsRun: 16,
   });
-  assert.deepEqual(r.records.map((x) => x.lowerRowNo), [47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32]);
+  assert.deepEqual(r.records.map((x) => x.lowerRowNo), [48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33]);
   r.records.forEach((rec, i) => {
     assert.equal(rec.t, i + 1);
-    assert.equal(rec.lowerIdx, 59 - (i + 1));
+    assert.equal(rec.lowerIdx, 60 - (i + 1));
     assert.equal(rec.upperPositions.length, 6); // 16 次都是 6 個位置，沒有任何略過
     assert.equal(rec.spareRowsUsed, Math.max(0, 44 - (rec.lowerIdx - 6 - 6)));
     assert.deepEqual(rec.actual, rows[rec.lowerIdx]);
@@ -239,18 +239,18 @@ test("backtest：回溯 16 次，每次下桿在倒數第 t 期", () => {
 
 test("backtest：回測起點跟著預測目標列走", () => {
   const rows = new Array(60).fill([1, 2, 3, 4, 5]);
-  // 預測期第 49 列（預設）：錨定期第 48 列不回測，下桿 idx58..43 = 第 47..32 列
+  // 下桿第 49 列（預設）= 預測期 = 錨定期：下桿 idx59..44 = 第 48..33 列
   const r17 = Cha.backtest(rows);
-  assert.deepEqual([r17.frame.targetRowNo, r17.frame.anchorRowNo, r17.frame.firstLowerIdx, r17.frame.lastLowerIdx], [49, 48, 58, 43]);
-  assert.deepEqual([r17.frame.firstLowerRowNo, r17.frame.lastLowerRowNo], [47, 32]);
-  // anchorRows: 0 → 回到「從目標列上一列開始」
-  const r0 = Cha.backtest(rows, { anchorRows: 0 });
-  assert.deepEqual([r0.frame.firstLowerRowNo, r0.frame.lastLowerRowNo], [48, 33]);
-  assert.deepEqual(r17.records.map((x) => x.lowerIdx), [58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 43]);
-  // 預測期第 48 列（idx59）：錨定期第 47 列，下桿 idx57..42 = 第 46..31 列
+  assert.deepEqual([r17.frame.targetRowNo, r17.frame.anchorRowNo, r17.frame.firstLowerIdx, r17.frame.lastLowerIdx], [49, 49, 59, 44]);
+  assert.deepEqual([r17.frame.firstLowerRowNo, r17.frame.lastLowerRowNo], [48, 33]);
+  // anchorRows: 1 → 舊定義，多跳過 N-1，從第 47 列開始
+  const r1 = Cha.backtest(rows, { anchorRows: 1 });
+  assert.deepEqual([r1.frame.firstLowerRowNo, r1.frame.lastLowerRowNo], [47, 32]);
+  assert.deepEqual(r17.records.map((x) => x.lowerIdx), [59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44]);
+  // 下桿第 48 列（idx59）：錨定期第 48 列，回溯 idx58..43 = 第 47..32 列（N-1 … N-16）
   const r16 = Cha.backtest(rows, { targetIdx: 59 });
-  assert.deepEqual([r16.frame.targetRowNo, r16.frame.anchorRowNo, r16.frame.firstLowerIdx, r16.frame.lastLowerIdx], [48, 47, 57, 42]);
-  assert.deepEqual([r16.frame.firstLowerRowNo, r16.frame.lastLowerRowNo], [46, 31]);
+  assert.deepEqual([r16.frame.targetRowNo, r16.frame.anchorRowNo, r16.frame.firstLowerIdx, r16.frame.lastLowerIdx], [48, 48, 58, 43]);
+  assert.deepEqual([r16.frame.firstLowerRowNo, r16.frame.lastLowerRowNo], [47, 32]);
   // 列號換算：備用列第一期 idx12 = 第 1 列；顯示區第一期 idx44 = 第 33 列
   const o = Cha.resolveOpts({});
   assert.equal(Cha.rowNo(rows, 12, o), 1);
@@ -259,10 +259,10 @@ test("backtest：回測起點跟著預測目標列走", () => {
   assert.equal(Cha.idxOfRowNo(rows, 49, o), 60);
   assert.equal(Cha.idxOfRowNo(rows, 1, o), 12);
   assert.equal(r16.records.length, 16);
-  assert.equal(r16.records[15].lowerIdx, 42);
+  assert.equal(r16.records[15].lowerIdx, 43);
   assert.equal(r16.records[15].upperPositions.length, 6);
-  assert.equal(r16.records[15].spareRowsUsed, 14); // 最早讀到 42-12=30，顯示第 1 期 idx44 → 14 列備用列
-  r16.records.forEach((x) => assert.ok(x.lowerIdx < 58)); // 絕不讀錨定期、預測期與其下方
+  assert.equal(r16.records[15].spareRowsUsed, 13); // 最早讀到 43-12=31，顯示第 1 期 idx44 → 13 列備用列
+  r16.records.forEach((x) => assert.ok(x.lowerIdx < 59)); // 絕不讀預測期（錨定期）與其下方
 });
 
 test("backtest：scorer 掛勾可以把額外欄位掛到 record", () => {
@@ -487,10 +487,10 @@ test("predict：目標列指定為已開出的第 48 列時，回測只用它以
   const pr = Cha.predict(rows, { targetIdx: 39, predictTop: 5 });
   assert.equal(pr.targetRowNo, 48);
   assert.deepEqual(pr.actual, rows[39]);
-  assert.equal(pr.backtest.frame.anchorIdx, 38);
-  assert.equal(pr.backtest.frame.firstLowerIdx, 37);
-  assert.equal(pr.backtest.frame.lastLowerIdx, 22);
-  pr.backtest.records.forEach((r) => assert.ok(r.lowerIdx <= 37));
+  assert.equal(pr.backtest.frame.anchorIdx, 39); // 錨定期 = 預測期
+  assert.equal(pr.backtest.frame.firstLowerIdx, 38); // 回溯 N-1 … N-16
+  assert.equal(pr.backtest.frame.lastLowerIdx, 23);
+  pr.backtest.records.forEach((r) => assert.ok(r.lowerIdx <= 38));
   pr.hits.forEach((n) => assert.ok(rows[39].includes(n)));
   // 主角的標定完全不碰 idx39 以下（含）：所有主角列都 < 39
   pr.live.aiEntries.forEach((e) => { assert.ok(e.selfRow < 39); assert.ok(e.partnerRow < 39); });

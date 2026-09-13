@@ -59,7 +59,7 @@
     intervals: null, // k2-k1 間隔打勾（App 的 cModeChaIntervals）；null = 全部打勾
     scorer: null, // 之後接「新計算機率邏輯」的掛勾：function(record, ctx) → 額外欄位
     targetIdx: null, // 預測期 N（下桿真正的位置）的索引；null = rows.length（空白第 1 列，列號 49）
-    anchorRows: 1, // 錨定期：預測期上方 anchorRows 列不回測；回溯從 N-1-anchorRows 開始（預設 N-2 … N-17）
+    anchorRows: 0, // 錨定期 = 預測期 N（下桿真正的位置）；回溯從 N-1 開始到 N-16。設 1 時多跳過 N-1（舊定義 N-2 … N-17）
     predictOffsetTop: 3, // anchor 模式：第 4 個記錄排行取前幾名九宮差
     anchorSubjectScore: "sum", // anchor 模式主角分數："sum"（四個百分比相加）、"product"（相乘）、"none"（不計，只看九宮差）
     anchorOffsetWeight: "add", // anchor 模式九宮差如何併入號碼分數："add"（主角分數 + 九宮差百分比）、"mul"（相乘）、"none"（只用主角分數）
@@ -499,9 +499,9 @@
   }
 
   /**
-   * 回測：以「預測期 N」為基準，N-1 是錨定期（不回測），下桿從 N-1-anchorRows 開始往上移 steps 次（列號見 rowNo）。
-   *   預測期第 49 列（空白第 1 列）→ 錨定期第 48 列 → 回溯第 47、46 … 32 列
-   *   預測期第 48 列              → 錨定期第 47 列 → 回溯第 46、45 … 31 列
+   * 回測：下桿在預測期 N，N 同時就是錨定期；下桿從 N-1-anchorRows 開始往上移 steps 次（列號見 rowNo，anchorRows 預設 0）。
+   *   下桿第 48 列（N）→ 錨定期第 48 列 → 回溯第 47、46 … 32 列（N-1 … N-16）
+   *   下桿第 49 列（空白第 1 列）→ 錨定期第 49 列 → 回溯第 48、47 … 33 列
    * 第 t 次下桿放在 targetIdx − t，那一期的號碼就是真實的果，計算時視為未開；
    * 上桿在它上方 sweepCount..1 列各跑一次（App 的 6期掃描），不夠的列往備用列讀，
    * 累計後取前幾名當預期的果，再跟真實的果比對。
@@ -565,7 +565,7 @@
         visibleStart: visibleStart(rows, o), visibleEnd: end - 1,
         spareStart: searchFloor(rows, o), spareEnd: visibleStart(rows, o) - 1,
         targetIdx: target, targetRowNo: rowNo(rows, target, o), // 統一列號：備用列 1..32、顯示區 33..48、空白第 1 列 49
-        anchorIdx: target - 1, anchorRowNo: rowNo(rows, target - 1, o), anchorRows: anchor,
+        anchorIdx: target, anchorRowNo: rowNo(rows, target, o), anchorRows: anchor, // 錨定期 = 預測期 N
         firstLowerIdx: target - anchor - 1, lastLowerIdx: Math.max(0, target - anchor - o.steps),
         firstLowerRowNo: rowNo(rows, target - anchor - 1, o), lastLowerRowNo: rowNo(rows, Math.max(0, target - anchor - o.steps), o),
         spareRowNo: [1, o.spareRows], visibleRowNo: [o.spareRows + 1, o.spareRows + o.windowSize],
