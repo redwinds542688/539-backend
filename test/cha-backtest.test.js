@@ -363,8 +363,9 @@ test("差數ai統計：五個記錄的機率分布（截圖那一組 10 筆有�
   assert.deepEqual(same.top, [0, 4]);
   assert.deepEqual(same.list.map((x) => [x.value, x.count]), [[0, 3], [4, 3], [-4, 2], [-3, 1], [3, 1]]);
   assert.equal(same.list[0].prob, 3 / 10);
-  // 第2個記錄 連線差：+1 三筆(05,28,29)、-10 三筆(35×3)
-  assert.deepEqual(st.fields.linkDiff.top, [-10, 1]);
+  // 第2個記錄 連線差：-1 三筆(06,06,29)、-10 三筆(35×3)；+1 兩筆(05,28)、+10 兩筆(25×2)
+  assert.deepEqual(st.fields.linkDiff.top, [-10, -1]);
+  assert.deepEqual(st.fields.linkDiff.list.map((x) => [x.value, x.count]), [[-10, 3], [-1, 3], [1, 2], [10, 2]]);
   // 第3個記錄 列距：-3 四筆(05,06,06,29)
   assert.deepEqual(st.fields.rowDist.top, [-3]);
   assert.equal(st.fields.rowDist.list[0].count, 4);
