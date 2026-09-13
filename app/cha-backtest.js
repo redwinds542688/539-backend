@@ -60,7 +60,7 @@
     scorer: null, // 之後接「新計算機率邏輯」的掛勾：function(record, ctx) → 額外欄位
     targetIdx: null, // 預測目標列（下桿位置）的索引；null = rows.length（空白第 1 列，App 第 17 列）
     predictTop: 5, // predict() 取前幾顆
-    predictMode: "field", // predict() 計分規則："field"（五個記錄機率相乘）或 "condition"（同條件歷史命中率）
+    predictMode: "top", // predict() 計分規則："top"（最高值篩選，預設）、"field"（五個記錄機率相乘）、"condition"（同條件歷史命中率）
   };
 
   function resolveOpts(opts) {
@@ -580,10 +580,57 @@
    * mode = "condition"：改用四個條件完全相同的歷史紀錄裡各九宮差的命中率（aggregateAi.byCondition），
    *   歷史沒有這組條件時退回 field 規則。
    */
+  /**
+   * 篩選式計分（predictMode = "top"）：
+   *   1. 第 1/2/3/5 個記錄各取機率最高的值（同分並列都算）。
+   *   2. 每顆主角數四個條件有幾個落在最高值上（0..4），只留符合最多的那一群（全中優先，沒有就退到 3、2、1）。
+   *   3. 留下的主角先套第 4 個記錄機率最高的九宮差，得到候選；候選不足 topN 顆時依機率順序再套下一個九宮差補滿。
+   *   4. 候選分數 = 推到它的主角數（同一輪內），輪次越早分數越高。
+   */
+  function predictByTop(live, st, o, topN) {
+    function topValues(field) { return st.fields[field].top; }
+    var tops = { sameRow: topValues("sameRow"), linkDiff: topValues("linkDiff"), rowDist: topValues("rowDist"), gap: topValues("gap") };
+    var scored = live.aiEntries.map(function (e) {
+      var m = 0;
+      ["sameRow", "linkDiff", "rowDist", "gap"].forEach(function (f) { if (tops[f].indexOf(e[f]) !== -1) m++; });
+      return { e: e, match: m };
+    });
+    var best = scored.reduce(function (a, x) { return Math.max(a, x.match); }, 0);
+    var kept = scored.filter(function (x) { return x.match === best && best > 0; }).map(function (x) { return x.e; });
+    // 九宮差依機率排序，同分一起用（一輪）
+    var offList = st.fields.offset.list.slice();
+    var rounds = [];
+    offList.forEach(function (x) {
+      var last = rounds[rounds.length - 1];
+      if (last && last.count === x.count) last.offsets.push(x.value);
+      else rounds.push({ count: x.count, offsets: [x.value] });
+    });
+    var score = {}, reasons = {};
+    for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
+    var found = 0;
+    rounds.forEach(function (round, ri) {
+      if (found >= topN) return;
+      var roundWeight = rounds.length - ri; // 越早的輪次分數越高
+      kept.forEach(function (e) {
+        var drag = nineGridDrag(e.self, o.maxBall);
+        round.offsets.forEach(function (off) {
+          var pos = NINE_GRID_DRAG_OFFSETS.indexOf(off);
+          if (pos === -1 || !o.offsetsChecked[pos]) return; // 這個九宮差沒打勾，跳過
+          var num = drag[pos];
+          if (score[num] === 0) found++;
+          score[num] += roundWeight;
+          reasons[num].push({ self: e.self, partner: e.partner, offset: off, weight: roundWeight, round: ri + 1,
+            sameRow: e.sameRow, linkDiff: e.linkDiff, rowDist: e.rowDist, gap: e.gap, upperIdx: e.upperIdx });
+        });
+      });
+    });
+    return { score: score, reasons: reasons, topValues: tops, matchLevel: best, keptSubjects: kept.length, offsetRounds: rounds };
+  }
+
   function predict(rows, opts, backtestResult) {
     var o = resolveOpts(opts);
     var topN = o.predictTop || 5;
-    var mode = o.predictMode || "field";
+    var mode = o.predictMode || "top";
     var bt = backtestResult || backtest(rows, o);
     var st = bt.aiFields;
     var byCond = bt.ai.byCondition;
@@ -597,8 +644,14 @@
     var live = sweep(rows.slice(0, lowerIdx), lowerIdx, o);
     var score = {};
     var reasons = {};
+    var topInfo = null;
     for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
-    live.aiEntries.forEach(function (e) {
+    if (mode === "top") {
+      topInfo = predictByTop(live, st, o, topN);
+      score = topInfo.score;
+      reasons = topInfo.reasons;
+    }
+    if (mode !== "top") live.aiEntries.forEach(function (e) {
       var condW = P("sameRow", e.sameRow) * P("linkDiff", e.linkDiff) * P("rowDist", e.rowDist) * P("gap", e.gap);
       var cond = mode === "condition" ? byCond[aiConditionKey(e)] : null;
       var drag = nineGridDrag(e.self, o.maxBall);
@@ -630,6 +683,7 @@
       topNums: topNums,
       actual: known,
       hits: known ? topNums.filter(function (n) { return known.indexOf(n) !== -1; }) : null,
+      top_: topInfo ? { topValues: topInfo.topValues, matchLevel: topInfo.matchLevel, keptSubjects: topInfo.keptSubjects, offsetRounds: topInfo.offsetRounds } : null,
       backtest: bt,
     };
   }

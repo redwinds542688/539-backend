@@ -12,7 +12,7 @@
  *   node app/cha-backtest-cli.js --ai-detail           # 加印 差數ai統計 每一筆紀錄 [同列,連線差,列距,九宮差,桿距]
  *   node app/cha-backtest-cli.js --target 17           # 預測目標列（顯示列號 1..16，17 = 空白第 1 列，預設）；回測從目標列上一列往上 16 次
  *   node app/cha-backtest-cli.js --predict [N]         # 用回測統計預測目標列，列前 N 顆（預設 5）；目標列已開出時附命中
- *   node app/cha-backtest-cli.js --predict-mode condition   # 計分改用「同條件歷史命中率」
+ *   node app/cha-backtest-cli.js --predict-mode top|field|condition   # 計分規則：top=最高值篩選（預設）、field=機率相乘、condition=同條件命中率
  *   node app/cha-backtest-cli.js --json                # 輸出完整 JSON（給後續機率邏輯用）
  *   node app/cha-backtest-cli.js --demo                # 用亂數資料跑一次，確認框架可動
  */
@@ -142,6 +142,13 @@ function printAi(result, detail) {
 function printPredict(pr) {
   console.log("");
   console.log("預測第 " + pr.targetRowNo + " 列（上桿掃上方 " + pr.live.positions.length + " 個位置）  計分規則=" + pr.mode + "  主角 " + pr.subjects + " 顆");
+  if (pr.top_) {
+    var tv = pr.top_.topValues;
+    console.log("  最高值：同列 " + tv.sameRow.map(fmtOff).join("/") + "  連線差 " + tv.linkDiff.map(fmtOff).join("/") +
+      "  列距 " + tv.rowDist.join("/") + "  桿距 " + tv.gap.join("/") +
+      "  → 主角四個條件符合 " + pr.top_.matchLevel + " 個的有 " + pr.top_.keptSubjects + " 顆");
+    console.log("  九宮差依機率：" + pr.top_.offsetRounds.slice(0, 4).map(function (r) { return r.offsets.map(fmtOff).join("/") + "(" + r.count + ")"; }).join("  →  "));
+  }
   if (!pr.ranked.length) { console.log("  沒有任何標定連線，無法預測"); return; }
   console.log("名次  號碼   分數      來源（主角+九宮差 → 這顆）");
   pr.top.forEach(function (x, i) {

@@ -412,7 +412,7 @@ test("predict：下桿在空白第 1 列，主角答案未知，分數來自回�
     while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
     rows.push([...set].sort((a, b) => a - b));
   }
-  const pr = Cha.predict(rows, { predictTop: 5 });
+  const pr = Cha.predict(rows, { predictTop: 5, predictMode: "field" });
   assert.equal(pr.lowerIdx, 40);
   assert.equal(pr.targetRowNo, 17);
   assert.equal(pr.actual, null);
@@ -445,7 +445,7 @@ test("predict：field 規則的分數 = 四個條件機率相乘 × 九宮差機
     rows.push([...set].sort((a, b) => a - b));
   }
   const bt = Cha.backtest(rows);
-  const pr = Cha.predict(rows, {}, bt);
+  const pr = Cha.predict(rows, { predictMode: "field" }, bt);
   const P = (f, v) => { const it = bt.aiFields.fields[f].list.find((x) => x.value === v); return it ? it.prob : 0; };
   pr.ranked.forEach((x) => {
     const manual = x.reasons.reduce((acc, r) =>
@@ -475,4 +475,44 @@ test("predict：目標列指定為已開出的第 16 列時，回測只用它以
   // 與「先切掉最後一期再預測空白列」結果一致
   const pr2 = Cha.predict(rows.slice(0, 39), { predictTop: 5 });
   assert.deepEqual(pr.topNums, pr2.topNums);
+});
+
+test("predict：top 模式 = 最高值篩主角，再套機率最高的九宮差", () => {
+  const rows = [];
+  let s = 11;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 40; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    rows.push([...set].sort((a, b) => a - b));
+  }
+  const pr = Cha.predict(rows, { predictTop: 5 });
+  assert.equal(pr.mode, "top");
+  const st = pr.backtest.aiFields.fields;
+  const tv = pr.top_.topValues;
+  assert.deepEqual(tv, { sameRow: st.sameRow.top, linkDiff: st.linkDiff.top, rowDist: st.rowDist.top, gap: st.gap.top });
+  // 留下的主角就是四個條件符合最多的那一群
+  const matchOf = (e) => ["sameRow", "linkDiff", "rowDist", "gap"].filter((f) => tv[f].includes(e[f])).length;
+  const best = Math.max(...pr.live.aiEntries.map(matchOf));
+  assert.equal(pr.top_.matchLevel, best);
+  assert.equal(pr.top_.keptSubjects, pr.live.aiEntries.filter((e) => matchOf(e) === best).length);
+  // 每個來源的主角都在留下的那一群，九宮差是依機率順序的輪次
+  pr.ranked.forEach((x) => x.reasons.forEach((r) => {
+    const e = pr.live.aiEntries.find((y) => y.self === r.self && y.partner === r.partner && y.upperIdx === r.upperIdx);
+    assert.equal(matchOf(e), best);
+    assert.ok(pr.top_.offsetRounds[r.round - 1].offsets.includes(r.offset));
+    assert.equal(Cha.nineGridDrag(r.self, 39)[Cha.NINE_GRID_DRAG_OFFSETS.indexOf(r.offset)], x.n);
+  }));
+  // 第一輪（機率最高的九宮差）推出的號碼一定排在後面輪次之前
+  const firstRoundNums = new Set(pr.ranked.filter((x) => x.reasons.some((r) => r.round === 1)).map((x) => x.n));
+  let seenLater = false;
+  pr.ranked.forEach((x) => { if (firstRoundNums.has(x.n)) assert.ok(!seenLater); else seenLater = true; });
+  assert.ok(pr.topNums.length <= 5);
+});
+
+test("predict：top 模式沒打勾的九宮差不會用", () => {
+  const rows = new Array(40).fill(0).map((_, i) => [1 + (i % 5), 7 + (i % 6), 13 + (i % 7), 21 + (i % 8), 30 + (i % 9)].sort((a, b) => a - b));
+  const checked = Cha.NINE_GRID_DRAG_OFFSETS.map((o) => o === 0); // 只留 0
+  const pr = Cha.predict(rows, { predictTop: 5, offsetsChecked: checked });
+  pr.ranked.forEach((x) => x.reasons.forEach((r) => assert.equal(r.offset, 0)));
 });
