@@ -728,3 +728,45 @@ test("predict：anchorStatsCond 桿距分開統計 = 差6只用差6的回溯資�
   assert.deepEqual(g.topNums, Cha.predict(rows, {}, bt).topNums);
   assert.equal(g.anchor_.subjects[0].bucket, null);
 });
+
+test("offsetCrossTable：依標定連線的九宮差分組，數每組主角加哪個九宮差會中", () => {
+  const bt = Cha.backtest(SHOT_ROWS);
+  const ct = bt.offsetByPairDiff;
+  assert.equal(ct.field, "pairDiff");
+  assert.ok(ct.groups.length > 0);
+  const known = bt.aiEntries.filter((e) => e.hits !== null);
+  let total = 0;
+  ct.groups.forEach((g) => {
+    // 每組都是九宮差之一，主角數 = 回溯裡 pairDiff 相同的主角
+    assert.ok(Cha.NINE_GRID_DRAG_OFFSETS.includes(g.value));
+    const mine = known.filter((e) => e.pairDiff === g.value);
+    assert.equal(g.subjects, mine.length);
+    assert.equal(g.hitSubjects, mine.filter((e) => e.hits.length > 0).length);
+    Cha.NINE_GRID_DRAG_OFFSETS.forEach((off) => {
+      assert.equal(g.byOffset[off], mine.filter((e) => e.hits.includes(off)).length);
+      assert.ok(Math.abs(g.rate[off] - g.byOffset[off] / g.subjects) < 1e-12);
+    });
+    const best = Math.max(...Cha.NINE_GRID_DRAG_OFFSETS.map((off) => g.byOffset[off]));
+    assert.deepEqual(g.top, best > 0 ? Cha.NINE_GRID_DRAG_OFFSETS.filter((off) => g.byOffset[off] === best) : []);
+    total += g.subjects;
+  });
+  assert.equal(total, known.length);
+  // 同一組的兩顆主角（連線的兩端）pairDiff 相同、連線差互為正負
+  known.forEach((e) => assert.ok(Math.abs(e.linkDiff) === Math.abs(e.pairDiff) || e.sameRow !== 0));
+  // 可換成其他欄位分組，例如桿距
+  const byGap = Cha.offsetCrossTable(bt.aiEntries, "gap");
+  assert.deepEqual(byGap.groups.map((g) => g.value), [-6, -5, -4, -3, -2, -1].filter((v) => known.some((e) => e.gap === v)));
+  // anchorOffsetCond 可以直接用 pairDiff
+  const pr = Cha.predict(SHOT_ROWS, { anchorOffsetCond: "pairDiff", anchorSubjectScore: "none" }, bt);
+  assert.ok(pr.anchor_.subjects.length > 0);
+  let checked = 0;
+  pr.anchor_.subjects.forEach((sj, i) => {
+    const live = pr.live.aiEntries[i];
+    assert.equal(live.self, sj.self);
+    const rank = Cha.offsetRanking(bt.aiEntries, "pairDiff", live.pairDiff);
+    if (!rank.length) return;
+    assert.deepEqual(sj.outputs.map((o) => o.offset), rank.slice(0, 3).map((x) => x.value));
+    checked++;
+  });
+  assert.ok(checked > 0);
+});

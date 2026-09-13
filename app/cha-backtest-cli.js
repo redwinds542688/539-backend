@@ -130,6 +130,7 @@ function printAi(result, detail) {
         (x.prob * 100).toFixed(1).padStart(5) + "%");
     });
   });
+  printCrossTable(result.offsetByPairDiff, "九宮差比對表：標定連線的九宮差（例 +11 的兩個標定號碼）→ 主角加哪個九宮差會中（命中主角數 / 該組主角數）");
   if (!detail) return;
   console.log("");
   console.log("每一筆紀錄  [同列, 連線差, 列距, 九宮差, 桿距]  主角(連線對手)");
@@ -142,6 +143,18 @@ function printAi(result, detail) {
       console.log("    [" + [x.sameRow, fmtOff(x.linkDiff), x.rowDist, fmtOff(x.offset), x.gap].join(", ") + "]  " +
         pad2(x.self) + "(" + pad2(x.partner) + ")");
     });
+  });
+}
+
+function printCrossTable(ct, title) {
+  if (!ct || !ct.groups.length) return;
+  console.log("");
+  console.log(title);
+  console.log("連線差  主角數 有中  " + Cha.NINE_GRID_DRAG_OFFSETS.map(function (o) { return fmtOff(o).padStart(6); }).join("") + "   最常中");
+  ct.groups.forEach(function (g) {
+    console.log(fmtOff(g.value).padStart(5) + "  " + String(g.subjects).padStart(5) + " " + String(g.hitSubjects).padStart(4) + "  " +
+      Cha.NINE_GRID_DRAG_OFFSETS.map(function (o) { return (String(g.byOffset[o]) + "(" + Math.round(g.rate[o] * 100) + "%)").padStart(6); }).join("") +
+      "   " + (g.top.map(fmtOff).join("/") || "-"));
   });
 }
 

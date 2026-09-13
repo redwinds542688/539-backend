@@ -63,7 +63,7 @@
     predictOffsetTop: 3, // anchor 模式：第 4 個記錄排行取前幾名九宮差
     anchorSubjectScore: "sum", // anchor 模式主角分數："sum"（四個百分比相加）、"product"（相乘）、"none"（不計，只看九宮差）
     anchorOffsetWeight: "add", // anchor 模式九宮差如何併入號碼分數："add"（主角分數 + 九宮差百分比）、"mul"（相乘）、"none"（只用主角分數）
-    anchorOffsetCond: "global", // anchor 模式九宮差排行的取樣範圍："global"（全部主角）或 "gap"/"rowDist"/"sameRow"/"linkDiff"（只取該記錄值相同的歷史主角）
+    anchorOffsetCond: "global", // anchor 模式九宮差排行的取樣範圍："global"（全部主角）或 "gap"/"rowDist"/"sameRow"/"linkDiff"/"pairDiff"（只取該記錄值相同的歷史主角；pairDiff = 標定連線的九宮差，例 +11 的兩個標定號碼）
     anchorStatsCond: "global", // anchor 模式「整套統計」的取樣範圍："global"，或記錄欄位名/陣列（例 "gap"、["gap","rowDist"]）：
                                // 差6只用回溯裡差6的資料、差5只用差5的（五個記錄的百分比與九宮差排行都只從同桿距的歷史主角算）
     fieldCountMode: "records", // 第 1/2/3/5 個記錄的分布以什麼計數："records"（一筆紀錄一次，中 3 個九宮差算 3 次）或 "subjects"（一顆主角一次）
@@ -555,6 +555,7 @@
       summary: summarize(records),
       ai: aggregateAi(allAi),
       aiFields: aiFieldStats(allAi, o), // 五個記錄各自的機率分布與最高值
+      offsetByPairDiff: offsetCrossTable(allAi, "pairDiff"), // 九宮差比對表：+11 的標定往往加哪個九宮差會中
       aiEntries: allAi,
       opts: o,
       targetIdx: target,
@@ -643,6 +644,41 @@
    *   2. 回溯第 4 個記錄排行取前 predictOffsetTop 名九宮差。
    *   3. 每顆主角各套這幾個九宮差，得到的號碼加分：主角分數 + 該九宮差的百分比，記到預測統計表。
    */
+  /**
+   * 九宮差比對表：依標定連線的九宮差（pairDiff，例 +11 的兩個標定號碼）分組，
+   * 看每一組的主角「加哪個九宮差」最常中。
+   * 每組：subjects（主角數）、hitSubjects（有中的主角數）、byOffset[off] = 命中主角數、
+   * rate[off] = 命中主角數 / 主角數（套這個九宮差會中的機率；純機率約 colCount/maxBall）、top（命中最多的九宮差）。
+   * groupField 可換成其他記錄欄位（gap / rowDist / sameRow / linkDiff）。
+   */
+  function offsetCrossTable(btEntries, groupField) {
+    var field = groupField || "pairDiff";
+    var groups = {};
+    btEntries.forEach(function (e) {
+      if (e.hits === null) return;
+      var key = e[field];
+      var g = groups[key];
+      if (!g) {
+        g = groups[key] = { value: key, subjects: 0, hitSubjects: 0, byOffset: {}, rate: {}, top: [] };
+        NINE_GRID_DRAG_OFFSETS.forEach(function (off) { g.byOffset[off] = 0; });
+      }
+      g.subjects++;
+      if (e.hits.length) g.hitSubjects++;
+      e.hits.forEach(function (off) { g.byOffset[off]++; });
+    });
+    var list = Object.keys(groups).map(function (k) { return groups[k]; });
+    list.forEach(function (g) {
+      var best = 0;
+      NINE_GRID_DRAG_OFFSETS.forEach(function (off) {
+        g.rate[off] = g.subjects ? g.byOffset[off] / g.subjects : 0;
+        if (g.byOffset[off] > best) best = g.byOffset[off];
+      });
+      g.top = best > 0 ? NINE_GRID_DRAG_OFFSETS.filter(function (off) { return g.byOffset[off] === best; }) : [];
+    });
+    list.sort(function (a, b) { return a.value - b.value; });
+    return { field: field, groups: list };
+  }
+
   /** 九宮差排行：全部主角，或只取某個記錄值與 live 主角相同的歷史主角 */
   function offsetRanking(btEntries, condField, condValue) {
     var counts = {}, total = 0;
@@ -880,6 +916,7 @@
     aiConditionKey: aiConditionKey,
     aggregateAi: aggregateAi,
     offsetRanking: offsetRanking,
+    offsetCrossTable: offsetCrossTable,
     AI_FIELDS: AI_FIELDS,
     aiFieldStats: aiFieldStats,
     statsCondFields: statsCondFields,

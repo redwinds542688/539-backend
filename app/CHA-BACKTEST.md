@@ -138,6 +138,13 @@ for t = 1 .. 16:
 - 九宮差排行的取樣範圍另有 `anchorOffsetCond`（只分開九宮差排行，記錄 1/2/3/5 仍用全體）；同時設定時以 `anchorOffsetCond` 的排行為準。
 - `anchor_.subjects[i].bucket` 給每顆主角的桶鍵、桶內主角數、有中主角數、是否退回全體；CLI 用 `--stats-cond gap`（可逗號串多欄）。
 
+九宮差比對表（`backtest().offsetByPairDiff`，`offsetCrossTable(entries, "pairDiff")`）：
+
+- 依標定連線的九宮差（`pairDiff`，例 +11 的兩個標定號碼）分組，數每組主角「加哪個九宮差會中」：
+  命中主角數、命中率（命中主角數 / 該組主角數，純機率約 5/39 = 12.8%）、最常中的九宮差。CLI `--ai` 會印出來。
+- 要拿來預測：`anchorOffsetCond: "pairDiff"`（每顆主角只套同 pairDiff 歷史主角最常中的九宮差）或 `anchorStatsCond: "pairDiff"`。
+- 分組欄位可換成 gap / rowDist / sameRow / linkDiff。
+
 其他規則：
 
 - `predictMode = "field"`：`score(號碼) += P1(同列) × P2(連線差) × P3(列距) × P5(桿距) × P4(九宮差)`，Pn 是該值在回測有中紀錄裡的機率。
@@ -180,6 +187,21 @@ npm run cha-eval -- --file x.json --from 60 --to 300 --top 5
 
 真實順序沒有一個高過亂序，分桶越細（桶內只剩幾筆）數字越飄，仍是雜訊。
 
+再加「比對法」（依標定連線的九宮差 pairDiff 分組，看 +11 的標定往往加哪個九宮差會中）的 6 個變體：
+
+| 變體 | 真實順序 | 亂序 ×3 |
+| --- | --- | --- |
+| 九宮差依 pairDiff 排行 | 13.1% | 11.6% ~ 13.8% |
+| pairDiff 排行 + 不看主角分數 | 13.5% | 12.1% ~ 13.3% |
+| pairDiff 排行前 1 + 不看主角分數 | 12.8% | 12.9% ~ 13.3% |
+| pairDiff 整套分開統計 | 13.6% | 12.2% ~ 13.1% |
+| pairDiff + 桿距分開統計 | 12.6% | 12.0% ~ 13.1% |
+| pairDiff 排行 + 回溯 32 次 | 12.0% | 12.2% ~ 13.6% |
+
+325 期全部回測的比對表本身：9 組 × 9 個九宮差共 81 格，命中率落在 10% ~ 17%，
+最高的一格（pairDiff 0 加 −11，17%）在亂序資料的比對表裡也會出現同樣高的格子（亂序最高 16% ~ 17%）。
+同一顆主角在同一個目標期會被不同上桿位置、不同連線重複計到，格子的有效樣本數比顯示的主角數小很多，所以格子之間的高低是雜訊。
+
 anchor 模式的可調變體（給評估用，預設值就是使用者定義的規則）：
 `anchorSubjectScore`（sum / product / none）、`anchorOffsetWeight`（add / mul / none）、
 `anchorOffsetCond`（global / gap / rowDist / sameRow / linkDiff：九宮差排行只取同條件的歷史主角）、
@@ -214,7 +236,7 @@ npm test                                          # 跑測試
 npm run cha-backtest -- --demo                    # 亂數資料試跑框架
 npm run cha-backtest -- --file data/results.json  # 真實資料（[{date, numbers}]）
 npm run cha-backtest -- --game lotto --span 5 --offsets -1,0,1,9,10,11
-npm run cha-backtest -- --ai                      # 加印 差數ai統計 彙總
+npm run cha-backtest -- --ai                      # 加印 差數ai統計 彙總與九宮差比對表
 npm run cha-backtest -- --ai-detail               # 加印每一筆 [同列,連線差,列距,九宮差,桿距]
 npm run cha-backtest -- --anchor-detail --stats-cond gap   # 預測：桿距分開統計，並列出每顆主角用的桶
 npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後續邏輯用
