@@ -360,12 +360,11 @@ test("差數ai統計：aggregateAi 分母與各九宮差次數", () => {
   const entries = Cha.aiRecords(SHOT_ROWS, 10, 15, SHOT_ROWS[15], { span: 6 });
   const agg = Cha.aggregateAi(entries);
   assert.equal(agg.total, 6);
-  assert.equal(agg.x, 0);
   // 05:+1、06:0,+11、28:-11、29:+1、35:-11,-10,+10、25:-1,0
   assert.deepEqual(agg.byOffset, { "-11": 2, "-10": 1, "-9": 0, "-1": 1, "0": 2, "1": 2, "9": 0, "10": 1, "11": 1 });
   const k = Cha.aiConditionKey(entries.find((e) => e.self === 5));
   assert.equal(k, "gap-5|same0|link1|dist-3");
-  assert.deepEqual([agg.byCondition[k].n, agg.byCondition[k].x, agg.byCondition[k].byOffset[1]], [1, 0, 1]);
+  assert.deepEqual([agg.byCondition[k].n, agg.byCondition[k].byOffset[1]], [1, 1]);
 });
 
 test("backtest：每筆回測帶 aiEntries，結果帶 ai 彙總", () => {
@@ -374,15 +373,14 @@ test("backtest：每筆回測帶 aiEntries，結果帶 ai 彙總", () => {
   const step = r.records[0].steps.find((s) => s.upperIdx === 10);
   assert.equal(step.aiEntries.length, 6);
   assert.ok(r.records[0].aiEntries.length >= 6);
-  assert.equal(r.ai.total, r.aiEntries.length);
+  assert.equal(r.ai.total, r.aiEntries.filter((e) => e.hits.length > 0).length); // x 不列入
 });
 
 test("差數ai統計：五個記錄的機率分布（截圖那一組 10 筆有中紀錄）", () => {
   const entries = Cha.aiRecords(SHOT_ROWS, 10, 15, SHOT_ROWS[15], { span: 6 });
   const st = Cha.aiFieldStats(entries);
-  assert.equal(st.subjects, 6);
-  assert.equal(st.totalRecords, 10); // 6 顆主角全部有中：05×1、06×2、28×1、29×1、25×2、35×3 = 10 筆
-  assert.equal(st.hitRecords, 10);
+  assert.equal(st.hitSubjects, 6);
+  assert.equal(st.hitRecords, 10); // 6 顆主角全部有中：05×1、06×2、28×1、29×1、25×2、35×3 = 10 筆
   // 第1個記錄 同列：0 出現 3 筆(05,06,06)、+4 出現 3 筆(35×3)、-4 兩筆(25×2)、+3、-3 各 1
   const same = st.fields.sameRow;
   assert.deepEqual(same.top, [0, 4]);
@@ -397,26 +395,28 @@ test("差數ai統計：五個記錄的機率分布（截圖那一組 10 筆有�
   // 第4個記錄 九宮差：-11、0、+1 各 2 筆
   assert.deepEqual(st.fields.offset.top, [-11, 0, 1]);
   const off0 = st.fields.offset.list.find((x) => x.value === 0);
-  assert.deepEqual([off0.count, off0.subjects, off0.hitSubjects], [2, 6, 2]); // 6 顆主角裡 2 顆靠 0 中
+  assert.deepEqual([off0.count, off0.prob], [2, 2 / 10]);
   // 第5個記錄 桿距：全部 -5
   assert.deepEqual(st.fields.gap.top, [-5]);
   assert.equal(st.fields.gap.list[0].count, 10);
-  assert.equal(st.fields.gap.list[0].hitRate, 1); // 6 顆主角 6 顆有中
 });
 
-test("差數ai統計：沒中的紀錄不進機率分母，但算進命中率的主角數", () => {
+test("差數ai統計：沒中(x) 的紀錄完全不列入計算與排行", () => {
   const entries = Cha.aiRecords(SHOT_ROWS, 10, 15, [30, 2, 3, 8, 9], { span: 6 }); // 只有 29+1=30 會中
   const st = Cha.aiFieldStats(entries);
-  assert.equal(st.subjects, 6);
-  assert.equal(st.totalRecords, 6); // 5 筆 x + 1 筆有中
+  assert.equal(st.hitSubjects, 1);
   assert.equal(st.hitRecords, 1);
-  const dist = st.fields.rowDist.list.find((x) => x.value === -3);
-  assert.deepEqual([dist.count, dist.subjects, dist.hitSubjects], [1, 3, 1]); // 列距 -3 的主角 05/06/29，只中 29
-  const gap = st.fields.gap.list[0];
-  assert.deepEqual([gap.value, gap.count, gap.subjects, gap.hitSubjects], [-5, 1, 6, 1]);
+  // 排行裡只剩 29 那一筆的值：同列 -3、連線差 -1、列距 -3、九宮差 +1、桿距 -5
+  assert.deepEqual(st.fields.sameRow.list, [{ value: -3, count: 1, prob: 1 }]);
+  assert.deepEqual(st.fields.rowDist.top, [-3]);
+  assert.deepEqual(st.fields.offset.top, [1]);
+  const agg = Cha.aggregateAi(entries);
+  assert.equal(agg.total, 1);
+  assert.equal(Object.keys(agg.byCondition).length, 1);
+  // 紀錄層仍保留 x 筆（使用者定義），只是統計不用
+  assert.equal(Cha.flattenAiRecords(entries).filter((r) => r.offset === "x").length, 5);
   const r = Cha.backtest(SHOT_ROWS, { steps: 1 });
   assert.ok(r.aiFields.hitRecords > 0);
-  assert.equal(r.aiFields.subjects, r.aiEntries.length);
 });
 
 // ---------- 預測下一期 ----------

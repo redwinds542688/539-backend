@@ -111,19 +111,19 @@ function fmtOff(o) { return o === "x" || o === null ? String(o) : (o > 0 ? "+" +
 function printAi(result, detail) {
   var agg = result.ai;
   console.log("");
-  console.log("差數ai統計  主角總數 " + agg.total + "  沒中(x) " + agg.x + "  有中 " + (agg.total - agg.x));
+  console.log("差數ai統計  有中的主角 " + agg.total + " 顆、有中的紀錄 " + result.aiFields.hitRecords + " 筆（沒中 x 不列入計算與排行）");
   console.log("九宮差  " + Cha.NINE_GRID_DRAG_OFFSETS.map(function (o) { return fmtOff(o).padStart(4); }).join(""));
   console.log("命中數  " + Cha.NINE_GRID_DRAG_OFFSETS.map(function (o) { return String(agg.byOffset[o]).padStart(4); }).join(""));
   var fs = result.aiFields;
   console.log("");
-  console.log("五個記錄的機率分布（分母 = 有中的紀錄 " + fs.hitRecords + " 筆；命中率 = 該值的主角有中 / 主角總數）");
+  console.log("五個記錄的排行（分母 = 有中的紀錄 " + fs.hitRecords + " 筆）");
   Cha.AI_FIELDS.forEach(function (f) {
     var st = fs.fields[f.key];
     var top = st.top.map(fmtOff).join(" / ") || "-";
     console.log("第" + f.no + "個記錄 " + f.label.padEnd(4, "　") + " 最高：" + top);
     st.list.forEach(function (x) {
       console.log("    " + fmtOff(x.value).padStart(4) + "  " + String(x.count).padStart(3) + " 筆  " +
-        (x.prob * 100).toFixed(1).padStart(5) + "%   命中率 " + x.hitSubjects + "/" + x.subjects + " = " + (x.hitRate * 100).toFixed(0) + "%");
+        (x.prob * 100).toFixed(1).padStart(5) + "%");
     });
   });
   if (!detail) return;

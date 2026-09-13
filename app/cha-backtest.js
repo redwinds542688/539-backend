@@ -351,30 +351,29 @@
   }
 
   /**
-   * 差數ai統計：把 entries 依條件分組，算每個九宮差的命中次數與沒中次數。
-   * 回傳 { byCondition: {key: {n, x, hitEntries, byOffset:{offset: count}}}, byOffset: {offset: count}, total, x }
-   * n = 這個條件下出現過幾顆主角（分母），x = 其中沒中的顆數。
+   * 差數ai統計：把 entries 依條件分組，算每個九宮差的命中次數。
+   * 沒中（x）的主角不列入計算與排行；答案未知的也不列入。
+   * 回傳 { byCondition: {key: {n, byOffset:{offset: count}}}, byOffset: {offset: count}, total }
+   * n = 這個條件下有中的主角數，byOffset = 各九宮差的命中筆數。
    */
   function aggregateAi(entries, keyFn) {
     var key = keyFn || aiConditionKey;
     var byCondition = {};
     var byOffset = {};
-    var total = 0, x = 0;
+    var total = 0;
     NINE_GRID_DRAG_OFFSETS.forEach(function (off) { byOffset[off] = 0; });
     entries.forEach(function (e) {
-      if (e.hits === null) return; // 未知答案不進統計
+      if (e.hits === null || e.hits.length === 0) return; // 未知答案、沒中(x) 都不列入
       var k = key(e);
       var c = byCondition[k];
       if (!c) {
-        c = byCondition[k] = { n: 0, x: 0, hitEntries: 0, byOffset: {} };
+        c = byCondition[k] = { n: 0, byOffset: {} };
         NINE_GRID_DRAG_OFFSETS.forEach(function (off) { c.byOffset[off] = 0; });
       }
       c.n++; total++;
-      if (e.hits.length === 0) { c.x++; x++; return; }
-      c.hitEntries++;
       e.hits.forEach(function (off) { c.byOffset[off]++; byOffset[off]++; });
     });
-    return { byCondition: byCondition, byOffset: byOffset, total: total, x: x };
+    return { byCondition: byCondition, byOffset: byOffset, total: total };
   }
 
   /** 五個記錄的欄位名稱與順序 */
@@ -388,44 +387,25 @@
 
   /**
    * 差數ai統計：統計層。
-   * 把回測累積的 entries 攤成一筆一筆紀錄，對五個記錄各自算「每個值出現幾次、機率多少」，找出最高的。
-   *   - 機率的分母是「有中的紀錄數」（九宮差 = x 的不算，因為它們沒有第 4 個記錄）
-   *   - 另外附上每個值的「命中率」：這個值出現過幾顆主角（含沒中），其中幾顆有中
-   * 回傳 { totalRecords, hitRecords, subjects, fields: { sameRow: {label, no, list:[{value,count,prob,subjects,hitSubjects,hitRate}], top:[values]} , ... } }
+   * 把回測累積的 entries 攤成一筆一筆紀錄，只取「有中」的紀錄（九宮差 = x 的不列入計算與排行），
+   * 對五個記錄各自算「每個值出現幾筆、佔比多少」，找出最高的。
+   * 回傳 { hitRecords, hitSubjects, fields: { sameRow: {label, no, list:[{value,count,prob}], top:[values]} , ... } }
    */
   function aiFieldStats(entries) {
-    var known = entries.filter(function (e) { return e.hits !== null; });
-    var flat = flattenAiRecords(known);
-    var hitFlat = flat.filter(function (r) { return r.offset !== "x"; });
-    var out = { totalRecords: flat.length, hitRecords: hitFlat.length, subjects: known.length, fields: {} };
+    var known = entries.filter(function (e) { return e.hits !== null && e.hits.length > 0; });
+    var hitFlat = flattenAiRecords(known);
+    var out = { hitRecords: hitFlat.length, hitSubjects: known.length, fields: {} };
     AI_FIELDS.forEach(function (f) {
       var counts = {};
       hitFlat.forEach(function (r) {
         var v = r[f.key];
         counts[v] = (counts[v] || 0) + 1;
       });
-      // 每個值的主角數與有中主角數（第 4 個記錄「九宮差」以主角總數當分母）
-      var subj = {}, subjHit = {};
-      known.forEach(function (e) {
-        if (f.key === "offset") {
-          e.hits.forEach(function (off) { subjHit[off] = (subjHit[off] || 0) + 1; });
-          return;
-        }
-        var v = e[f.key];
-        subj[v] = (subj[v] || 0) + 1;
-        if (e.hits.length) subjHit[v] = (subjHit[v] || 0) + 1;
-      });
       var list = Object.keys(counts).map(function (k) {
-        var v = parseInt(k, 10);
-        var subjects = f.key === "offset" ? known.length : (subj[v] || 0);
-        var hitSubjects = subjHit[v] || 0;
         return {
-          value: v,
+          value: parseInt(k, 10),
           count: counts[k],
           prob: hitFlat.length ? counts[k] / hitFlat.length : 0,
-          subjects: subjects,
-          hitSubjects: hitSubjects,
-          hitRate: subjects ? hitSubjects / subjects : 0,
         };
       }).sort(function (a, b) { return b.count - a.count || a.value - b.value; });
       var best = list.length ? list[0].count : 0;
