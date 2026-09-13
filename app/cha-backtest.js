@@ -49,7 +49,8 @@
     game: "539",
     span: 6, // 搜期（App 預設 6，可 3~6）
     sweepCount: 6, // 長按 6期掃描：上桿放在下桿上方 6..1 列
-    windowSize: 16, // App 畫面只有 16 期有開，桿子上方超過 16 列的資料在畫面上不存在
+    windowSize: 16, // App 畫面只有 16 期有開（16+4 視窗）
+    spareRows: 16, // 備用列：畫面上方另外備好的 16 期（捲動回溯用），不顯示、只供內部搜尋/統計
     topRanks: 2, // 前二名（App 的 CMODE_DING_TOP_RANKS）
     maxFill: 15, // 填空白格最多顆數（App 的 slice(0,15)）
     steps: 16, // 回測次數（回溯 16 期）
@@ -97,13 +98,19 @@
     return rowIdx + ":" + col;
   }
 
+  /** 搜尋可以往上讀到的最早列：畫面 16 期 + 備用列 16 期 */
+  function searchFloor(lowerIdx, o) {
+    return Math.max(0, lowerIdx - o.windowSize - o.spareRows);
+  }
+
   /**
-   * 取得某一列在「畫面視窗」內可用的號碼；不在視窗內（超出表格頂端或 16 期範圍）回傳 null。
+   * 取得某一列可用的號碼；超出「畫面 + 備用列」範圍或資料不存在時回傳 null。
+   * 上桿上方不足搜期時，會自然讀到備用列（畫面上看不到，只做內部統計）。
    * App 對應：getRowCells()（cells.length>=colCount 才算有效）。
    */
   function rowCells(rows, idx, lowerIdx, o) {
     if (idx < 0 || idx >= rows.length) return null;
-    if (idx < lowerIdx - o.windowSize) return null;
+    if (idx < searchFloor(lowerIdx, o)) return null;
     var r = rows[idx];
     if (!r || r.length < o.colCount) return null;
     return r.slice(0, o.colCount);
@@ -229,12 +236,13 @@
   }
 
   /**
-   * 6期掃描要跑的上桿位置：下桿上方 sweepCount..1 列，
-   * 並套 App 的「位置 >= 搜期+1」足額比對規則（上桿上方要有整整 span 列可比）。
+   * 6期掃描要跑的上桿位置：下桿上方 sweepCount..1 列。
+   * 上桿上方不足搜期時先往備用列讀（不顯示、只統計）；
+   * 連備用列都補不滿整整 span 列（資料真的不存在）才略過，避免殘缺結果計入。
    */
   function sweepPositions(rows, lowerIdx, opts) {
     var o = resolveOpts(opts);
-    var floor = Math.max(0, lowerIdx - o.windowSize);
+    var floor = searchFloor(lowerIdx, o);
     var out = [];
     for (var u = lowerIdx - o.sweepCount; u <= lowerIdx - 1; u++) {
       if (u < 0) continue;
@@ -242,6 +250,14 @@
       out.push(u);
     }
     return out;
+  }
+
+  /** 這次掃描最早讀到哪一列，以及其中有幾列落在畫面外的備用列 */
+  function spareUsage(positions, lowerIdx, o) {
+    if (!positions.length) return { earliestIdx: null, spareRowsUsed: 0 };
+    var earliest = positions[0] - o.span;
+    var visibleTop = lowerIdx - o.windowSize;
+    return { earliestIdx: earliest, spareRowsUsed: Math.max(0, visibleTop - earliest) };
   }
 
   /** 6期掃描（App 長按差數鍵）：逐位置跑 runSingle，次數加總。 */
@@ -255,7 +271,11 @@
       addCounts(acc, r.counts);
       steps.push(r);
     });
-    return { lowerIdx: lowerIdx, positions: positions, accCounts: acc, steps: steps };
+    var usage = spareUsage(positions, lowerIdx, o);
+    return {
+      lowerIdx: lowerIdx, positions: positions, accCounts: acc, steps: steps,
+      earliestIdx: usage.earliestIdx, spareRowsUsed: usage.spareRowsUsed,
+    };
   }
 
   /**
@@ -305,6 +325,8 @@
         lowerIdx: lowerIdx,
         meta: meta ? meta[lowerIdx] : undefined,
         upperPositions: sw.positions,
+        earliestIdx: sw.earliestIdx, // 這次最早讀到的列
+        spareRowsUsed: sw.spareRowsUsed, // 其中有幾列是畫面外的備用列（內部統計用）
         accCounts: sw.accCounts,
         steps: sw.steps,
         predicted: predicted,
@@ -378,6 +400,7 @@
     markCha: markCha,
     countCha: countCha,
     runSingle: runSingle,
+    searchFloor: searchFloor,
     sweepPositions: sweepPositions,
     sweep: sweep,
     topRankList: topRankList,

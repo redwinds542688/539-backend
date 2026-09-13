@@ -113,14 +113,41 @@ test("topRankList：同次數依號碼由小到大", () => {
 });
 
 // ---------- 6期掃描位置 ----------
-test("sweepPositions：下桿上方 6..1 列，且上桿上方要有整整 span 列", () => {
+test("sweepPositions：下桿上方 6..1 列，資料真的不存在才略過", () => {
   const rows = new Array(30).fill([1, 2, 3, 4, 5]);
-  // 下桿 idx16（App 第 17 列）：上桿 10..15，全部 ≥ span(6) → 6 個
+  // 下桿 idx16（App 第 17 列）：上桿 10..15 → 6 個
   assert.deepEqual(Cha.sweepPositions(rows, 16, { span: 6 }), [10, 11, 12, 13, 14, 15]);
-  // 下桿 idx10：上桿 4..9，只有 ≥6 的留下
+  // 下桿 idx10：上桿 4..9，上桿 4、5 上方連備用列都沒有整整 6 列（資料從 0 開始）→ 略過
   assert.deepEqual(Cha.sweepPositions(rows, 10, { span: 6 }), [6, 7, 8, 9]);
-  // 視窗 16 期：下桿 idx29，上桿 23..28，floor=13，u-6 ≥ 13 → 全部保留
   assert.deepEqual(Cha.sweepPositions(rows, 29, { span: 6 }), [23, 24, 25, 26, 27, 28]);
+});
+
+test("備用列：上桿上方不足搜期時往畫面外的備用列讀，不略過", () => {
+  const rows = new Array(40).fill([1, 2, 3, 4, 5]);
+  // 畫面只有 8 期、沒有備用列：下桿 idx20，上桿 14 需要讀到 idx8，但畫面頂端是 idx12 → 略過 14..17
+  assert.deepEqual(Cha.sweepPositions(rows, 20, { span: 6, windowSize: 8, spareRows: 0 }), [18, 19]);
+  // 有 16 列備用列：全部 6 個位置都跑
+  assert.deepEqual(Cha.sweepPositions(rows, 20, { span: 6, windowSize: 8, spareRows: 16 }), [14, 15, 16, 17, 18, 19]);
+  // sweep 回報最早讀到的列與備用列使用量：上桿 14 - 搜期 6 = idx8，畫面頂端 idx12 → 用了 4 列備用列
+  const sw = Cha.sweep(rows, 20, { span: 6, windowSize: 8, spareRows: 16 });
+  assert.equal(sw.earliestIdx, 8);
+  assert.equal(sw.spareRowsUsed, 4);
+});
+
+test("備用列：標定/統計會實際讀到備用列的號碼", () => {
+  // 手算範例整組往後推：前面塞 20 列雜訊當歷史，畫面視窗只有 2 期 → 搜尋列全在備用列裡
+  const noise = new Array(20).fill([2, 4, 6, 8, 12]);
+  const rows = noise.concat(HAND_ROWS); // HAND 的 r0..r3 變成 idx20..23
+  const opts = { ...HAND_OPTS, windowSize: 2, spareRows: 0 };
+  // 沒有備用列：上桿 21 上方的 idx20 在畫面外 → 標不到
+  assert.equal(Cha.markCha(rows, 21, 23, opts).marked.size, 0);
+  // 開備用列：標定與統計結果跟原本手算完全一樣
+  const withSpare = { ...opts, spareRows: 16 };
+  const m = Cha.markCha(rows, 21, 23, withSpare);
+  assert.deepEqual([...m.marked].sort(), ["20:0", "20:1", "22:0", "22:1"]);
+  const c = Cha.countCha(rows, 21, 23, m.marked, withSpare);
+  assert.equal(c.counts[32], 2);
+  assert.equal(c.counts[33], 1);
 });
 
 test("sweep：累計等於各位置 counts 相加", () => {
@@ -172,6 +199,7 @@ test("backtest：回溯 16 次，每次下桿在倒數第 t 期", () => {
     assert.equal(rec.t, i + 1);
     assert.equal(rec.lowerIdx, 60 - (i + 1));
     assert.equal(rec.upperPositions.length, 6);
+    assert.equal(typeof rec.spareRowsUsed, "number");
     assert.deepEqual(rec.actual, rows[rec.lowerIdx]);
     rec.hits.forEach((n) => assert.ok(rec.actual.includes(n)));
     rec.predictedNums.forEach((n) => assert.ok(n >= 1 && n <= 39));

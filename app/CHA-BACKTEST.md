@@ -28,7 +28,8 @@ rows = 由舊到新的開獎列（每列號碼由小到大，不含特別號）
 for t = 1 .. 16:                       # 回溯 16 次
     lowerIdx = rows.length - t         # 下桿放在倒數第 t 期，這一期就是真實的果
     for upperIdx = lowerIdx-6 .. lowerIdx-1:   # 上桿掃 6 個位置（App 的 6期掃描）
-        略過「上桿上方不足 搜期 列」的位置    # App 的「位置 >= 搜期+1」規則
+        上桿上方不足 搜期 列 → 往畫面外的備用列讀（不顯示、只統計）
+        連備用列都補不滿（資料真的不存在）才略過，殘缺結果不計入
         標定  markCha(rows, upperIdx, lowerIdx)
         統計  countCha(...)  → counts 累加
     predicted = topRankList(累計 counts)   # 前二名，不足 2 顆補第三名，最多 15 顆
@@ -42,6 +43,7 @@ for t = 1 .. 16:                       # 回溯 16 次
 |---|---|
 | `t`, `lowerIdx`, `meta.date` | 第幾次回溯、下桿列索引、該期日期 |
 | `upperPositions` | 這次實際掃到的上桿位置 |
+| `earliestIdx`, `spareRowsUsed` | 這次最早讀到哪一列、其中幾列是畫面外的備用列（內部統計用） |
 | `accCounts` | 6 個位置累計後的統計表（號碼 → 次數） |
 | `steps[]` | 每個上桿位置各自的 `marked / pairs / counts / contribs` |
 | `steps[].contribs[]` | 每一次加分的來源：`k`（往上第幾列）、`col`（欄）、`offset`（偏移）、`upper`、`lower`、`result` |
@@ -58,8 +60,15 @@ for t = 1 .. 16:                       # 回溯 16 次
 2. **`contribs`** 已經把每一分的來源（偏移、往上第幾列、哪一欄）都留著，
    要按「偏移」「搜期」「間隔」分別統計命中率，直接從這裡分組即可。
 3. **參數全部可調**：`span`（搜期 3~6）、`sweepCount`（掃幾個位置）、`offsetsChecked`（九宮拖牌打勾）、
-   `intervals`（間隔打勾）、`windowSize`（畫面 16 期）、`steps`（回溯次數）。
+   `intervals`（間隔打勾）、`windowSize`（畫面 16 期）、`spareRows`（備用列 16 期）、`steps`（回溯次數）。
    要比較不同設定的落差，用不同 opts 各跑一次 `backtest()` 比 `summary` 就行。
+
+## 備用列
+
+App 為了捲動回溯，在畫面 16+4 視窗上方常駐備好 16 期（備用列，視覺上看不到）。
+回測時上桿上方不足搜期的位置，直接往備用列讀取來標定與統計，不做任何顯示；
+每筆 record 的 `spareRowsUsed` 記錄這次用了幾列備用列。
+只有連備用列都補不滿整整搜期列（歷史資料真的不存在）的位置才略過，避免殘缺結果計入。
 
 ## 使用
 

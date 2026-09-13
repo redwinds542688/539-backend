@@ -6,6 +6,7 @@
  *   node app/cha-backtest-cli.js --file path.json      # 指定資料檔（[{date, numbers}] 陣列）
  *   node app/cha-backtest-cli.js --game lotto          # 539 | daily | mark6 | lotto
  *   node app/cha-backtest-cli.js --steps 16 --span 6 --sweep 6
+ *   node app/cha-backtest-cli.js --spare 16                   # 備用列數（畫面外可往上讀的期數，預設 16）
  *   node app/cha-backtest-cli.js --offsets -11,-10,-9,-1,0,1,9,10,11   # 只勾這些偏移
  *   node app/cha-backtest-cli.js --json                # 輸出完整 JSON（給後續機率邏輯用）
  *   node app/cha-backtest-cli.js --demo                # 用亂數資料跑一次，確認框架可動
@@ -17,7 +18,7 @@ var path = require("path");
 var Cha = require("./cha-backtest.js");
 
 function parseArgs(argv) {
-  var a = { file: null, game: "539", steps: 16, span: 6, sweep: 6, offsets: null, json: false, demo: false, seed: 1 };
+  var a = { file: null, game: "539", steps: 16, span: 6, sweep: 6, offsets: null, json: false, demo: false, seed: 1, spare: 16 };
   for (var i = 0; i < argv.length; i++) {
     var k = argv[i];
     var v = argv[i + 1];
@@ -26,6 +27,7 @@ function parseArgs(argv) {
     else if (k === "--steps") { a.steps = parseInt(v, 10); i++; }
     else if (k === "--span") { a.span = parseInt(v, 10); i++; }
     else if (k === "--sweep") { a.sweep = parseInt(v, 10); i++; }
+    else if (k === "--spare") { a.spare = parseInt(v, 10); i++; }
     else if (k === "--offsets") { a.offsets = v; i++; }
     else if (k === "--seed") { a.seed = parseInt(v, 10); i++; }
     else if (k === "--json") a.json = true;
@@ -68,9 +70,9 @@ function printReport(result) {
   var o = result.opts;
   var offsetsOn = Cha.NINE_GRID_DRAG_OFFSETS.filter(function (_, i) { return o.offsetsChecked[i]; });
   console.log("C式差數 回測  彩券=" + o.game + "  球數=" + o.maxBall + "  搜期=" + o.span +
-    "  掃描=" + o.sweepCount + "位置  回溯=" + o.steps + "次  偏移=" + offsetsOn.join(","));
+    "  掃描=" + o.sweepCount + "位置  回溯=" + o.steps + "次  備用列=" + o.spareRows + "  偏移=" + offsetsOn.join(","));
   console.log("");
-  console.log("回溯  日期        上桿位置        預期的果(號碼×次數)                          真實的果             命中");
+  console.log("回溯  日期        上桿位置        備用  預期的果(號碼×次數)                          真實的果             命中");
   result.records.forEach(function (r) {
     var date = r.meta && r.meta.date ? r.meta.date : "-";
     var ups = r.upperPositions.map(function (u) { return r.lowerIdx - u; }).join(",");
@@ -79,7 +81,7 @@ function printReport(result) {
     var hits = r.hits.length ? r.hits.map(pad2).join(" ") : "-";
     console.log(
       String(r.t).padStart(3) + "   " + date.padEnd(11) + " 下桿-" + ups.padEnd(12) + " " +
-      pred.padEnd(44) + " " + act.padEnd(20) + " " + hits
+      String(r.spareRowsUsed).padStart(2) + "列  " + pred.padEnd(44) + " " + act.padEnd(20) + " " + hits
     );
   });
   var s = result.summary;
@@ -113,6 +115,7 @@ function main() {
     steps: a.steps,
     span: a.span,
     sweepCount: a.sweep,
+    spareRows: a.spare,
     offsetsChecked: offsetsToChecked(a.offsets),
   };
   var data = Cha.fromRecords(records, opts);
