@@ -130,6 +130,29 @@ for t = 1 .. 16:
 目標列已開出時另附 `actual`、`hits`。
 CLI：`--target 49`（統一列號，49 = 空白第 1 列、48 = 顯示區最後一期）、`--predict [N]`、`--predict-mode anchor|top|field|condition`、`--anchor-detail`。
 
+## 滾動評估（cha-eval）
+
+`app/cha-eval.js` 在真實資料上逐期預測、逐期對答案：對每個目標期 T，只餵 T 以前的資料
+（框架跟著目標期走，T 就是空白第 1 列），取前 5 顆跟 rows[T] 比。所有變體用同一批目標期。
+
+```bash
+npm run cha-eval -- --file data/results.json          # 比較全部內建變體
+npm run cha-eval -- --file x.json --from 60 --to 300 --top 5
+```
+
+輸出每個變體的命中/預測、命中率、相對純機率（5/39 = 12.8%）的提升倍數、至少中 1 顆的次數與隨機期望。
+1385 次預測的純機率標準差約 ±0.9 個百分點；差異在 ±2 個百分點內都可能只是雜訊。
+判斷有沒有訊號的方法：把期數順序打亂再跑一次，打亂後任何規律都應消失；若打亂後的命中率跟真實順序一樣，就是雜訊。
+
+2026-09 用 App 內嵌的 325 期真實 539 資料（2025-08-07 ~ 2026-08-17，277 個目標期）評估的結果：
+全部 20 個變體的命中率落在 10.0% ~ 13.7%，App 原邏輯 12.5%；把順序打亂 3 次，各變體同樣落在 12.0% ~ 14.4%。
+結論：目前沒有任何變體在統計上超過純機率，變體之間的差異是雜訊。
+
+anchor 模式的可調變體（給評估用，預設值就是使用者定義的規則）：
+`anchorSubjectScore`（sum / product / none）、`anchorOffsetWeight`（add / mul / none）、
+`anchorOffsetCond`（global / gap / rowDist / sameRow / linkDiff：九宮差排行只取同條件的歷史主角）、
+`fieldCountMode`（records / subjects）、`predictOffsetTop`；`predictMode = "app"` 是 App 原本的 6 期掃描前二名。
+
 ## 之後接機率邏輯的位置
 
 1. **`opts.scorer(record, ctx)`**：每筆 record 算完後呼叫，回傳的物件會合併到 record。

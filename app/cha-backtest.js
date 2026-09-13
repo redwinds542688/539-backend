@@ -61,6 +61,10 @@
     targetIdx: null, // 預測期 N（下桿真正的位置）的索引；null = rows.length（空白第 1 列，列號 49）
     anchorRows: 1, // 錨定期：預測期上方 anchorRows 列不回測；回溯從 N-1-anchorRows 開始（預設 N-2 … N-17）
     predictOffsetTop: 3, // anchor 模式：第 4 個記錄排行取前幾名九宮差
+    anchorSubjectScore: "sum", // anchor 模式主角分數："sum"（四個百分比相加）、"product"（相乘）、"none"（不計，只看九宮差）
+    anchorOffsetWeight: "add", // anchor 模式九宮差如何併入號碼分數："add"（主角分數 + 九宮差百分比）、"mul"（相乘）、"none"（只用主角分數）
+    anchorOffsetCond: "global", // anchor 模式九宮差排行的取樣範圍："global"（全部主角）或 "gap"/"rowDist"/"sameRow"/"linkDiff"（只取該記錄值相同的歷史主角）
+    fieldCountMode: "records", // 第 1/2/3/5 個記錄的分布以什麼計數："records"（一筆紀錄一次，中 3 個九宮差算 3 次）或 "subjects"（一顆主角一次）
     predictTop: 5, // predict() 取前幾顆
     predictMode: "anchor", // predict() 計分規則："anchor"（百分比相加，預設）、"top"（最高值篩選）、"field"（機率相乘）、"condition"（同條件命中率）
   };
@@ -393,21 +397,26 @@
    * 對五個記錄各自算「每個值出現幾筆、佔比多少」，找出最高的。
    * 回傳 { hitRecords, hitSubjects, fields: { sameRow: {label, no, list:[{value,count,prob}], top:[values]} , ... } }
    */
-  function aiFieldStats(entries) {
+  function aiFieldStats(entries, opts) {
+    var o = opts && opts.fieldCountMode ? opts : { fieldCountMode: "records" };
     var known = entries.filter(function (e) { return e.hits !== null && e.hits.length > 0; });
     var hitFlat = flattenAiRecords(known);
     var out = { hitRecords: hitFlat.length, hitSubjects: known.length, fields: {} };
     AI_FIELDS.forEach(function (f) {
       var counts = {};
-      hitFlat.forEach(function (r) {
+      // 第 4 個記錄（九宮差）一定以紀錄計；其餘四個依 fieldCountMode
+      var perSubject = o.fieldCountMode === "subjects" && f.key !== "offset";
+      var source = perSubject ? known : hitFlat;
+      source.forEach(function (r) {
         var v = r[f.key];
         counts[v] = (counts[v] || 0) + 1;
       });
+      var denom = perSubject ? known.length : hitFlat.length;
       var list = Object.keys(counts).map(function (k) {
         return {
           value: parseInt(k, 10),
           count: counts[k],
-          prob: hitFlat.length ? counts[k] / hitFlat.length : 0,
+          prob: denom ? counts[k] / denom : 0,
         };
       }).sort(function (a, b) { return b.count - a.count || a.value - b.value; });
       var best = list.length ? list[0].count : 0;
@@ -543,7 +552,7 @@
       records: records,
       summary: summarize(records),
       ai: aggregateAi(allAi),
-      aiFields: aiFieldStats(allAi), // 五個記錄各自的機率分布與最高值
+      aiFields: aiFieldStats(allAi, o), // 五個記錄各自的機率分布與最高值
       aiEntries: allAi,
       opts: o,
       targetIdx: target,
@@ -632,24 +641,49 @@
    *   2. 回溯第 4 個記錄排行取前 predictOffsetTop 名九宮差。
    *   3. 每顆主角各套這幾個九宮差，得到的號碼加分：主角分數 + 該九宮差的百分比，記到預測統計表。
    */
-  function predictByAnchor(live, st, o) {
+  /** 九宮差排行：全部主角，或只取某個記錄值與 live 主角相同的歷史主角 */
+  function offsetRanking(btEntries, condField, condValue) {
+    var counts = {}, total = 0;
+    NINE_GRID_DRAG_OFFSETS.forEach(function (off) { counts[off] = 0; });
+    btEntries.forEach(function (e) {
+      if (e.hits === null || e.hits.length === 0) return;
+      if (condField && e[condField] !== condValue) return;
+      e.hits.forEach(function (off) { counts[off]++; total++; });
+    });
+    return NINE_GRID_DRAG_OFFSETS.map(function (off) { return { value: off, count: counts[off], prob: total ? counts[off] / total : 0 }; })
+      .filter(function (x) { return x.count > 0; })
+      .sort(function (a, b) { return b.count - a.count || a.value - b.value; });
+  }
+
+  function predictByAnchor(live, st, o, btEntries) {
     function P(field, value) {
       var item = st.fields[field].list.find(function (x) { return x.value === value; });
       return item ? item.prob : 0;
     }
-    var offTop = st.fields.offset.list.slice(0, o.predictOffsetTop || 3);
+    var globalTop = st.fields.offset.list.slice(0, o.predictOffsetTop || 3);
     var score = {}, reasons = {};
     for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
     var subjects = live.aiEntries.map(function (e) {
       var parts = { sameRow: P("sameRow", e.sameRow), linkDiff: P("linkDiff", e.linkDiff), rowDist: P("rowDist", e.rowDist), gap: P("gap", e.gap) };
-      var subjectScore = parts.sameRow + parts.linkDiff + parts.rowDist + parts.gap;
+      var subjectScore;
+      if (o.anchorSubjectScore === "product") subjectScore = parts.sameRow * parts.linkDiff * parts.rowDist * parts.gap;
+      else if (o.anchorSubjectScore === "none") subjectScore = 1;
+      else subjectScore = parts.sameRow + parts.linkDiff + parts.rowDist + parts.gap;
+      var offTop = globalTop;
+      if (o.anchorOffsetCond && o.anchorOffsetCond !== "global" && btEntries) {
+        var cond = offsetRanking(btEntries, o.anchorOffsetCond, e[o.anchorOffsetCond]).slice(0, o.predictOffsetTop || 3);
+        if (cond.length) offTop = cond; // 同條件歷史沒有資料就退回全體排行
+      }
       var drag = nineGridDrag(e.self, o.maxBall);
       var outputs = [];
       offTop.forEach(function (x) {
         var pos = NINE_GRID_DRAG_OFFSETS.indexOf(x.value);
         if (pos === -1 || !o.offsetsChecked[pos]) return;
         var num = drag[pos];
-        var w = subjectScore + x.prob;
+        var w;
+        if (o.anchorOffsetWeight === "mul") w = subjectScore * x.prob;
+        else if (o.anchorOffsetWeight === "none") w = subjectScore;
+        else w = subjectScore + x.prob;
         score[num] += w;
         reasons[num].push({ self: e.self, partner: e.partner, offset: x.value, weight: w, subjectScore: subjectScore, offsetProb: x.prob,
           sameRow: e.sameRow, linkDiff: e.linkDiff, rowDist: e.rowDist, gap: e.gap, upperIdx: e.upperIdx });
@@ -658,7 +692,7 @@
       return { self: e.self, partner: e.partner, upperIdx: e.upperIdx, sameRow: e.sameRow, linkDiff: e.linkDiff, rowDist: e.rowDist, gap: e.gap,
         parts: parts, subjectScore: subjectScore, outputs: outputs };
     });
-    return { score: score, reasons: reasons, subjects: subjects, offsetTop: offTop };
+    return { score: score, reasons: reasons, subjects: subjects, offsetTop: globalTop };
   }
 
   function predict(rows, opts, backtestResult) {
@@ -685,8 +719,13 @@
     for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
     var effectiveMode = mode;
     var anchorInfo = null;
+    if (mode === "app") {
+      // App 現有邏輯：6 期掃描累計統計表，取前二名（不足補第三名）填空白格
+      var appList = topRankList(live.accCounts, o);
+      appList.forEach(function (x) { score[x.n] = x.c; reasons[x.n].push({ self: null, partner: null, offset: null, weight: x.c, note: "app-count" }); });
+    }
     if (mode === "anchor") {
-      anchorInfo = predictByAnchor(live, st, o);
+      anchorInfo = predictByAnchor(live, st, o, bt.aiEntries);
       score = anchorInfo.score;
       reasons = anchorInfo.reasons;
     }
@@ -700,7 +739,7 @@
         topInfo.fallback = "field";
       }
     }
-    if (effectiveMode !== "top" && effectiveMode !== "anchor") live.aiEntries.forEach(function (e) {
+    if (effectiveMode !== "top" && effectiveMode !== "anchor" && effectiveMode !== "app") live.aiEntries.forEach(function (e) {
       var condW = P("sameRow", e.sameRow) * P("linkDiff", e.linkDiff) * P("rowDist", e.rowDist) * P("gap", e.gap);
       var cond = mode === "condition" ? byCond[aiConditionKey(e)] : null;
       var drag = nineGridDrag(e.self, o.maxBall);
@@ -805,6 +844,7 @@
     flattenAiRecords: flattenAiRecords,
     aiConditionKey: aiConditionKey,
     aggregateAi: aggregateAi,
+    offsetRanking: offsetRanking,
     AI_FIELDS: AI_FIELDS,
     aiFieldStats: aiFieldStats,
     backtest: backtest,

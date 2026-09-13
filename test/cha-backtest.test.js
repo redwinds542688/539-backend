@@ -610,3 +610,67 @@ test("predict：anchor 模式沒打勾的九宮差不套用；predictOffsetTop �
   const pr0 = Cha.predict(rows, { offsetsChecked: checked });
   pr0.ranked.forEach((x) => x.reasons.forEach((r) => assert.equal(r.offset, 0)));
 });
+
+// ---------- 滾動評估 ----------
+test("cha-eval：純機率公式與滾動評估結構", () => {
+  const Ev = require("../app/cha-eval.js");
+  // 539 隨機挑 5 顆至少中 1 顆 = 1 - C(34,5)/C(39,5) ≈ 51.7%
+  assert.ok(Math.abs(Ev.pAtLeastOne(39, 5, 5) - (1 - 278256 / 575757)) < 1e-9);
+  assert.equal(Ev.pAtLeastOne(39, 5, 0), 0);
+  const rows = [];
+  let s = 77;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 80; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    rows.push([...set].sort((a, b) => a - b));
+  }
+  const variants = [{ name: "anchor", opts: { predictMode: "anchor" } }, { name: "app", opts: { predictMode: "app" }, variableCount: true }];
+  const ev = Ev.evaluate(rows, { variants, from: 60, to: 79, keepRuns: true });
+  assert.equal(ev.results.length, 2);
+  ev.results.forEach((r) => {
+    assert.equal(r.runs, 20);
+    assert.equal(r.hits <= r.predicted, true);
+    assert.ok(Math.abs(r.baseline - 5 / 39) < 1e-12);
+    // 每次只用目標期以前的資料：預測號碼與該期真實開出的交集才算命中
+    r.perRun.forEach((x) => x.hits.forEach((n) => assert.ok(rows[x.T].includes(n))));
+  });
+  // 固定 5 顆的變體每次都是 5 顆（有主角時）
+  const anchor = ev.results[0];
+  anchor.perRun.forEach((x) => assert.ok(x.nums.length <= 5));
+});
+
+test("predict：anchor 變體選項（相乘、不加九宮差、依桿距分開排行、主角計數）都能跑且結果合法", () => {
+  const rows = [];
+  let s = 88;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 60; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    rows.push([...set].sort((a, b) => a - b));
+  }
+  const bt = Cha.backtest(rows);
+  const P = (f, v) => { const it = bt.aiFields.fields[f].list.find((x) => x.value === v); return it ? it.prob : 0; };
+  const mul = Cha.predict(rows, { anchorSubjectScore: "product", anchorOffsetWeight: "mul" }, bt);
+  mul.anchor_.subjects.forEach((sj) => {
+    const expect = P("sameRow", sj.sameRow) * P("linkDiff", sj.linkDiff) * P("rowDist", sj.rowDist) * P("gap", sj.gap);
+    assert.ok(Math.abs(sj.subjectScore - expect) < 1e-12);
+    sj.outputs.forEach((o) => assert.ok(Math.abs(o.weight - sj.subjectScore * bt.aiFields.fields.offset.list.find((x) => x.value === o.offset).prob) < 1e-12));
+  });
+  const none = Cha.predict(rows, { anchorOffsetWeight: "none" }, bt);
+  none.anchor_.subjects.forEach((sj) => sj.outputs.forEach((o) => assert.ok(Math.abs(o.weight - sj.subjectScore) < 1e-12)));
+  // 依桿距分開排行：每顆主角套的九宮差 = 歷史上同桿距主角的前三名
+  const cond = Cha.predict(rows, { anchorOffsetCond: "gap" }, bt);
+  cond.anchor_.subjects.forEach((sj) => {
+    const rank = Cha.offsetRanking(bt.aiEntries, "gap", sj.gap).slice(0, 3).map((x) => x.value);
+    if (rank.length) assert.deepEqual(sj.outputs.map((o) => o.offset), rank);
+  });
+  // 記錄以主角計：分母 = 有中的主角數
+  const bs = Cha.backtest(rows, { fieldCountMode: "subjects" });
+  const sum = bs.aiFields.fields.sameRow.list.reduce((a, x) => a + x.count, 0);
+  assert.equal(sum, bs.aiFields.hitSubjects);
+  // app 原邏輯當預測規則
+  const app = Cha.predict(rows, { predictMode: "app", predictTop: 39 }, bt);
+  const expectApp = Cha.topRankList(app.live.accCounts, {}).map((x) => x.n);
+  assert.deepEqual(app.ranked.map((x) => x.n), expectApp);
+});
