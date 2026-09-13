@@ -533,3 +533,32 @@ test("predict：top 模式沒打勾的九宮差不會用", () => {
   const pr = Cha.predict(rows, { predictTop: 5, offsetsChecked: checked });
   pr.ranked.forEach((x) => x.reasons.forEach((r) => assert.equal(r.offset, 0)));
 });
+
+test("predict：top 模式無主角符合最高值時退回 field，不會沒有預測", () => {
+  const rows = [];
+  let s = 41;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 60; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    rows.push([...set].sort((a, b) => a - b));
+  }
+  const bt = Cha.backtest(rows);
+  // 把最高值全部改成不可能出現的值，模擬「沒有主角符合」
+  ["sameRow", "linkDiff", "rowDist", "gap"].forEach((f) => { bt.aiFields.fields[f].top = [999]; });
+  const pr = Cha.predict(rows, { predictTop: 5 }, bt);
+  assert.equal(pr.mode, "top");
+  assert.equal(pr.effectiveMode, "field");
+  assert.equal(pr.top_.fallback, "field");
+  assert.ok(pr.topNums.length > 0);
+});
+
+test("predict：目標列已開出時，即時標定的框架列號仍以原本資料為準", () => {
+  const rows = new Array(60).fill([1, 2, 3, 4, 5]);
+  const o = Cha.resolveOpts({});
+  const pr = Cha.predict(rows, { targetIdx: 59, predictTop: 3 }, Cha.backtest(rows, { targetIdx: 59 }));
+  assert.equal(pr.targetRowNo, 48);
+  // live sweep 的 spareRowsUsed 以第 33 列（idx44）為界：下桿 idx59、上桿最低 53、最早讀到 47 → 0 列
+  assert.equal(pr.live.spareRowsUsed, 0);
+  assert.equal(pr.live.earliestIdx, 47);
+});

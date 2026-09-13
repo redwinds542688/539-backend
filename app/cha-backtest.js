@@ -655,18 +655,27 @@
     }
     var lowerIdx = targetIndex(rows, o);
     var known = lowerIdx < rows.length && rows[lowerIdx] ? rows[lowerIdx].slice(0, o.colCount) : null;
-    // 標定/主角只用目標列以前的資料：sweep 內部 rowCells 不讀 lowerIdx 以下；答案先藏起來
-    var live = sweep(rows.slice(0, lowerIdx), lowerIdx, o);
+    // 標定/主角只用目標列以前的資料（切掉目標列與其下方，答案藏起來）；框架列號仍固定在原本的 rows.length
+    var liveOpts = {};
+    for (var key in o) liveOpts[key] = o[key];
+    liveOpts.frameEnd = frameEnd(rows, o);
+    var live = sweep(rows.slice(0, lowerIdx), lowerIdx, liveOpts);
     var score = {};
     var reasons = {};
     var topInfo = null;
     for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
+    var effectiveMode = mode;
     if (mode === "top") {
       topInfo = predictByTop(live, st, o, topN);
-      score = topInfo.score;
-      reasons = topInfo.reasons;
+      if (topInfo.keptSubjects > 0) {
+        score = topInfo.score;
+        reasons = topInfo.reasons;
+      } else {
+        effectiveMode = "field"; // 沒有任何主角符合最高值 → 退回機率相乘
+        topInfo.fallback = "field";
+      }
     }
-    if (mode !== "top") live.aiEntries.forEach(function (e) {
+    if (effectiveMode !== "top") live.aiEntries.forEach(function (e) {
       var condW = P("sameRow", e.sameRow) * P("linkDiff", e.linkDiff) * P("rowDist", e.rowDist) * P("gap", e.gap);
       var cond = mode === "condition" ? byCond[aiConditionKey(e)] : null;
       var drag = nineGridDrag(e.self, o.maxBall);
@@ -698,7 +707,8 @@
       topNums: topNums,
       actual: known,
       hits: known ? topNums.filter(function (n) { return known.indexOf(n) !== -1; }) : null,
-      top_: topInfo ? { topValues: topInfo.topValues, matchLevel: topInfo.matchLevel, keptSubjects: topInfo.keptSubjects, offsetRounds: topInfo.offsetRounds } : null,
+      effectiveMode: effectiveMode,
+      top_: topInfo ? { topValues: topInfo.topValues, matchLevel: topInfo.matchLevel, keptSubjects: topInfo.keptSubjects, offsetRounds: topInfo.offsetRounds, fallback: topInfo.fallback || null } : null,
       backtest: bt,
     };
   }
