@@ -190,7 +190,7 @@ test("sweep：累計等於各位置 counts 相加", () => {
 
 // ---------- 回測 ----------
 test("backtest：手算範例回溯 1 次，命中 32", () => {
-  const r = Cha.backtest(HAND_ROWS, { ...HAND_OPTS, steps: 1, sweepCount: 2 });
+  const r = Cha.backtest(HAND_ROWS, { ...HAND_OPTS, steps: 1, sweepCount: 2, anchorRows: 0 }); // 不設錨定期，直接回測最後一列
   assert.equal(r.records.length, 1);
   const rec = r.records[0];
   assert.equal(rec.lowerIdx, 3);
@@ -216,17 +216,18 @@ test("backtest：回溯 16 次，每次下桿在倒數第 t 期", () => {
   }
   const r = Cha.backtest(rows);
   assert.equal(r.records.length, 16);
+  // 預測期第 49 列、錨定期第 48 列（不回測）、回溯第 47..32 列
   assert.deepEqual(r.frame, {
     visibleStart: 44, visibleEnd: 59, spareStart: 12, spareEnd: 43, targetIdx: 60, targetRowNo: 49,
-    firstLowerIdx: 59, lastLowerIdx: 44, firstLowerRowNo: 48, lastLowerRowNo: 33,
+    anchorIdx: 59, anchorRowNo: 48, anchorRows: 1,
+    firstLowerIdx: 58, lastLowerIdx: 43, firstLowerRowNo: 47, lastLowerRowNo: 32,
     spareRowNo: [1, 32], visibleRowNo: [33, 48], stepsRequested: 16, stepsRun: 16,
   });
-  assert.deepEqual(r.records.map((x) => x.lowerRowNo), [48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33]);
+  assert.deepEqual(r.records.map((x) => x.lowerRowNo), [47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32]);
   r.records.forEach((rec, i) => {
     assert.equal(rec.t, i + 1);
-    assert.equal(rec.lowerIdx, 60 - (i + 1));
+    assert.equal(rec.lowerIdx, 59 - (i + 1));
     assert.equal(rec.upperPositions.length, 6); // 16 次都是 6 個位置，沒有任何略過
-    // 備用列用量：下桿在顯示第 16 期(t=1) 最早讀到 idx47 → 0 列；第 1 期(t=16) 最早 idx32 → 12 列
     assert.equal(rec.spareRowsUsed, Math.max(0, 44 - (rec.lowerIdx - 6 - 6)));
     assert.deepEqual(rec.actual, rows[rec.lowerIdx]);
     rec.hits.forEach((n) => assert.ok(rec.actual.includes(n)));
@@ -238,15 +239,18 @@ test("backtest：回溯 16 次，每次下桿在倒數第 t 期", () => {
 
 test("backtest：回測起點跟著預測目標列走", () => {
   const rows = new Array(60).fill([1, 2, 3, 4, 5]);
-  // 目標第 49 列（空白第 1 列，預設）：下桿 idx59..44 = 第 48..33 列
+  // 預測期第 49 列（預設）：錨定期第 48 列不回測，下桿 idx58..43 = 第 47..32 列
   const r17 = Cha.backtest(rows);
-  assert.deepEqual([r17.frame.targetRowNo, r17.frame.firstLowerIdx, r17.frame.lastLowerIdx], [49, 59, 44]);
-  assert.deepEqual([r17.frame.firstLowerRowNo, r17.frame.lastLowerRowNo], [48, 33]);
-  assert.deepEqual(r17.records.map((x) => x.lowerIdx), [59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44]);
-  // 目標第 48 列（idx59）：下桿 idx58..43 = 第 47..32 列，第 32 列是備用列最後一期
+  assert.deepEqual([r17.frame.targetRowNo, r17.frame.anchorRowNo, r17.frame.firstLowerIdx, r17.frame.lastLowerIdx], [49, 48, 58, 43]);
+  assert.deepEqual([r17.frame.firstLowerRowNo, r17.frame.lastLowerRowNo], [47, 32]);
+  // anchorRows: 0 → 回到「從目標列上一列開始」
+  const r0 = Cha.backtest(rows, { anchorRows: 0 });
+  assert.deepEqual([r0.frame.firstLowerRowNo, r0.frame.lastLowerRowNo], [48, 33]);
+  assert.deepEqual(r17.records.map((x) => x.lowerIdx), [58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 43]);
+  // 預測期第 48 列（idx59）：錨定期第 47 列，下桿 idx57..42 = 第 46..31 列
   const r16 = Cha.backtest(rows, { targetIdx: 59 });
-  assert.deepEqual([r16.frame.targetRowNo, r16.frame.firstLowerIdx, r16.frame.lastLowerIdx], [48, 58, 43]);
-  assert.deepEqual([r16.frame.firstLowerRowNo, r16.frame.lastLowerRowNo], [47, 32]);
+  assert.deepEqual([r16.frame.targetRowNo, r16.frame.anchorRowNo, r16.frame.firstLowerIdx, r16.frame.lastLowerIdx], [48, 47, 57, 42]);
+  assert.deepEqual([r16.frame.firstLowerRowNo, r16.frame.lastLowerRowNo], [46, 31]);
   // 列號換算：備用列第一期 idx12 = 第 1 列；顯示區第一期 idx44 = 第 33 列
   const o = Cha.resolveOpts({});
   assert.equal(Cha.rowNo(rows, 12, o), 1);
@@ -255,15 +259,15 @@ test("backtest：回測起點跟著預測目標列走", () => {
   assert.equal(Cha.idxOfRowNo(rows, 49, o), 60);
   assert.equal(Cha.idxOfRowNo(rows, 1, o), 12);
   assert.equal(r16.records.length, 16);
-  assert.equal(r16.records[15].lowerIdx, 43);
-  assert.equal(r16.records[15].upperPositions.length, 6); // 第 0 列上方還有備用列，6 個位置都跑
-  assert.equal(r16.records[15].spareRowsUsed, 13); // 最早讀到 43-12=31，顯示第 1 期 idx44 → 13 列備用列
-  r16.records.forEach((x) => assert.ok(x.lowerIdx < 59)); // 絕不讀目標列與其下方
+  assert.equal(r16.records[15].lowerIdx, 42);
+  assert.equal(r16.records[15].upperPositions.length, 6);
+  assert.equal(r16.records[15].spareRowsUsed, 14); // 最早讀到 42-12=30，顯示第 1 期 idx44 → 14 列備用列
+  r16.records.forEach((x) => assert.ok(x.lowerIdx < 58)); // 絕不讀錨定期、預測期與其下方
 });
 
 test("backtest：scorer 掛勾可以把額外欄位掛到 record", () => {
   const r = Cha.backtest(HAND_ROWS, {
-    ...HAND_OPTS, steps: 1, sweepCount: 2,
+    ...HAND_OPTS, steps: 1, sweepCount: 2, anchorRows: 0,
     scorer: (rec) => ({ myScore: rec.hitCount * 10 }),
   });
   assert.equal(r.records[0].myScore, 10);
@@ -368,7 +372,7 @@ test("差數ai統計：aggregateAi 分母與各九宮差次數", () => {
 });
 
 test("backtest：每筆回測帶 aiEntries，結果帶 ai 彙總", () => {
-  const r = Cha.backtest(SHOT_ROWS, { steps: 1, sweepCount: 6 });
+  const r = Cha.backtest(SHOT_ROWS, { steps: 1, sweepCount: 6, anchorRows: 0 });
   // t=1 下桿 idx15，上桿 9..14；上桿 idx10 那一步就是截圖的設定
   const step = r.records[0].steps.find((s) => s.upperIdx === 10);
   assert.equal(step.aiEntries.length, 6);
@@ -415,7 +419,7 @@ test("差數ai統計：沒中(x) 的紀錄完全不列入計算與排行", () =>
   assert.equal(Object.keys(agg.byCondition).length, 1);
   // 紀錄層仍保留 x 筆（使用者定義），只是統計不用
   assert.equal(Cha.flattenAiRecords(entries).filter((r) => r.offset === "x").length, 5);
-  const r = Cha.backtest(SHOT_ROWS, { steps: 1 });
+  const r = Cha.backtest(SHOT_ROWS, { steps: 1, anchorRows: 0 });
   assert.ok(r.aiFields.hitRecords > 0);
 });
 
@@ -483,9 +487,10 @@ test("predict：目標列指定為已開出的第 48 列時，回測只用它以
   const pr = Cha.predict(rows, { targetIdx: 39, predictTop: 5 });
   assert.equal(pr.targetRowNo, 48);
   assert.deepEqual(pr.actual, rows[39]);
-  assert.equal(pr.backtest.frame.firstLowerIdx, 38);
-  assert.equal(pr.backtest.frame.lastLowerIdx, 23);
-  pr.backtest.records.forEach((r) => assert.ok(r.lowerIdx <= 38));
+  assert.equal(pr.backtest.frame.anchorIdx, 38);
+  assert.equal(pr.backtest.frame.firstLowerIdx, 37);
+  assert.equal(pr.backtest.frame.lastLowerIdx, 22);
+  pr.backtest.records.forEach((r) => assert.ok(r.lowerIdx <= 37));
   pr.hits.forEach((n) => assert.ok(rows[39].includes(n)));
   // 主角的標定完全不碰 idx39 以下（含）：所有主角列都 < 39
   pr.live.aiEntries.forEach((e) => { assert.ok(e.selfRow < 39); assert.ok(e.partnerRow < 39); });
@@ -503,7 +508,7 @@ test("predict：top 模式 = 最高值篩主角，再套機率最高的九宮差
     while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
     rows.push([...set].sort((a, b) => a - b));
   }
-  const pr = Cha.predict(rows, { predictTop: 5 });
+  const pr = Cha.predict(rows, { predictTop: 5, predictMode: "top" });
   assert.equal(pr.mode, "top");
   const st = pr.backtest.aiFields.fields;
   const tv = pr.top_.topValues;
@@ -530,7 +535,7 @@ test("predict：top 模式 = 最高值篩主角，再套機率最高的九宮差
 test("predict：top 模式沒打勾的九宮差不會用", () => {
   const rows = new Array(40).fill(0).map((_, i) => [1 + (i % 5), 7 + (i % 6), 13 + (i % 7), 21 + (i % 8), 30 + (i % 9)].sort((a, b) => a - b));
   const checked = Cha.NINE_GRID_DRAG_OFFSETS.map((o) => o === 0); // 只留 0
-  const pr = Cha.predict(rows, { predictTop: 5, offsetsChecked: checked });
+  const pr = Cha.predict(rows, { predictTop: 5, offsetsChecked: checked, predictMode: "top" });
   pr.ranked.forEach((x) => x.reasons.forEach((r) => assert.equal(r.offset, 0)));
 });
 
@@ -546,7 +551,7 @@ test("predict：top 模式無主角符合最高值時退回 field，不會沒有
   const bt = Cha.backtest(rows);
   // 把最高值全部改成不可能出現的值，模擬「沒有主角符合」
   ["sameRow", "linkDiff", "rowDist", "gap"].forEach((f) => { bt.aiFields.fields[f].top = [999]; });
-  const pr = Cha.predict(rows, { predictTop: 5 }, bt);
+  const pr = Cha.predict(rows, { predictTop: 5, predictMode: "top" }, bt);
   assert.equal(pr.mode, "top");
   assert.equal(pr.effectiveMode, "field");
   assert.equal(pr.top_.fallback, "field");
@@ -561,4 +566,47 @@ test("predict：目標列已開出時，即時標定的框架列號仍以原本�
   // live sweep 的 spareRowsUsed 以第 33 列（idx44）為界：下桿 idx59、上桿最低 53、最早讀到 47 → 0 列
   assert.equal(pr.live.spareRowsUsed, 0);
   assert.equal(pr.live.earliestIdx, 47);
+});
+
+// ---------- 錨定式（anchor，預設） ----------
+test("predict：anchor 模式 = 四個記錄百分比相加 + 九宮差前三名的百分比", () => {
+  const rows = [];
+  let s = 51;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 60; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    rows.push([...set].sort((a, b) => a - b));
+  }
+  const bt = Cha.backtest(rows);
+  const pr = Cha.predict(rows, {}, bt);
+  assert.equal(pr.mode, "anchor");
+  const P = (f, v) => { const it = bt.aiFields.fields[f].list.find((x) => x.value === v); return it ? it.prob : 0; };
+  const offTop = bt.aiFields.fields.offset.list.slice(0, 3);
+  assert.deepEqual(pr.anchor_.offsetTop.map((x) => x.value), offTop.map((x) => x.value));
+  // 主角分數 = P1+P2+P3+P5
+  pr.anchor_.subjects.forEach((sj) => {
+    const expect = P("sameRow", sj.sameRow) + P("linkDiff", sj.linkDiff) + P("rowDist", sj.rowDist) + P("gap", sj.gap);
+    assert.ok(Math.abs(sj.subjectScore - expect) < 1e-12);
+    assert.equal(sj.outputs.length, 3); // 每顆主角套前三名九宮差 → 三顆號碼
+    sj.outputs.forEach((out, i) => {
+      assert.equal(out.offset, offTop[i].value);
+      assert.equal(Cha.nineGridDrag(sj.self, 39)[Cha.NINE_GRID_DRAG_OFFSETS.indexOf(out.offset)], out.num);
+      assert.ok(Math.abs(out.weight - (sj.subjectScore + offTop[i].prob)) < 1e-12);
+    });
+  });
+  // 預測統計表 = 各主角三顆號碼的分數累加
+  const table = {};
+  pr.anchor_.subjects.forEach((sj) => sj.outputs.forEach((o) => { table[o.num] = (table[o.num] || 0) + o.weight; }));
+  pr.ranked.forEach((x) => assert.ok(Math.abs(table[x.n] - x.score) < 1e-12));
+  assert.equal(pr.topNums.length, 5);
+});
+
+test("predict：anchor 模式沒打勾的九宮差不套用；predictOffsetTop 可調", () => {
+  const rows = new Array(60).fill(0).map((_, i) => [1 + (i % 5), 7 + (i % 6), 13 + (i % 7), 21 + (i % 8), 30 + (i % 9)].sort((a, b) => a - b));
+  const pr = Cha.predict(rows, { predictOffsetTop: 2 });
+  pr.anchor_.subjects.forEach((sj) => assert.ok(sj.outputs.length <= 2));
+  const checked = Cha.NINE_GRID_DRAG_OFFSETS.map((o) => o === 0);
+  const pr0 = Cha.predict(rows, { offsetsChecked: checked });
+  pr0.ranked.forEach((x) => x.reasons.forEach((r) => assert.equal(r.offset, 0)));
 });

@@ -30,11 +30,13 @@ rows = 由舊到新的開獎列（每列號碼由小到大，不含特別號）
     顯示區 = 第 33 ~ 48 列         rows[N-16 .. N-1]   （App 畫面的第 1 ~ 16 期）
     空白第 1 列 = 第 49 列         idx N               （App 畫面的第 17 列）
 
-targetIdx = 預測目標列（下桿位置）；預設 N = 第 49 列
+targetIdx = 預測期 N（下桿真正的位置）；預設 rows.length = 第 49 列
+錨定期    = N-1（anchorRows = 1，不回測）
+回溯區    = N-2 … N-17（16 次）
 
-for t = 1 .. 16:                       # 從目標列的上一列往上回溯 16 次
-    lowerIdx = targetIdx - t           # 目標第 49 列 → 回溯第 48..33 列；目標第 48 列 → 回溯第 47..32 列（第 32 列是備用列最後一期）
-                                       # 這一期就是真實的果
+for t = 1 .. 16:
+    lowerIdx = targetIdx - anchorRows - t   # 預測期第 49 列 → 錨定期第 48 列 → 回溯第 47..32 列
+                                            # 這一期就是真實的果
     for upperIdx = lowerIdx-6 .. lowerIdx-1:   # 上桿掃 6 個位置（App 的 6期掃描）
         上桿上方不足 搜期 列 → 往顯示區上方的備用列讀（不顯示、只統計）
         下桿列與其下方是未來，永遠不讀
@@ -97,14 +99,21 @@ for t = 1 .. 16:                       # 從目標列的上一列往上回溯 16
 ## 預測下一期（predict）
 
 ```
-1. backtest(rows)                      → 16 次回測，五個記錄的機率分布 aiFields
-2. sweep(rows[0..targetIdx), targetIdx) → 下桿放在目標列（預設第 49 列 = 空白第 1 列），上桿掃上方 6..1 列
+1. backtest(rows)                      → 回溯 N-2..N-17 共 16 次，五個記錄的排行與百分比 aiFields
+2. sweep(rows[0..targetIdx), targetIdx) → 下桿固定在預測期 N（預設第 49 列），上桿掃上 1..上 6
                                           標定連線 → 主角 entries（答案未知，hits = null，只有記錄 1/2/3/5）
-3. 每顆主角 × 9 個九宮差               → 號碼 = 主角 + 九宮差，加分
+3. 計分（依 predictMode）
 4. 依分數排序，取前 predictTop 顆
 ```
 
-預設計分規則 `predictMode = "top"`（最高值篩選）：
+預設計分規則 `predictMode = "anchor"`（錨定式，百分比相加）：
+
+1. 每顆主角把第 1/2/3/5 個記錄的值到回溯排行查百分比，四個相加 = 主角分數。
+2. 回溯第 4 個記錄排行取前 `predictOffsetTop`（預設 3）名九宮差。
+3. 每顆主角各套這幾個九宮差，得到的號碼記到預測統計表，分數 = 主角分數 + 該九宮差的百分比；同一顆號碼累加。
+   結果的 `anchor_` 給每顆主角的四個百分比、分數、套出的號碼，以及整張預測統計表 `table`。
+
+`predictMode = "top"`（最高值篩選）：
 
 1. 第 1/2/3/5 個記錄各取機率最高的值（同分並列都算）。
 2. 每顆主角數四個條件有幾個落在最高值上，只留符合最多的那一群（全中優先，沒有就退到 3、2、1）。
@@ -119,7 +128,7 @@ for t = 1 .. 16:                       # 從目標列的上一列往上回溯 16
 
 回傳 `ranked`（每顆號碼的分數與來源：哪顆主角加哪個九宮差）、`top`、`topNums`；
 目標列已開出時另附 `actual`、`hits`。
-CLI：`--target 49`（統一列號，49 = 空白第 1 列、48 = 顯示區最後一期）、`--predict [N]`、`--predict-mode top|field|condition`。
+CLI：`--target 49`（統一列號，49 = 空白第 1 列、48 = 顯示區最後一期）、`--predict [N]`、`--predict-mode anchor|top|field|condition`、`--anchor-detail`。
 
 ## 之後接機率邏輯的位置
 

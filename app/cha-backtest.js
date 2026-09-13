@@ -58,9 +58,11 @@
     offsetsChecked: null, // 9 個 boolean；null = 全部打勾
     intervals: null, // k2-k1 間隔打勾（App 的 cModeChaIntervals）；null = 全部打勾
     scorer: null, // 之後接「新計算機率邏輯」的掛勾：function(record, ctx) → 額外欄位
-    targetIdx: null, // 預測目標列（下桿位置）的索引；null = rows.length（空白第 1 列，App 第 17 列）
+    targetIdx: null, // 預測期 N（下桿真正的位置）的索引；null = rows.length（空白第 1 列，列號 49）
+    anchorRows: 1, // 錨定期：預測期上方 anchorRows 列不回測；回溯從 N-1-anchorRows 開始（預設 N-2 … N-17）
+    predictOffsetTop: 3, // anchor 模式：第 4 個記錄排行取前幾名九宮差
     predictTop: 5, // predict() 取前幾顆
-    predictMode: "top", // predict() 計分規則："top"（最高值篩選，預設）、"field"（五個記錄機率相乘）、"condition"（同條件歷史命中率）
+    predictMode: "anchor", // predict() 計分規則："anchor"（百分比相加，預設）、"top"（最高值篩選）、"field"（機率相乘）、"condition"（同條件命中率）
   };
 
   function resolveOpts(opts) {
@@ -484,9 +486,9 @@
   }
 
   /**
-   * 回測：以「預測目標列」為基準，下桿從目標列的上一列開始往上移 steps 次（列號見 rowNo）。
-   *   目標在第 49 列（空白第 1 列）→ 回溯第 48、47 … 33 列（顯示區 16 期）
-   *   目標在第 48 列              → 回溯第 47、46 … 32 列（第 32 列是備用列最後一期）
+   * 回測：以「預測期 N」為基準，N-1 是錨定期（不回測），下桿從 N-1-anchorRows 開始往上移 steps 次（列號見 rowNo）。
+   *   預測期第 49 列（空白第 1 列）→ 錨定期第 48 列 → 回溯第 47、46 … 32 列
+   *   預測期第 48 列              → 錨定期第 47 列 → 回溯第 46、45 … 31 列
    * 第 t 次下桿放在 targetIdx − t，那一期的號碼就是真實的果，計算時視為未開；
    * 上桿在它上方 sweepCount..1 列各跑一次（App 的 6期掃描），不夠的列往備用列讀，
    * 累計後取前幾名當預期的果，再跟真實的果比對。
@@ -501,8 +503,9 @@
     var records = [];
     var end = frameEnd(rows, o);
     var target = targetIndex(rows, o);
+    var anchor = o.anchorRows || 0;
     for (var t = 1; t <= o.steps; t++) {
-      var lowerIdx = target - t;
+      var lowerIdx = target - anchor - t;
       if (lowerIdx < 0) break;
       var sw = sweep(rows, lowerIdx, o);
       var predicted = topRankList(sw.accCounts, o);
@@ -548,8 +551,9 @@
         visibleStart: visibleStart(rows, o), visibleEnd: end - 1,
         spareStart: searchFloor(rows, o), spareEnd: visibleStart(rows, o) - 1,
         targetIdx: target, targetRowNo: rowNo(rows, target, o), // 統一列號：備用列 1..32、顯示區 33..48、空白第 1 列 49
-        firstLowerIdx: target - 1, lastLowerIdx: Math.max(0, target - o.steps),
-        firstLowerRowNo: rowNo(rows, target - 1, o), lastLowerRowNo: rowNo(rows, Math.max(0, target - o.steps), o),
+        anchorIdx: target - 1, anchorRowNo: rowNo(rows, target - 1, o), anchorRows: anchor,
+        firstLowerIdx: target - anchor - 1, lastLowerIdx: Math.max(0, target - anchor - o.steps),
+        firstLowerRowNo: rowNo(rows, target - anchor - 1, o), lastLowerRowNo: rowNo(rows, Math.max(0, target - anchor - o.steps), o),
         spareRowNo: [1, o.spareRows], visibleRowNo: [o.spareRows + 1, o.spareRows + o.windowSize],
         stepsRequested: o.steps, stepsRun: records.length,
       },
@@ -622,10 +626,45 @@
     return { score: score, reasons: reasons, topValues: tops, matchLevel: best, keptSubjects: kept.length, offsetRounds: rounds };
   }
 
+  /**
+   * 錨定式計分（predictMode = "anchor"，預設）：
+   *   1. 每顆主角把第 1/2/3/5 個記錄的值到回溯排行查百分比，四個相加 = 主角分數。
+   *   2. 回溯第 4 個記錄排行取前 predictOffsetTop 名九宮差。
+   *   3. 每顆主角各套這幾個九宮差，得到的號碼加分：主角分數 + 該九宮差的百分比，記到預測統計表。
+   */
+  function predictByAnchor(live, st, o) {
+    function P(field, value) {
+      var item = st.fields[field].list.find(function (x) { return x.value === value; });
+      return item ? item.prob : 0;
+    }
+    var offTop = st.fields.offset.list.slice(0, o.predictOffsetTop || 3);
+    var score = {}, reasons = {};
+    for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
+    var subjects = live.aiEntries.map(function (e) {
+      var parts = { sameRow: P("sameRow", e.sameRow), linkDiff: P("linkDiff", e.linkDiff), rowDist: P("rowDist", e.rowDist), gap: P("gap", e.gap) };
+      var subjectScore = parts.sameRow + parts.linkDiff + parts.rowDist + parts.gap;
+      var drag = nineGridDrag(e.self, o.maxBall);
+      var outputs = [];
+      offTop.forEach(function (x) {
+        var pos = NINE_GRID_DRAG_OFFSETS.indexOf(x.value);
+        if (pos === -1 || !o.offsetsChecked[pos]) return;
+        var num = drag[pos];
+        var w = subjectScore + x.prob;
+        score[num] += w;
+        reasons[num].push({ self: e.self, partner: e.partner, offset: x.value, weight: w, subjectScore: subjectScore, offsetProb: x.prob,
+          sameRow: e.sameRow, linkDiff: e.linkDiff, rowDist: e.rowDist, gap: e.gap, upperIdx: e.upperIdx });
+        outputs.push({ offset: x.value, num: num, weight: w });
+      });
+      return { self: e.self, partner: e.partner, upperIdx: e.upperIdx, sameRow: e.sameRow, linkDiff: e.linkDiff, rowDist: e.rowDist, gap: e.gap,
+        parts: parts, subjectScore: subjectScore, outputs: outputs };
+    });
+    return { score: score, reasons: reasons, subjects: subjects, offsetTop: offTop };
+  }
+
   function predict(rows, opts, backtestResult) {
     var o = resolveOpts(opts);
     var topN = o.predictTop || 5;
-    var mode = o.predictMode || "top";
+    var mode = o.predictMode || "anchor";
     var bt = backtestResult || backtest(rows, o);
     var st = bt.aiFields;
     var byCond = bt.ai.byCondition;
@@ -645,6 +684,12 @@
     var topInfo = null;
     for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
     var effectiveMode = mode;
+    var anchorInfo = null;
+    if (mode === "anchor") {
+      anchorInfo = predictByAnchor(live, st, o);
+      score = anchorInfo.score;
+      reasons = anchorInfo.reasons;
+    }
     if (mode === "top") {
       topInfo = predictByTop(live, st, o, topN);
       if (topInfo.keptSubjects > 0) {
@@ -655,7 +700,7 @@
         topInfo.fallback = "field";
       }
     }
-    if (effectiveMode !== "top") live.aiEntries.forEach(function (e) {
+    if (effectiveMode !== "top" && effectiveMode !== "anchor") live.aiEntries.forEach(function (e) {
       var condW = P("sameRow", e.sameRow) * P("linkDiff", e.linkDiff) * P("rowDist", e.rowDist) * P("gap", e.gap);
       var cond = mode === "condition" ? byCond[aiConditionKey(e)] : null;
       var drag = nineGridDrag(e.self, o.maxBall);
@@ -688,6 +733,7 @@
       actual: known,
       hits: known ? topNums.filter(function (n) { return known.indexOf(n) !== -1; }) : null,
       effectiveMode: effectiveMode,
+      anchor_: anchorInfo ? { subjects: anchorInfo.subjects, offsetTop: anchorInfo.offsetTop, table: score } : null, // 預測統計表 = table
       top_: topInfo ? { topValues: topInfo.topValues, matchLevel: topInfo.matchLevel, keptSubjects: topInfo.keptSubjects, offsetRounds: topInfo.offsetRounds, fallback: topInfo.fallback || null } : null,
       backtest: bt,
     };

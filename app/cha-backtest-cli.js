@@ -12,7 +12,8 @@
  *   node app/cha-backtest-cli.js --ai-detail           # 加印 差數ai統計 每一筆紀錄 [同列,連線差,列距,九宮差,桿距]
  *   node app/cha-backtest-cli.js --target 49           # 預測目標列（統一列號：備用列 1..32、顯示區 33..48、空白第 1 列 49 = 預設）；回測從目標列上一列往上 16 次
  *   node app/cha-backtest-cli.js --predict [N]         # 用回測統計預測目標列，列前 N 顆（預設 5）；目標列已開出時附命中
- *   node app/cha-backtest-cli.js --predict-mode top|field|condition   # 計分規則：top=最高值篩選（預設）、field=機率相乘、condition=同條件命中率
+ *   node app/cha-backtest-cli.js --predict-mode anchor|top|field|condition   # 計分規則：anchor=百分比相加（預設）、top=最高值篩選、field=機率相乘、condition=同條件命中率
+ *   node app/cha-backtest-cli.js --anchor-detail       # 加印 anchor 模式每顆主角的四個百分比與分數
  *   node app/cha-backtest-cli.js --json                # 輸出完整 JSON（給後續機率邏輯用）
  *   node app/cha-backtest-cli.js --demo                # 用亂數資料跑一次，確認框架可動
  */
@@ -40,6 +41,7 @@ function parseArgs(argv) {
     else if (k === "--predict") { a.predict = true; if (v && /^\d+$/.test(v)) { a.predictTop = parseInt(v, 10); i++; } }
     else if (k === "--predict-mode") { a.predictMode = v; i++; }
     else if (k === "--target") { a.target = parseInt(v, 10); i++; }
+    else if (k === "--anchor-detail") { a.predict = true; a.anchorDetail = true; }
     else if (k === "--ai-detail") { a.ai = true; a.aiDetail = true; }
     else if (k === "--demo") a.demo = true;
     else if (k === "--help" || k === "-h") { a.help = true; }
@@ -83,7 +85,7 @@ function printReport(result) {
     "  掃描=" + o.sweepCount + "位置  顯示區=" + o.windowSize + "期  備用列=" + o.spareRows + "期  偏移=" + offsetsOn.join(","));
   console.log("列號：備用列 " + result.frame.spareRowNo[0] + "~" + result.frame.spareRowNo[1] + "、顯示區 " +
     result.frame.visibleRowNo[0] + "~" + result.frame.visibleRowNo[1] + "、空白第 1 列 " + (result.frame.visibleRowNo[1] + 1) +
-    "   預測目標=第 " + result.frame.targetRowNo + " 列  回測=" + result.frame.stepsRun + "次（下桿從第 " +
+    "   預測期=第 " + result.frame.targetRowNo + " 列  錨定期=第 " + result.frame.anchorRowNo + " 列  回溯=" + result.frame.stepsRun + "次（下桿從第 " +
     result.frame.firstLowerRowNo + " 列往上到第 " + result.frame.lastLowerRowNo + " 列）");
   console.log("");
   console.log("回溯  列號 日期        上桿位置        備用  預期的果(號碼×次數)                          真實的果             命中");
@@ -141,8 +143,20 @@ function printAi(result, detail) {
   });
 }
 
-function printPredict(pr) {
+function printPredict(pr, anchorDetail) {
   console.log("");
+  if (pr.anchor_) {
+    console.log("錨定式：九宮差前 " + pr.anchor_.offsetTop.length + " 名 " + pr.anchor_.offsetTop.map(function (x) { return fmtOff(x.value) + "(" + (x.prob * 100).toFixed(1) + "%)"; }).join(" ") +
+      "  主角 " + pr.anchor_.subjects.length + " 顆");
+    if (anchorDetail) {
+      console.log("  主角(對手) 上桿列  [同列, 連線差, 列距, 桿距] → 百分比相加 = 主角分數 → 套九宮差得到的號碼");
+      pr.anchor_.subjects.forEach(function (sj) {
+        var pct = [sj.parts.sameRow, sj.parts.linkDiff, sj.parts.rowDist, sj.parts.gap].map(function (p) { return (p * 100).toFixed(1) + "%"; }).join(" + ");
+        console.log("  " + pad2(sj.self) + "(" + pad2(sj.partner) + ")  [" + [sj.sameRow, fmtOff(sj.linkDiff), sj.rowDist, sj.gap].join(", ") + "]  " + pct +
+          " = " + (sj.subjectScore * 100).toFixed(1) + "%  → " + sj.outputs.map(function (x) { return pad2(sj.self) + fmtOff(x.offset) + "=" + pad2(x.num); }).join(" "));
+      });
+    }
+  }
   console.log("預測第 " + pr.targetRowNo + " 列（上桿掃上方 " + pr.live.positions.length + " 個位置）  計分規則=" + pr.mode + "  主角 " + pr.subjects + " 顆");
   if (pr.top_) {
     var tv = pr.top_.topValues;
@@ -200,7 +214,7 @@ function main() {
   }
   printReport(result);
   if (a.ai) printAi(result, a.aiDetail);
-  if (a.predict) printPredict(Cha.predict(data.rows, opts, result));
+  if (a.predict) printPredict(Cha.predict(data.rows, opts, result), a.anchorDetail);
 }
 
 main();
