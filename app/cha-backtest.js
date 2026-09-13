@@ -58,6 +58,7 @@
     offsetsChecked: null, // 9 個 boolean；null = 全部打勾
     intervals: null, // k2-k1 間隔打勾（App 的 cModeChaIntervals）；null = 全部打勾
     scorer: null, // 之後接「新計算機率邏輯」的掛勾：function(record, ctx) → 額外欄位
+    targetIdx: null, // 預測目標列（下桿位置）的索引；null = rows.length（空白第 1 列，App 第 17 列）
     predictTop: 5, // predict() 取前幾顆
     predictMode: "field", // predict() 計分規則："field"（五個記錄機率相乘）或 "condition"（同條件歷史命中率）
   };
@@ -485,13 +486,20 @@
     return filtered.slice(0, o.maxFill);
   }
 
+  /** 預測目標列（下桿位置）的索引：預設 rows.length = 空白第 1 列（App 第 17 列） */
+  function targetIndex(rows, o) {
+    return o.targetIdx === null || o.targetIdx === undefined ? rows.length : o.targetIdx;
+  }
+
   /**
-   * 回測：顯示區 16 期 + 備用列 16 期固定不動，下桿在顯示區裡上移 steps 次。
-   * 第 t 次下桿放在「顯示區倒數第 t 期」（t=1 是第 16 期、t=16 是第 1 期），
-   * 那一期的號碼就是真實的果，計算時視為未開；
+   * 回測：以「預測目標列」為基準，下桿從目標列的上一列開始往上移 steps 次。
+   *   目標在第 17 列（空白第 1 列）→ 回溯第 16、15 … 1 列
+   *   目標在第 16 列              → 回溯第 15、14 … 0 列（第 0 列已在備用列）
+   * 第 t 次下桿放在 targetIdx − t，那一期的號碼就是真實的果，計算時視為未開；
    * 上桿在它上方 sweepCount..1 列各跑一次（App 的 6期掃描），不夠的列往備用列讀，
    * 累計後取前幾名當預期的果，再跟真實的果比對。
-   * 下桿最多上移到顯示區第 1 期：上桿 6 + 搜期 6 = 12 列，備用列 16 期足夠，不會略過任何位置。
+   * 顯示區 16 期 + 備用列 16 期固定不動（frameEnd = rows.length）；最深一步讀到 targetIdx − 16 − 12，
+   * 目標在第 16 或 17 列時都在備用列範圍內，不會略過任何位置。
    *
    * rows  ：由舊到新的號碼列。
    * meta  ：可選，與 rows 等長的附加資訊（例如日期），會原樣掛到 record.meta。
@@ -500,9 +508,9 @@
     var o = resolveOpts(opts);
     var records = [];
     var end = frameEnd(rows, o);
-    var maxSteps = Math.min(o.steps, o.windowSize); // 下桿不離開顯示區
-    for (var t = 1; t <= maxSteps; t++) {
-      var lowerIdx = end - t;
+    var target = targetIndex(rows, o);
+    for (var t = 1; t <= o.steps; t++) {
+      var lowerIdx = target - t;
       if (lowerIdx < 0) break;
       var sw = sweep(rows, lowerIdx, o);
       var predicted = topRankList(sw.accCounts, o);
@@ -542,16 +550,21 @@
       aiFields: aiFieldStats(allAi), // 五個記錄各自的機率分布與最高值
       aiEntries: allAi,
       opts: o,
+      targetIdx: target,
       frame: {
         visibleStart: visibleStart(rows, o), visibleEnd: end - 1,
         spareStart: searchFloor(rows, o), spareEnd: visibleStart(rows, o) - 1,
+        targetIdx: target, targetRowNo: target - visibleStart(rows, o) + 1, // 顯示列號：1..16，17 = 空白第 1 列
+        firstLowerIdx: target - 1, lastLowerIdx: Math.max(0, target - o.steps),
         stepsRequested: o.steps, stepsRun: records.length,
       },
     };
   }
 
   /**
-   * 預測下一期（下桿放在空白第 1 列，也就是 App 的第 17 列）。
+   * 預測目標列（預設下一期 = 空白第 1 列，也就是 App 的第 17 列；opts.targetIdx 可改成任一列）。
+   * 回測一律從目標列的上一列往上跑 steps 次，統計只用目標列以前的資料。
+   * 若目標列已經開出（targetIdx < rows.length），結果會附上 actual / hits 方便驗證。
    *
    * 流程：
    *   1. 先跑 16 次回測，得到五個記錄的機率分布（bt.aiFields）。
@@ -578,8 +591,10 @@
       var item = st.fields[field].list.find(function (x) { return x.value === value; });
       return item ? item.prob : 0;
     }
-    var lowerIdx = rows.length; // 空白第 1 列
-    var live = sweep(rows, lowerIdx, o);
+    var lowerIdx = targetIndex(rows, o);
+    var known = lowerIdx < rows.length && rows[lowerIdx] ? rows[lowerIdx].slice(0, o.colCount) : null;
+    // 標定/主角只用目標列以前的資料：sweep 內部 rowCells 不讀 lowerIdx 以下；答案先藏起來
+    var live = sweep(rows.slice(0, lowerIdx), lowerIdx, o);
     var score = {};
     var reasons = {};
     for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
@@ -603,14 +618,18 @@
       .map(function (k) { return { n: parseInt(k, 10), score: score[k], reasons: reasons[k] }; })
       .filter(function (x) { return x.score > 0; })
       .sort(function (a, b) { return b.score - a.score || a.n - b.n; });
+    var topNums = ranked.slice(0, topN).map(function (x) { return x.n; });
     return {
       lowerIdx: lowerIdx,
+      targetRowNo: lowerIdx - visibleStart(rows, o) + 1,
       mode: mode,
       live: live,
       subjects: live.aiEntries.length,
       ranked: ranked,
       top: ranked.slice(0, topN),
-      topNums: ranked.slice(0, topN).map(function (x) { return x.n; }),
+      topNums: topNums,
+      actual: known,
+      hits: known ? topNums.filter(function (n) { return known.indexOf(n) !== -1; }) : null,
       backtest: bt,
     };
   }
@@ -670,6 +689,7 @@
     runSingle: runSingle,
     frameEnd: frameEnd,
     visibleStart: visibleStart,
+    targetIndex: targetIndex,
     searchFloor: searchFloor,
     sweepPositions: sweepPositions,
     sweep: sweep,

@@ -10,7 +10,8 @@
  *   node app/cha-backtest-cli.js --offsets -11,-10,-9,-1,0,1,9,10,11   # 只勾這些偏移
  *   node app/cha-backtest-cli.js --ai                  # 加印 差數ai統計 彙總（各九宮差命中次數、沒中 x）
  *   node app/cha-backtest-cli.js --ai-detail           # 加印 差數ai統計 每一筆紀錄 [同列,連線差,列距,九宮差,桿距]
- *   node app/cha-backtest-cli.js --predict [N]         # 用 16 次回測的統計預測下一期（空白第 1 列），列前 N 顆（預設 5）
+ *   node app/cha-backtest-cli.js --target 17           # 預測目標列（顯示列號 1..16，17 = 空白第 1 列，預設）；回測從目標列上一列往上 16 次
+ *   node app/cha-backtest-cli.js --predict [N]         # 用回測統計預測目標列，列前 N 顆（預設 5）；目標列已開出時附命中
  *   node app/cha-backtest-cli.js --predict-mode condition   # 計分改用「同條件歷史命中率」
  *   node app/cha-backtest-cli.js --json                # 輸出完整 JSON（給後續機率邏輯用）
  *   node app/cha-backtest-cli.js --demo                # 用亂數資料跑一次，確認框架可動
@@ -38,6 +39,7 @@ function parseArgs(argv) {
     else if (k === "--ai") a.ai = true;
     else if (k === "--predict") { a.predict = true; if (v && /^\d+$/.test(v)) { a.predictTop = parseInt(v, 10); i++; } }
     else if (k === "--predict-mode") { a.predictMode = v; i++; }
+    else if (k === "--target") { a.target = parseInt(v, 10); i++; }
     else if (k === "--ai-detail") { a.ai = true; a.aiDetail = true; }
     else if (k === "--demo") a.demo = true;
     else if (k === "--help" || k === "-h") { a.help = true; }
@@ -78,7 +80,9 @@ function printReport(result) {
   var o = result.opts;
   var offsetsOn = Cha.NINE_GRID_DRAG_OFFSETS.filter(function (_, i) { return o.offsetsChecked[i]; });
   console.log("C式差數 回測  彩券=" + o.game + "  球數=" + o.maxBall + "  搜期=" + o.span +
-    "  掃描=" + o.sweepCount + "位置  顯示區=" + o.windowSize + "期  備用列=" + o.spareRows + "期  回測=" + result.frame.stepsRun + "次  偏移=" + offsetsOn.join(","));
+    "  掃描=" + o.sweepCount + "位置  顯示區=" + o.windowSize + "期  備用列=" + o.spareRows + "期  偏移=" + offsetsOn.join(","));
+  console.log("預測目標=第 " + result.frame.targetRowNo + " 列  回測=" + result.frame.stepsRun + "次（下桿從第 " +
+    (result.frame.targetRowNo - 1) + " 列往上到第 " + (result.frame.targetRowNo - result.frame.stepsRun) + " 列）");
   console.log("");
   console.log("回溯  日期        上桿位置        備用  預期的果(號碼×次數)                          真實的果             命中");
   result.records.forEach(function (r) {
@@ -137,7 +141,7 @@ function printAi(result, detail) {
 
 function printPredict(pr) {
   console.log("");
-  console.log("預測下一期（下桿在空白第 1 列，上桿掃上方 " + pr.live.positions.length + " 個位置）  計分規則=" + pr.mode + "  主角 " + pr.subjects + " 顆");
+  console.log("預測第 " + pr.targetRowNo + " 列（上桿掃上方 " + pr.live.positions.length + " 個位置）  計分規則=" + pr.mode + "  主角 " + pr.subjects + " 顆");
   if (!pr.ranked.length) { console.log("  沒有任何標定連線，無法預測"); return; }
   console.log("名次  號碼   分數      來源（主角+九宮差 → 這顆）");
   pr.top.forEach(function (x, i) {
@@ -146,6 +150,7 @@ function printPredict(pr) {
     console.log(String(i + 1).padStart(3) + "    " + pad2(x.n) + "   " + x.score.toFixed(4) + "   " + src + (x.reasons.length > 4 ? " …" : ""));
   });
   console.log("預測號碼：" + pr.topNums.map(pad2).join(" "));
+  if (pr.actual) console.log("真實的果：" + pr.actual.map(pad2).join(" ") + "   命中：" + (pr.hits.length ? pr.hits.map(pad2).join(" ") : "-"));
 }
 
 function main() {
@@ -177,6 +182,7 @@ function main() {
     offsetsChecked: offsetsToChecked(a.offsets),
   };
   var data = Cha.fromRecords(records, opts);
+  if (a.target) opts.targetIdx = data.rows.length - 16 + (a.target - 1); // 顯示列號 → 索引（17 = rows.length）
   var result = Cha.backtest(data.rows, opts, data.meta);
   if (a.json) {
     // steps 裡有 Set，輸出時轉成陣列

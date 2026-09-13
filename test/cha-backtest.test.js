@@ -213,7 +213,7 @@ test("backtest：回溯 16 次，每次下桿在倒數第 t 期", () => {
   }
   const r = Cha.backtest(rows);
   assert.equal(r.records.length, 16);
-  assert.deepEqual(r.frame, { visibleStart: 44, visibleEnd: 59, spareStart: 28, spareEnd: 43, stepsRequested: 16, stepsRun: 16 });
+  assert.deepEqual(r.frame, { visibleStart: 44, visibleEnd: 59, spareStart: 28, spareEnd: 43, targetIdx: 60, targetRowNo: 17, firstLowerIdx: 59, lastLowerIdx: 44, stepsRequested: 16, stepsRun: 16 });
   r.records.forEach((rec, i) => {
     assert.equal(rec.t, i + 1);
     assert.equal(rec.lowerIdx, 60 - (i + 1));
@@ -228,12 +228,20 @@ test("backtest：回溯 16 次，每次下桿在倒數第 t 期", () => {
   assert.equal(r.summary.totalHits, sumHits);
 });
 
-test("backtest：下桿不離開顯示區，steps 超過 windowSize 會被截到 16", () => {
+test("backtest：回測起點跟著預測目標列走", () => {
   const rows = new Array(60).fill([1, 2, 3, 4, 5]);
-  const r = Cha.backtest(rows, { steps: 30 });
-  assert.equal(r.records.length, 16);
-  assert.equal(r.frame.stepsRequested, 30);
-  assert.equal(r.frame.stepsRun, 16);
+  // 目標第 17 列（空白第 1 列，預設）：下桿 idx59..44 = 顯示第 16..1 列
+  const r17 = Cha.backtest(rows);
+  assert.deepEqual([r17.frame.targetRowNo, r17.frame.firstLowerIdx, r17.frame.lastLowerIdx], [17, 59, 44]);
+  assert.deepEqual(r17.records.map((x) => x.lowerIdx), [59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44]);
+  // 目標第 16 列（idx59）：下桿 idx58..43 = 顯示第 15..0 列，第 0 列已在備用列
+  const r16 = Cha.backtest(rows, { targetIdx: 59 });
+  assert.deepEqual([r16.frame.targetRowNo, r16.frame.firstLowerIdx, r16.frame.lastLowerIdx], [16, 58, 43]);
+  assert.equal(r16.records.length, 16);
+  assert.equal(r16.records[15].lowerIdx, 43);
+  assert.equal(r16.records[15].upperPositions.length, 6); // 第 0 列上方還有備用列，6 個位置都跑
+  assert.equal(r16.records[15].spareRowsUsed, 13); // 最早讀到 43-12=31，顯示第 1 期 idx44 → 13 列備用列
+  r16.records.forEach((x) => assert.ok(x.lowerIdx < 59)); // 絕不讀目標列與其下方
 });
 
 test("backtest：scorer 掛勾可以把額外欄位掛到 record", () => {
@@ -406,6 +414,8 @@ test("predict：下桿在空白第 1 列，主角答案未知，分數來自回�
   }
   const pr = Cha.predict(rows, { predictTop: 5 });
   assert.equal(pr.lowerIdx, 40);
+  assert.equal(pr.targetRowNo, 17);
+  assert.equal(pr.actual, null);
   assert.equal(pr.live.positions.length, 6);
   pr.live.aiEntries.forEach((e) => assert.equal(e.hits, null));
   assert.equal(pr.subjects, pr.live.aiEntries.length);
@@ -442,4 +452,27 @@ test("predict：field 規則的分數 = 四個條件機率相乘 × 九宮差機
       acc + P("sameRow", r.sameRow) * P("linkDiff", r.linkDiff) * P("rowDist", r.rowDist) * P("gap", r.gap) * P("offset", r.offset), 0);
     assert.ok(Math.abs(manual - x.score) < 1e-12);
   });
+});
+
+test("predict：目標列指定為已開出的第 16 列時，回測只用它以前的資料，並附命中", () => {
+  const rows = [];
+  let s = 31;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 40; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    rows.push([...set].sort((a, b) => a - b));
+  }
+  const pr = Cha.predict(rows, { targetIdx: 39, predictTop: 5 });
+  assert.equal(pr.targetRowNo, 16);
+  assert.deepEqual(pr.actual, rows[39]);
+  assert.equal(pr.backtest.frame.firstLowerIdx, 38);
+  assert.equal(pr.backtest.frame.lastLowerIdx, 23);
+  pr.backtest.records.forEach((r) => assert.ok(r.lowerIdx <= 38));
+  pr.hits.forEach((n) => assert.ok(rows[39].includes(n)));
+  // 主角的標定完全不碰 idx39 以下（含）：所有主角列都 < 39
+  pr.live.aiEntries.forEach((e) => { assert.ok(e.selfRow < 39); assert.ok(e.partnerRow < 39); });
+  // 與「先切掉最後一期再預測空白列」結果一致
+  const pr2 = Cha.predict(rows.slice(0, 39), { predictTop: 5 });
+  assert.deepEqual(pr.topNums, pr2.topNums);
 });
