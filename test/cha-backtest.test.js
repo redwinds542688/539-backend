@@ -122,24 +122,42 @@ test("sweepPositions：下桿上方 6..1 列，資料真的不存在才略過", 
   assert.deepEqual(Cha.sweepPositions(rows, 29, { span: 6 }), [23, 24, 25, 26, 27, 28]);
 });
 
-test("備用列：上桿上方不足搜期時往畫面外的備用列讀，不略過", () => {
+test("固定框架：顯示區 = 最新 16 期、備用列 = 再往上 16 期", () => {
   const rows = new Array(40).fill([1, 2, 3, 4, 5]);
-  // 畫面只有 8 期、沒有備用列：下桿 idx20，上桿 14 需要讀到 idx8，但畫面頂端是 idx12 → 略過 14..17
-  assert.deepEqual(Cha.sweepPositions(rows, 20, { span: 6, windowSize: 8, spareRows: 0 }), [18, 19]);
-  // 有 16 列備用列：全部 6 個位置都跑
-  assert.deepEqual(Cha.sweepPositions(rows, 20, { span: 6, windowSize: 8, spareRows: 16 }), [14, 15, 16, 17, 18, 19]);
-  // sweep 回報最早讀到的列與備用列使用量：上桿 14 - 搜期 6 = idx8，畫面頂端 idx12 → 用了 4 列備用列
-  const sw = Cha.sweep(rows, 20, { span: 6, windowSize: 8, spareRows: 16 });
-  assert.equal(sw.earliestIdx, 8);
-  assert.equal(sw.spareRowsUsed, 4);
+  const o = Cha.resolveOpts({});
+  assert.equal(Cha.visibleStart(rows, o), 24); // 顯示區 idx24..39
+  assert.equal(Cha.searchFloor(rows, o), 8); // 備用列 idx8..23
+});
+
+test("備用列：下桿在顯示區第 1 期時，上桿與搜尋列全在備用列，不略過", () => {
+  const rows = new Array(40).fill([1, 2, 3, 4, 5]);
+  // 下桿 idx24 = 顯示區第 1 期；上桿 18..23，最早讀到 18-6 = idx12，備用列下限 idx8 → 全部 6 個位置都跑
+  assert.deepEqual(Cha.sweepPositions(rows, 24, { span: 6 }), [18, 19, 20, 21, 22, 23]);
+  const sw = Cha.sweep(rows, 24, { span: 6 });
+  assert.equal(sw.earliestIdx, 12);
+  assert.equal(sw.spareRowsUsed, 12); // 顯示第 1 期 idx24 - 12 = 用了 12 列備用列，16 列夠用
+  // 沒有備用列的話，這個位置的 6 個上桿位置全部不夠搜期 → 全部略過
+  assert.deepEqual(Cha.sweepPositions(rows, 24, { span: 6, spareRows: 0 }), []);
+});
+
+test("下桿列與其下方是未來，不可讀", () => {
+  const rows = new Array(6).fill([1, 2, 3, 4, 5]); // 每列相同，只要讀得到就一定會標定
+  // 下桿 idx1、上桿 idx2、搜期 1：上桿上方是 idx1 = 下桿列本身 → 不可讀 → 標不到
+  assert.equal(Cha.markCha(rows, 2, 1, { span: 1 }).marked.size, 0);
+  // 對照：下桿 idx3、上桿 idx2 → 上桿上方 idx1 在下桿之上 → 可讀 → 有標定
+  assert.ok(Cha.markCha(rows, 2, 3, { span: 1 }).marked.size > 0);
+  // 統計用的上桿列若等於下桿列也不可讀 → 全部 0
+  const m = Cha.markCha(rows, 2, 3, { span: 1 });
+  const c = Cha.countCha(rows, 3, 3, m.marked, { span: 1 });
+  assert.equal(Object.values(c.counts).reduce((a, b) => a + b, 0), 0);
 });
 
 test("備用列：標定/統計會實際讀到備用列的號碼", () => {
-  // 手算範例整組往後推：前面塞 20 列雜訊當歷史，畫面視窗只有 2 期 → 搜尋列全在備用列裡
+  // 手算範例整組往後推：前面塞 20 列雜訊當歷史，顯示區只有 2 期(idx22,23) → 上桿與搜尋列全在備用列裡
   const noise = new Array(20).fill([2, 4, 6, 8, 12]);
   const rows = noise.concat(HAND_ROWS); // HAND 的 r0..r3 變成 idx20..23
   const opts = { ...HAND_OPTS, windowSize: 2, spareRows: 0 };
-  // 沒有備用列：上桿 21 上方的 idx20 在畫面外 → 標不到
+  // 沒有備用列：上桿 21 與其上方 idx20 都在顯示區外 → 標不到
   assert.equal(Cha.markCha(rows, 21, 23, opts).marked.size, 0);
   // 開備用列：標定與統計結果跟原本手算完全一樣
   const withSpare = { ...opts, spareRows: 16 };
@@ -195,17 +213,27 @@ test("backtest：回溯 16 次，每次下桿在倒數第 t 期", () => {
   }
   const r = Cha.backtest(rows);
   assert.equal(r.records.length, 16);
+  assert.deepEqual(r.frame, { visibleStart: 44, visibleEnd: 59, spareStart: 28, spareEnd: 43, stepsRequested: 16, stepsRun: 16 });
   r.records.forEach((rec, i) => {
     assert.equal(rec.t, i + 1);
     assert.equal(rec.lowerIdx, 60 - (i + 1));
-    assert.equal(rec.upperPositions.length, 6);
-    assert.equal(typeof rec.spareRowsUsed, "number");
+    assert.equal(rec.upperPositions.length, 6); // 16 次都是 6 個位置，沒有任何略過
+    // 備用列用量：下桿在顯示第 16 期(t=1) 最早讀到 idx47 → 0 列；第 1 期(t=16) 最早 idx32 → 12 列
+    assert.equal(rec.spareRowsUsed, Math.max(0, 44 - (rec.lowerIdx - 6 - 6)));
     assert.deepEqual(rec.actual, rows[rec.lowerIdx]);
     rec.hits.forEach((n) => assert.ok(rec.actual.includes(n)));
     rec.predictedNums.forEach((n) => assert.ok(n >= 1 && n <= 39));
   });
   const sumHits = r.records.reduce((a, x) => a + x.hitCount, 0);
   assert.equal(r.summary.totalHits, sumHits);
+});
+
+test("backtest：下桿不離開顯示區，steps 超過 windowSize 會被截到 16", () => {
+  const rows = new Array(60).fill([1, 2, 3, 4, 5]);
+  const r = Cha.backtest(rows, { steps: 30 });
+  assert.equal(r.records.length, 16);
+  assert.equal(r.frame.stepsRequested, 30);
+  assert.equal(r.frame.stepsRun, 16);
 });
 
 test("backtest：scorer 掛勾可以把額外欄位掛到 record", () => {

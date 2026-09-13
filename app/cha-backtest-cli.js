@@ -70,7 +70,7 @@ function printReport(result) {
   var o = result.opts;
   var offsetsOn = Cha.NINE_GRID_DRAG_OFFSETS.filter(function (_, i) { return o.offsetsChecked[i]; });
   console.log("C式差數 回測  彩券=" + o.game + "  球數=" + o.maxBall + "  搜期=" + o.span +
-    "  掃描=" + o.sweepCount + "位置  回溯=" + o.steps + "次  備用列=" + o.spareRows + "  偏移=" + offsetsOn.join(","));
+    "  掃描=" + o.sweepCount + "位置  顯示區=" + o.windowSize + "期  備用列=" + o.spareRows + "期  回測=" + result.frame.stepsRun + "次  偏移=" + offsetsOn.join(","));
   console.log("");
   console.log("回溯  日期        上桿位置        備用  預期的果(號碼×次數)                          真實的果             命中");
   result.records.forEach(function (r) {

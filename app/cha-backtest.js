@@ -49,8 +49,9 @@
     game: "539",
     span: 6, // 搜期（App 預設 6，可 3~6）
     sweepCount: 6, // 長按 6期掃描：上桿放在下桿上方 6..1 列
-    windowSize: 16, // App 畫面只有 16 期有開（16+4 視窗）
-    spareRows: 16, // 備用列：畫面上方另外備好的 16 期（捲動回溯用），不顯示、只供內部搜尋/統計
+    windowSize: 16, // 顯示區：App 畫面 16 期有開（16+4 視窗），固定框在最新 16 期
+    spareRows: 16, // 備用列：顯示區上方另外備好的 16 期（捲動回溯用），不顯示、只供內部搜尋/統計
+    frameEnd: null, // 顯示區最後一列的下一個索引；null = rows.length（顯示區 = 最新 16 期）
     topRanks: 2, // 前二名（App 的 CMODE_DING_TOP_RANKS）
     maxFill: 15, // 填空白格最多顆數（App 的 slice(0,15)）
     steps: 16, // 回測次數（回溯 16 期）
@@ -98,19 +99,32 @@
     return rowIdx + ":" + col;
   }
 
-  /** 搜尋可以往上讀到的最早列：畫面 16 期 + 備用列 16 期 */
-  function searchFloor(lowerIdx, o) {
-    return Math.max(0, lowerIdx - o.windowSize - o.spareRows);
+  /**
+   * 固定框架（跟 App 畫面一致，不隨下桿移動）：
+   *   顯示區 = [frameEnd - windowSize, frameEnd)   最新 16 期
+   *   備用列 = [frameEnd - windowSize - spareRows, 顯示區第 1 期)   再往上 16 期
+   * 回測時下桿只在顯示區裡上移（第 16 期 → 第 1 期），上桿與搜尋列不夠時往備用列讀。
+   */
+  function frameEnd(rows, o) {
+    return o.frameEnd === null || o.frameEnd === undefined ? rows.length : o.frameEnd;
+  }
+  function visibleStart(rows, o) {
+    return Math.max(0, frameEnd(rows, o) - o.windowSize);
+  }
+  /** 搜尋可以往上讀到的最早列：顯示區 16 期 + 備用列 16 期 */
+  function searchFloor(rows, o) {
+    return Math.max(0, frameEnd(rows, o) - o.windowSize - o.spareRows);
   }
 
   /**
-   * 取得某一列可用的號碼；超出「畫面 + 備用列」範圍或資料不存在時回傳 null。
+   * 取得某一列可用的號碼；超出「顯示區 + 備用列」範圍或資料不存在時回傳 null。
    * 上桿上方不足搜期時，會自然讀到備用列（畫面上看不到，只做內部統計）。
    * App 對應：getRowCells()（cells.length>=colCount 才算有效）。
    */
   function rowCells(rows, idx, lowerIdx, o) {
     if (idx < 0 || idx >= rows.length) return null;
-    if (idx < searchFloor(lowerIdx, o)) return null;
+    if (idx >= lowerIdx) return null; // 下桿列與其下方是「未來」，不可讀
+    if (idx < searchFloor(rows, o)) return null;
     var r = rows[idx];
     if (!r || r.length < o.colCount) return null;
     return r.slice(0, o.colCount);
@@ -242,7 +256,7 @@
    */
   function sweepPositions(rows, lowerIdx, opts) {
     var o = resolveOpts(opts);
-    var floor = searchFloor(lowerIdx, o);
+    var floor = searchFloor(rows, o);
     var out = [];
     for (var u = lowerIdx - o.sweepCount; u <= lowerIdx - 1; u++) {
       if (u < 0) continue;
@@ -252,12 +266,11 @@
     return out;
   }
 
-  /** 這次掃描最早讀到哪一列，以及其中有幾列落在畫面外的備用列 */
-  function spareUsage(positions, lowerIdx, o) {
+  /** 這次掃描最早讀到哪一列，以及其中有幾列落在顯示區第 1 期之上的備用列 */
+  function spareUsage(rows, positions, o) {
     if (!positions.length) return { earliestIdx: null, spareRowsUsed: 0 };
     var earliest = positions[0] - o.span;
-    var visibleTop = lowerIdx - o.windowSize;
-    return { earliestIdx: earliest, spareRowsUsed: Math.max(0, visibleTop - earliest) };
+    return { earliestIdx: earliest, spareRowsUsed: Math.max(0, visibleStart(rows, o) - earliest) };
   }
 
   /** 6期掃描（App 長按差數鍵）：逐位置跑 runSingle，次數加總。 */
@@ -271,7 +284,7 @@
       addCounts(acc, r.counts);
       steps.push(r);
     });
-    var usage = spareUsage(positions, lowerIdx, o);
+    var usage = spareUsage(rows, positions, o);
     return {
       lowerIdx: lowerIdx, positions: positions, accCounts: acc, steps: steps,
       earliestIdx: usage.earliestIdx, spareRowsUsed: usage.spareRowsUsed,
@@ -302,10 +315,12 @@
   }
 
   /**
-   * 回測：回溯 steps 次。
-   * 第 t 次把下桿放在「倒數第 t 期」（那一期的號碼就是真實的果，計算時視為未開），
-   * 上桿在它上方 sweepCount..1 列各跑一次（App 的 6期掃描），累計後取前幾名當預期的果，
-   * 再跟真實的果比對。
+   * 回測：顯示區 16 期 + 備用列 16 期固定不動，下桿在顯示區裡上移 steps 次。
+   * 第 t 次下桿放在「顯示區倒數第 t 期」（t=1 是第 16 期、t=16 是第 1 期），
+   * 那一期的號碼就是真實的果，計算時視為未開；
+   * 上桿在它上方 sweepCount..1 列各跑一次（App 的 6期掃描），不夠的列往備用列讀，
+   * 累計後取前幾名當預期的果，再跟真實的果比對。
+   * 下桿最多上移到顯示區第 1 期：上桿 6 + 搜期 6 = 12 列，備用列 16 期足夠，不會略過任何位置。
    *
    * rows  ：由舊到新的號碼列。
    * meta  ：可選，與 rows 等長的附加資訊（例如日期），會原樣掛到 record.meta。
@@ -313,8 +328,10 @@
   function backtest(rows, opts, meta) {
     var o = resolveOpts(opts);
     var records = [];
-    for (var t = 1; t <= o.steps; t++) {
-      var lowerIdx = rows.length - t;
+    var end = frameEnd(rows, o);
+    var maxSteps = Math.min(o.steps, o.windowSize); // 下桿不離開顯示區
+    for (var t = 1; t <= maxSteps; t++) {
+      var lowerIdx = end - t;
       if (lowerIdx < 0) break;
       var sw = sweep(rows, lowerIdx, o);
       var predicted = topRankList(sw.accCounts, o);
@@ -344,7 +361,16 @@
       }
       records.push(record);
     }
-    return { records: records, summary: summarize(records), opts: o };
+    return {
+      records: records,
+      summary: summarize(records),
+      opts: o,
+      frame: {
+        visibleStart: visibleStart(rows, o), visibleEnd: end - 1,
+        spareStart: searchFloor(rows, o), spareEnd: visibleStart(rows, o) - 1,
+        stepsRequested: o.steps, stepsRun: records.length,
+      },
+    };
   }
 
   function summarize(records) {
@@ -400,6 +426,8 @@
     markCha: markCha,
     countCha: countCha,
     runSingle: runSingle,
+    frameEnd: frameEnd,
+    visibleStart: visibleStart,
     searchFloor: searchFloor,
     sweepPositions: sweepPositions,
     sweep: sweep,
