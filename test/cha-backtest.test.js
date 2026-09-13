@@ -674,3 +674,57 @@ test("predict：anchor 變體選項（相乘、不加九宮差、依桿距分開
   const expectApp = Cha.topRankList(app.live.accCounts, {}).map((x) => x.n);
   assert.deepEqual(app.ranked.map((x) => x.n), expectApp);
 });
+
+test("predict：anchorStatsCond 桿距分開統計 = 差6只用差6的回溯資料（五個記錄與九宮差排行都只從同桶算）", () => {
+  let seed = 4242;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const rows = [];
+  for (let i = 0; i < 60; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    rows.push([...set].sort((a, b) => a - b));
+  }
+  const bt = Cha.backtest(rows);
+  assert.deepEqual(Cha.statsCondFields("global"), []);
+  assert.deepEqual(Cha.statsCondFields("gap"), ["gap"]);
+  assert.deepEqual(Cha.statsCondFields(["gap", "rowDist"]), ["gap", "rowDist"]);
+
+  const pr = Cha.predict(rows, { anchorStatsCond: "gap" }, bt);
+  assert.deepEqual(pr.anchor_.statsCond, ["gap"]);
+  assert.ok(pr.anchor_.subjects.length > 0);
+  pr.anchor_.subjects.forEach((sj) => {
+    assert.ok(sj.bucket, "每顆主角都要有桶");
+    assert.equal(sj.bucket.key, "gap=" + sj.gap);
+    // 桶 = 回溯裡同桿距的主角
+    const subset = bt.aiEntries.filter((e) => e.gap === sj.gap);
+    assert.equal(sj.bucket.subjects, subset.length);
+    const st = Cha.aiFieldStats(subset);
+    assert.equal(sj.bucket.hitRecords, st.hitRecords);
+    if (sj.bucket.fallback) {
+      // 同桶沒命中紀錄 → 退回全體
+      assert.equal(st.hitRecords, 0);
+      assert.deepEqual(sj.outputs.map((o) => o.offset), bt.aiFields.fields.offset.list.slice(0, 3).map((x) => x.value));
+      return;
+    }
+    const P = (f, v) => { const it = st.fields[f].list.find((x) => x.value === v); return it ? it.prob : 0; };
+    // 桶內桿距一定 100%，其餘三個記錄百分比來自同桶
+    assert.ok(Math.abs(sj.parts.gap - 1) < 1e-12);
+    assert.ok(Math.abs(sj.parts.sameRow - P("sameRow", sj.sameRow)) < 1e-12);
+    assert.ok(Math.abs(sj.parts.linkDiff - P("linkDiff", sj.linkDiff)) < 1e-12);
+    assert.ok(Math.abs(sj.parts.rowDist - P("rowDist", sj.rowDist)) < 1e-12);
+    // 九宮差前三名也來自同桶
+    const top = st.fields.offset.list.slice(0, 3).map((x) => x.value);
+    assert.deepEqual(sj.outputs.map((o) => o.offset), top);
+    sj.outputs.forEach((o) => assert.ok(Math.abs(o.weight - (sj.subjectScore + P("offset", o.offset))) < 1e-12));
+  });
+  // 兩欄分桶：桶鍵含兩個欄位，桶內主角兩欄都相同
+  const pr2 = Cha.predict(rows, { anchorStatsCond: ["gap", "rowDist"] }, bt);
+  pr2.anchor_.subjects.forEach((sj) => {
+    assert.equal(sj.bucket.key, "gap=" + sj.gap + "|rowDist=" + sj.rowDist);
+    assert.equal(sj.bucket.subjects, bt.aiEntries.filter((e) => e.gap === sj.gap && e.rowDist === sj.rowDist).length);
+  });
+  // global 不分桶，結果與預設相同
+  const g = Cha.predict(rows, { anchorStatsCond: "global" }, bt);
+  assert.deepEqual(g.topNums, Cha.predict(rows, {}, bt).topNums);
+  assert.equal(g.anchor_.subjects[0].bucket, null);
+});

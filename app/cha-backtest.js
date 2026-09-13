@@ -64,6 +64,8 @@
     anchorSubjectScore: "sum", // anchor 模式主角分數："sum"（四個百分比相加）、"product"（相乘）、"none"（不計，只看九宮差）
     anchorOffsetWeight: "add", // anchor 模式九宮差如何併入號碼分數："add"（主角分數 + 九宮差百分比）、"mul"（相乘）、"none"（只用主角分數）
     anchorOffsetCond: "global", // anchor 模式九宮差排行的取樣範圍："global"（全部主角）或 "gap"/"rowDist"/"sameRow"/"linkDiff"（只取該記錄值相同的歷史主角）
+    anchorStatsCond: "global", // anchor 模式「整套統計」的取樣範圍："global"，或記錄欄位名/陣列（例 "gap"、["gap","rowDist"]）：
+                               // 差6只用回溯裡差6的資料、差5只用差5的（五個記錄的百分比與九宮差排行都只從同桿距的歷史主角算）
     fieldCountMode: "records", // 第 1/2/3/5 個記錄的分布以什麼計數："records"（一筆紀錄一次，中 3 個九宮差算 3 次）或 "subjects"（一顆主角一次）
     predictTop: 5, // predict() 取前幾顆
     predictMode: "anchor", // predict() 計分規則："anchor"（百分比相加，預設）、"top"（最高值篩選）、"field"（機率相乘）、"condition"（同條件命中率）
@@ -655,21 +657,53 @@
       .sort(function (a, b) { return b.count - a.count || a.value - b.value; });
   }
 
+  /** anchorStatsCond 正規化成欄位名陣列；"global"/空 → [] */
+  function statsCondFields(cond) {
+    if (!cond || cond === "global") return [];
+    return Array.isArray(cond) ? cond.slice() : [cond];
+  }
+
+  /**
+   * 桿距分開統計（巧合法）：依 anchorStatsCond 指定的記錄欄位，把回溯主角分桶，
+   * 每個 live 主角只用「同桶」的歷史主角算五個記錄的百分比與九宮差排行。
+   * 例：anchorStatsCond = "gap" → 差6只計算差6的，差5只計算差5的。
+   * 同桶沒有任何命中紀錄 → 退回全體統計（bucket.fallback = true）。
+   */
+  function bucketStats(btEntries, condFields, liveEntry, o, cache) {
+    if (!condFields.length) return null;
+    var key = condFields.map(function (f) { return f + "=" + liveEntry[f]; }).join("|");
+    if (cache[key]) return cache[key];
+    var subset = btEntries.filter(function (e) {
+      for (var i = 0; i < condFields.length; i++) if (e[condFields[i]] !== liveEntry[condFields[i]]) return false;
+      return true;
+    });
+    var st = aiFieldStats(subset, o);
+    var b = { key: key, subjects: subset.length, hitSubjects: st.hitSubjects, hitRecords: st.hitRecords, stats: st, fallback: st.hitRecords === 0 };
+    cache[key] = b;
+    return b;
+  }
+
   function predictByAnchor(live, st, o, btEntries) {
-    function P(field, value) {
-      var item = st.fields[field].list.find(function (x) { return x.value === value; });
+    var condFields = statsCondFields(o.anchorStatsCond);
+    var bucketCache = {};
+    function Pfrom(stats, field, value) {
+      var item = stats.fields[field].list.find(function (x) { return x.value === value; });
       return item ? item.prob : 0;
     }
     var globalTop = st.fields.offset.list.slice(0, o.predictOffsetTop || 3);
     var score = {}, reasons = {};
     for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
     var subjects = live.aiEntries.map(function (e) {
+      // 依桶（例：同桿距）取統計；沒有桶或桶內沒資料 → 全體統計
+      var bucket = btEntries ? bucketStats(btEntries, condFields, e, o, bucketCache) : null;
+      var stUse = bucket && !bucket.fallback ? bucket.stats : st;
+      function P(field, value) { return Pfrom(stUse, field, value); }
       var parts = { sameRow: P("sameRow", e.sameRow), linkDiff: P("linkDiff", e.linkDiff), rowDist: P("rowDist", e.rowDist), gap: P("gap", e.gap) };
       var subjectScore;
       if (o.anchorSubjectScore === "product") subjectScore = parts.sameRow * parts.linkDiff * parts.rowDist * parts.gap;
       else if (o.anchorSubjectScore === "none") subjectScore = 1;
       else subjectScore = parts.sameRow + parts.linkDiff + parts.rowDist + parts.gap;
-      var offTop = globalTop;
+      var offTop = bucket && !bucket.fallback ? stUse.fields.offset.list.slice(0, o.predictOffsetTop || 3) : globalTop;
       if (o.anchorOffsetCond && o.anchorOffsetCond !== "global" && btEntries) {
         var cond = offsetRanking(btEntries, o.anchorOffsetCond, e[o.anchorOffsetCond]).slice(0, o.predictOffsetTop || 3);
         if (cond.length) offTop = cond; // 同條件歷史沒有資料就退回全體排行
@@ -690,9 +724,10 @@
         outputs.push({ offset: x.value, num: num, weight: w });
       });
       return { self: e.self, partner: e.partner, upperIdx: e.upperIdx, sameRow: e.sameRow, linkDiff: e.linkDiff, rowDist: e.rowDist, gap: e.gap,
-        parts: parts, subjectScore: subjectScore, outputs: outputs };
+        parts: parts, subjectScore: subjectScore, outputs: outputs, offsetTop: offTop,
+        bucket: bucket ? { key: bucket.key, subjects: bucket.subjects, hitSubjects: bucket.hitSubjects, hitRecords: bucket.hitRecords, fallback: bucket.fallback } : null };
     });
-    return { score: score, reasons: reasons, subjects: subjects, offsetTop: globalTop };
+    return { score: score, reasons: reasons, subjects: subjects, offsetTop: globalTop, statsCond: condFields };
   }
 
   function predict(rows, opts, backtestResult) {
@@ -772,7 +807,7 @@
       actual: known,
       hits: known ? topNums.filter(function (n) { return known.indexOf(n) !== -1; }) : null,
       effectiveMode: effectiveMode,
-      anchor_: anchorInfo ? { subjects: anchorInfo.subjects, offsetTop: anchorInfo.offsetTop, table: score } : null, // 預測統計表 = table
+      anchor_: anchorInfo ? { subjects: anchorInfo.subjects, offsetTop: anchorInfo.offsetTop, statsCond: anchorInfo.statsCond, table: score } : null, // 預測統計表 = table
       top_: topInfo ? { topValues: topInfo.topValues, matchLevel: topInfo.matchLevel, keptSubjects: topInfo.keptSubjects, offsetRounds: topInfo.offsetRounds, fallback: topInfo.fallback || null } : null,
       backtest: bt,
     };
@@ -847,6 +882,8 @@
     offsetRanking: offsetRanking,
     AI_FIELDS: AI_FIELDS,
     aiFieldStats: aiFieldStats,
+    statsCondFields: statsCondFields,
+    bucketStats: bucketStats,
     backtest: backtest,
     predict: predict,
     summarize: summarize,

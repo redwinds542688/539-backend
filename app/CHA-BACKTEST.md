@@ -130,6 +130,14 @@ for t = 1 .. 16:
 4. 候選分數 = 推到它的主角數，越早輪次的九宮差分數越高。
    結果的 `top_` 給最高值、符合幾個條件、留下幾顆主角、九宮差的輪次。
 
+桿距分開統計（巧合法）`anchorStatsCond`（預設 `"global"`）：
+
+- 設成 `"gap"` 時，回溯 16 次的主角先依桿距分桶，每顆即時主角只用「同桿距」的回溯主角算五個記錄的百分比與九宮差前三名：
+  差 6 只計算差 6 的，差 5 只計算差 5 的。同桶沒有任何命中紀錄才退回全體統計（`bucket.fallback = true`）。
+- 也可以給欄位陣列，例如 `["gap", "rowDist"]`（桿距與列距都相同才算同桶）、四欄全給就是「四個記錄完全相同才算」的完全巧合。
+- 九宮差排行的取樣範圍另有 `anchorOffsetCond`（只分開九宮差排行，記錄 1/2/3/5 仍用全體）；同時設定時以 `anchorOffsetCond` 的排行為準。
+- `anchor_.subjects[i].bucket` 給每顆主角的桶鍵、桶內主角數、有中主角數、是否退回全體；CLI 用 `--stats-cond gap`（可逗號串多欄）。
+
 其他規則：
 
 - `predictMode = "field"`：`score(號碼) += P1(同列) × P2(連線差) × P3(列距) × P5(桿距) × P4(九宮差)`，Pn 是該值在回測有中紀錄裡的機率。
@@ -137,7 +145,7 @@ for t = 1 .. 16:
 
 回傳 `ranked`（每顆號碼的分數與來源：哪顆主角加哪個九宮差）、`top`、`topNums`；
 目標列已開出時另附 `actual`、`hits`。
-CLI：`--target 49`（統一列號，49 = 空白第 1 列、48 = 顯示區最後一期）、`--predict [N]`、`--predict-mode anchor|top|field|condition`、`--anchor-detail`。
+CLI：`--target 49`（統一列號，49 = 空白第 1 列、48 = 顯示區最後一期）、`--predict [N]`、`--predict-mode anchor|top|field|condition|app`、`--anchor-detail`、`--stats-cond gap`。
 
 ## 滾動評估（cha-eval）
 
@@ -157,9 +165,25 @@ npm run cha-eval -- --file x.json --from 60 --to 300 --top 5
 全部 20 個變體的命中率落在 10.0% ~ 13.7%，App 原邏輯 12.5%；把順序打亂 3 次，各變體同樣落在 12.0% ~ 14.4%。
 結論：目前沒有任何變體在統計上超過純機率，變體之間的差異是雜訊。
 
+同一批資料再加「巧合法」（`anchorStatsCond`，回溯 16 期但統計依桿距分開）的 8 個變體：
+
+| 變體 | 真實順序 | 亂序 ×3 |
+| --- | --- | --- |
+| 桿距分開統計（差 6 只算差 6） | 12.1% | 11.9% ~ 14.0% |
+| 桿距 + 列距分開 | 11.5% | 13.7% ~ 14.7% |
+| 桿距 + 同列分開 | 12.6% | 11.6% ~ 13.1% |
+| 桿距 + 連線差分開 | 11.4% | 11.4% ~ 13.2% |
+| 四記錄完全相同才算（完全巧合） | 13.4% | 13.6% ~ 14.2% |
+| 桿距分開 + 九宮差前 1 | 12.7% | 12.7% ~ 14.2% |
+| 桿距分開 + 只看九宮差 | 11.6% | 12.0% ~ 14.4% |
+| 桿距分開 + 回溯 32 次 | 12.5% | 12.8% ~ 14.1% |
+
+真實順序沒有一個高過亂序，分桶越細（桶內只剩幾筆）數字越飄，仍是雜訊。
+
 anchor 模式的可調變體（給評估用，預設值就是使用者定義的規則）：
 `anchorSubjectScore`（sum / product / none）、`anchorOffsetWeight`（add / mul / none）、
 `anchorOffsetCond`（global / gap / rowDist / sameRow / linkDiff：九宮差排行只取同條件的歷史主角）、
+`anchorStatsCond`（global / 欄位名 / 欄位陣列：整套統計依該記錄分桶，差 6 只算差 6 的）、
 `fieldCountMode`（records / subjects）、`predictOffsetTop`；`predictMode = "app"` 是 App 原本的 6 期掃描前二名。
 
 ## 之後接機率邏輯的位置
@@ -192,6 +216,7 @@ npm run cha-backtest -- --file data/results.json  # 真實資料（[{date, numbe
 npm run cha-backtest -- --game lotto --span 5 --offsets -1,0,1,9,10,11
 npm run cha-backtest -- --ai                      # 加印 差數ai統計 彙總
 npm run cha-backtest -- --ai-detail               # 加印每一筆 [同列,連線差,列距,九宮差,桿距]
+npm run cha-backtest -- --anchor-detail --stats-cond gap   # 預測：桿距分開統計，並列出每顆主角用的桶
 npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後續邏輯用
 ```
 

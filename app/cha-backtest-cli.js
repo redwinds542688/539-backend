@@ -14,6 +14,7 @@
  *   node app/cha-backtest-cli.js --predict [N]         # 用回測統計預測目標列，列前 N 顆（預設 5）；目標列已開出時附命中
  *   node app/cha-backtest-cli.js --predict-mode anchor|top|field|condition   # 計分規則：anchor=百分比相加（預設）、top=最高值篩選、field=機率相乘、condition=同條件命中率
  *   node app/cha-backtest-cli.js --anchor-detail       # 加印 anchor 模式每顆主角的四個百分比與分數
+ *   node app/cha-backtest-cli.js --stats-cond gap      # 桿距分開統計：差6只用回溯裡差6的資料、差5只用差5的（可逗號串多欄，例 gap,rowDist）
  *   node app/cha-backtest-cli.js --json                # 輸出完整 JSON（給後續機率邏輯用）
  *   node app/cha-backtest-cli.js --demo                # 用亂數資料跑一次，確認框架可動
  */
@@ -42,6 +43,7 @@ function parseArgs(argv) {
     else if (k === "--predict-mode") { a.predictMode = v; i++; }
     else if (k === "--target") { a.target = parseInt(v, 10); i++; }
     else if (k === "--anchor-detail") { a.predict = true; a.anchorDetail = true; }
+    else if (k === "--stats-cond") { a.statsCond = v; i++; }
     else if (k === "--ai-detail") { a.ai = true; a.aiDetail = true; }
     else if (k === "--demo") a.demo = true;
     else if (k === "--help" || k === "-h") { a.help = true; }
@@ -148,12 +150,14 @@ function printPredict(pr, anchorDetail) {
   if (pr.anchor_) {
     console.log("錨定式：九宮差前 " + pr.anchor_.offsetTop.length + " 名 " + pr.anchor_.offsetTop.map(function (x) { return fmtOff(x.value) + "(" + (x.prob * 100).toFixed(1) + "%)"; }).join(" ") +
       "  主角 " + pr.anchor_.subjects.length + " 顆");
+    if (pr.anchor_.statsCond && pr.anchor_.statsCond.length) console.log("  分開統計：依 " + pr.anchor_.statsCond.join("+") + " 分桶，每顆主角只用同桶的回溯資料（桶內沒命中紀錄才退回全體）");
     if (anchorDetail) {
       console.log("  主角(對手) 上桿列  [同列, 連線差, 列距, 桿距] → 百分比相加 = 主角分數 → 套九宮差得到的號碼");
       pr.anchor_.subjects.forEach(function (sj) {
         var pct = [sj.parts.sameRow, sj.parts.linkDiff, sj.parts.rowDist, sj.parts.gap].map(function (p) { return (p * 100).toFixed(1) + "%"; }).join(" + ");
+        var bk = sj.bucket ? "  [桶 " + sj.bucket.key + "：主角 " + sj.bucket.hitSubjects + "/" + sj.bucket.subjects + " 有中" + (sj.bucket.fallback ? "，退回全體" : "") + "]" : "";
         console.log("  " + pad2(sj.self) + "(" + pad2(sj.partner) + ")  [" + [sj.sameRow, fmtOff(sj.linkDiff), sj.rowDist, sj.gap].join(", ") + "]  " + pct +
-          " = " + (sj.subjectScore * 100).toFixed(1) + "%  → " + sj.outputs.map(function (x) { return pad2(sj.self) + fmtOff(x.offset) + "=" + pad2(x.num); }).join(" "));
+          " = " + (sj.subjectScore * 100).toFixed(1) + "%  → " + sj.outputs.map(function (x) { return pad2(sj.self) + fmtOff(x.offset) + "=" + pad2(x.num); }).join(" ") + bk);
       });
     }
   }
@@ -203,6 +207,7 @@ function main() {
     sweepCount: a.sweep,
     spareRows: a.spare,
     offsetsChecked: offsetsToChecked(a.offsets),
+    anchorStatsCond: a.statsCond ? (a.statsCond === "global" ? "global" : a.statsCond.split(",")) : "global",
   };
   var data = Cha.fromRecords(records, opts);
   if (a.target) opts.targetIdx = Cha.idxOfRowNo(data.rows, a.target, Cha.resolveOpts(opts)); // 統一列號 → 索引（49 = rows.length）
