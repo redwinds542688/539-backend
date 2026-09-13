@@ -486,15 +486,27 @@
     return filtered.slice(0, o.maxFill);
   }
 
-  /** 預測目標列（下桿位置）的索引：預設 rows.length = 空白第 1 列（App 第 17 列） */
+  /** 預測目標列（下桿位置）的索引：預設 rows.length = 空白第 1 列（列號 49） */
   function targetIndex(rows, o) {
     return o.targetIdx === null || o.targetIdx === undefined ? rows.length : o.targetIdx;
   }
 
   /**
-   * 回測：以「預測目標列」為基準，下桿從目標列的上一列開始往上移 steps 次。
-   *   目標在第 17 列（空白第 1 列）→ 回溯第 16、15 … 1 列
-   *   目標在第 16 列              → 回溯第 15、14 … 0 列（第 0 列已在備用列）
+   * 統一列號：備用列第一期 = 1，備用列 1..spareRows，顯示區接著到 spareRows+windowSize，空白第 1 列再 +1。
+   * 預設 32 + 16：備用列 1..32、顯示區 33..48、空白第 1 列 49。
+   * 列號固定以顯示區最後一期為 48，資料不足時前面的列號只是不存在，不會位移。
+   */
+  function rowNo(rows, idx, o) {
+    return idx - (frameEnd(rows, o) - o.windowSize - o.spareRows) + 1;
+  }
+  function idxOfRowNo(rows, no, o) {
+    return no - 1 + (frameEnd(rows, o) - o.windowSize - o.spareRows);
+  }
+
+  /**
+   * 回測：以「預測目標列」為基準，下桿從目標列的上一列開始往上移 steps 次（列號見 rowNo）。
+   *   目標在第 49 列（空白第 1 列）→ 回溯第 48、47 … 33 列（顯示區 16 期）
+   *   目標在第 48 列              → 回溯第 47、46 … 32 列（第 32 列是備用列最後一期）
    * 第 t 次下桿放在 targetIdx − t，那一期的號碼就是真實的果，計算時視為未開；
    * 上桿在它上方 sweepCount..1 列各跑一次（App 的 6期掃描），不夠的列往備用列讀，
    * 累計後取前幾名當預期的果，再跟真實的果比對。
@@ -519,6 +531,7 @@
       var record = {
         t: t,
         lowerIdx: lowerIdx,
+        lowerRowNo: rowNo(rows, lowerIdx, o), // 統一列號（備用列第一期 = 1）
         meta: meta ? meta[lowerIdx] : undefined,
         upperPositions: sw.positions,
         earliestIdx: sw.earliestIdx, // 這次最早讀到的列
@@ -554,8 +567,10 @@
       frame: {
         visibleStart: visibleStart(rows, o), visibleEnd: end - 1,
         spareStart: searchFloor(rows, o), spareEnd: visibleStart(rows, o) - 1,
-        targetIdx: target, targetRowNo: target - visibleStart(rows, o) + 1, // 顯示列號：1..16，17 = 空白第 1 列
+        targetIdx: target, targetRowNo: rowNo(rows, target, o), // 統一列號：備用列 1..32、顯示區 33..48、空白第 1 列 49
         firstLowerIdx: target - 1, lastLowerIdx: Math.max(0, target - o.steps),
+        firstLowerRowNo: rowNo(rows, target - 1, o), lastLowerRowNo: rowNo(rows, Math.max(0, target - o.steps), o),
+        spareRowNo: [1, o.spareRows], visibleRowNo: [o.spareRows + 1, o.spareRows + o.windowSize],
         stepsRequested: o.steps, stepsRun: records.length,
       },
     };
@@ -674,7 +689,7 @@
     var topNums = ranked.slice(0, topN).map(function (x) { return x.n; });
     return {
       lowerIdx: lowerIdx,
-      targetRowNo: lowerIdx - visibleStart(rows, o) + 1,
+      targetRowNo: rowNo(rows, lowerIdx, o),
       mode: mode,
       live: live,
       subjects: live.aiEntries.length,
@@ -744,6 +759,8 @@
     frameEnd: frameEnd,
     visibleStart: visibleStart,
     targetIndex: targetIndex,
+    rowNo: rowNo,
+    idxOfRowNo: idxOfRowNo,
     searchFloor: searchFloor,
     sweepPositions: sweepPositions,
     sweep: sweep,
