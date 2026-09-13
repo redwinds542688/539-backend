@@ -122,16 +122,19 @@ test("sweepPositions：下桿上方 6..1 列，資料真的不存在才略過", 
   assert.deepEqual(Cha.sweepPositions(rows, 29, { span: 6 }), [23, 24, 25, 26, 27, 28]);
 });
 
-test("固定框架：顯示區 = 最新 16 期、備用列 = 再往上 16 期", () => {
-  const rows = new Array(40).fill([1, 2, 3, 4, 5]);
+test("固定框架：顯示區 = 最新 16 期、備用列 = 再往上 32 期", () => {
+  const rows = new Array(60).fill([1, 2, 3, 4, 5]);
   const o = Cha.resolveOpts({});
-  assert.equal(Cha.visibleStart(rows, o), 24); // 顯示區 idx24..39
-  assert.equal(Cha.searchFloor(rows, o), 8); // 備用列 idx8..23
+  assert.equal(o.spareRows, 32);
+  assert.equal(Cha.visibleStart(rows, o), 44); // 顯示區 idx44..59
+  assert.equal(Cha.searchFloor(rows, o), 12); // 備用列 idx12..43
+  // 資料不足 48 期時，下限就是第 0 列
+  assert.equal(Cha.searchFloor(new Array(40).fill([1, 2, 3, 4, 5]), o), 0);
 });
 
 test("備用列：下桿在顯示區第 1 期時，上桿與搜尋列全在備用列，不略過", () => {
   const rows = new Array(40).fill([1, 2, 3, 4, 5]);
-  // 下桿 idx24 = 顯示區第 1 期；上桿 18..23，最早讀到 18-6 = idx12，備用列下限 idx8 → 全部 6 個位置都跑
+  // 下桿 idx24 = 顯示區第 1 期；上桿 18..23，最早讀到 18-6 = idx12，備用列下限 idx0（40-16-32<0）→ 全部 6 個位置都跑
   assert.deepEqual(Cha.sweepPositions(rows, 24, { span: 6 }), [18, 19, 20, 21, 22, 23]);
   const sw = Cha.sweep(rows, 24, { span: 6 });
   assert.equal(sw.earliestIdx, 12);
@@ -213,7 +216,7 @@ test("backtest：回溯 16 次，每次下桿在倒數第 t 期", () => {
   }
   const r = Cha.backtest(rows);
   assert.equal(r.records.length, 16);
-  assert.deepEqual(r.frame, { visibleStart: 44, visibleEnd: 59, spareStart: 28, spareEnd: 43, targetIdx: 60, targetRowNo: 17, firstLowerIdx: 59, lastLowerIdx: 44, stepsRequested: 16, stepsRun: 16 });
+  assert.deepEqual(r.frame, { visibleStart: 44, visibleEnd: 59, spareStart: 12, spareEnd: 43, targetIdx: 60, targetRowNo: 17, firstLowerIdx: 59, lastLowerIdx: 44, stepsRequested: 16, stepsRun: 16 });
   r.records.forEach((rec, i) => {
     assert.equal(rec.t, i + 1);
     assert.equal(rec.lowerIdx, 60 - (i + 1));

@@ -6,7 +6,7 @@
  *   node app/cha-backtest-cli.js --file path.json      # 指定資料檔（[{date, numbers}] 陣列）
  *   node app/cha-backtest-cli.js --game lotto          # 539 | daily | mark6 | lotto
  *   node app/cha-backtest-cli.js --steps 16 --span 6 --sweep 6
- *   node app/cha-backtest-cli.js --spare 16                   # 備用列數（畫面外可往上讀的期數，預設 16）
+ *   node app/cha-backtest-cli.js --spare 32                   # 備用列數（畫面外可往上讀的期數，預設 32）
  *   node app/cha-backtest-cli.js --offsets -11,-10,-9,-1,0,1,9,10,11   # 只勾這些偏移
  *   node app/cha-backtest-cli.js --ai                  # 加印 差數ai統計 彙總（各九宮差命中次數、沒中 x）
  *   node app/cha-backtest-cli.js --ai-detail           # 加印 差數ai統計 每一筆紀錄 [同列,連線差,列距,九宮差,桿距]
@@ -23,7 +23,7 @@ var path = require("path");
 var Cha = require("./cha-backtest.js");
 
 function parseArgs(argv) {
-  var a = { file: null, game: "539", steps: 16, span: 6, sweep: 6, offsets: null, json: false, demo: false, seed: 1, spare: 16 };
+  var a = { file: null, game: "539", steps: 16, span: 6, sweep: 6, offsets: null, json: false, demo: false, seed: 1, spare: 32 };
   for (var i = 0; i < argv.length; i++) {
     var k = argv[i];
     var v = argv[i + 1];

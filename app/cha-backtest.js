@@ -50,7 +50,7 @@
     span: 6, // 搜期（App 預設 6，可 3~6）
     sweepCount: 6, // 長按 6期掃描：上桿放在下桿上方 6..1 列
     windowSize: 16, // 顯示區：App 畫面 16 期有開（16+4 視窗），固定框在最新 16 期
-    spareRows: 16, // 備用列：顯示區上方另外備好的 16 期（捲動回溯用），不顯示、只供內部搜尋/統計
+    spareRows: 32, // 備用列：顯示區上方另外備好的 32 期（捲動回溯用），不顯示、只供內部搜尋/統計
     frameEnd: null, // 顯示區最後一列的下一個索引；null = rows.length（顯示區 = 最新 16 期）
     topRanks: 2, // 前二名（App 的 CMODE_DING_TOP_RANKS）
     maxFill: 15, // 填空白格最多顆數（App 的 slice(0,15)）
@@ -105,7 +105,7 @@
   /**
    * 固定框架（跟 App 畫面一致，不隨下桿移動）：
    *   顯示區 = [frameEnd - windowSize, frameEnd)   最新 16 期
-   *   備用列 = [frameEnd - windowSize - spareRows, 顯示區第 1 期)   再往上 16 期
+   *   備用列 = [frameEnd - windowSize - spareRows, 顯示區第 1 期)   再往上 32 期
    * 回測時下桿只在顯示區裡上移（第 16 期 → 第 1 期），上桿與搜尋列不夠時往備用列讀。
    */
   function frameEnd(rows, o) {
@@ -114,7 +114,7 @@
   function visibleStart(rows, o) {
     return Math.max(0, frameEnd(rows, o) - o.windowSize);
   }
-  /** 搜尋可以往上讀到的最早列：顯示區 16 期 + 備用列 16 期 */
+  /** 搜尋可以往上讀到的最早列：顯示區 16 期 + 備用列 32 期 */
   function searchFloor(rows, o) {
     return Math.max(0, frameEnd(rows, o) - o.windowSize - o.spareRows);
   }
@@ -498,7 +498,7 @@
    * 第 t 次下桿放在 targetIdx − t，那一期的號碼就是真實的果，計算時視為未開；
    * 上桿在它上方 sweepCount..1 列各跑一次（App 的 6期掃描），不夠的列往備用列讀，
    * 累計後取前幾名當預期的果，再跟真實的果比對。
-   * 顯示區 16 期 + 備用列 16 期固定不動（frameEnd = rows.length）；最深一步讀到 targetIdx − 16 − 12，
+   * 顯示區 16 期 + 備用列 32 期固定不動（frameEnd = rows.length）；最深一步讀到 targetIdx − 16 − 12，
    * 目標在第 16 或 17 列時都在備用列範圍內，不會略過任何位置。
    *
    * rows  ：由舊到新的號碼列。
