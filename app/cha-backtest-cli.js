@@ -10,6 +10,8 @@
  *   node app/cha-backtest-cli.js --offsets -11,-10,-9,-1,0,1,9,10,11   # 只勾這些偏移
  *   node app/cha-backtest-cli.js --ai                  # 加印 差數ai統計 彙總（各九宮差命中次數、沒中 x）
  *   node app/cha-backtest-cli.js --ai-detail           # 加印 差數ai統計 每一筆紀錄 [同列,連線差,列距,九宮差,桿距]
+ *   node app/cha-backtest-cli.js --predict [N]         # 用 16 次回測的統計預測下一期（空白第 1 列），列前 N 顆（預設 5）
+ *   node app/cha-backtest-cli.js --predict-mode condition   # 計分改用「同條件歷史命中率」
  *   node app/cha-backtest-cli.js --json                # 輸出完整 JSON（給後續機率邏輯用）
  *   node app/cha-backtest-cli.js --demo                # 用亂數資料跑一次，確認框架可動
  */
@@ -34,6 +36,8 @@ function parseArgs(argv) {
     else if (k === "--seed") { a.seed = parseInt(v, 10); i++; }
     else if (k === "--json") a.json = true;
     else if (k === "--ai") a.ai = true;
+    else if (k === "--predict") { a.predict = true; if (v && /^\d+$/.test(v)) { a.predictTop = parseInt(v, 10); i++; } }
+    else if (k === "--predict-mode") { a.predictMode = v; i++; }
     else if (k === "--ai-detail") { a.ai = true; a.aiDetail = true; }
     else if (k === "--demo") a.demo = true;
     else if (k === "--help" || k === "-h") { a.help = true; }
@@ -131,6 +135,19 @@ function printAi(result, detail) {
   });
 }
 
+function printPredict(pr) {
+  console.log("");
+  console.log("預測下一期（下桿在空白第 1 列，上桿掃上方 " + pr.live.positions.length + " 個位置）  計分規則=" + pr.mode + "  主角 " + pr.subjects + " 顆");
+  if (!pr.ranked.length) { console.log("  沒有任何標定連線，無法預測"); return; }
+  console.log("名次  號碼   分數      來源（主角+九宮差 → 這顆）");
+  pr.top.forEach(function (x, i) {
+    var src = x.reasons.slice().sort(function (a, b) { return b.weight - a.weight; }).slice(0, 4)
+      .map(function (r) { return pad2(r.self) + (r.offset >= 0 ? "+" : "") + r.offset; }).join(" ");
+    console.log(String(i + 1).padStart(3) + "    " + pad2(x.n) + "   " + x.score.toFixed(4) + "   " + src + (x.reasons.length > 4 ? " …" : ""));
+  });
+  console.log("預測號碼：" + pr.topNums.map(pad2).join(" "));
+}
+
 function main() {
   var a = parseArgs(process.argv.slice(2));
   if (a.help) {
@@ -150,6 +167,8 @@ function main() {
     if (records && !Array.isArray(records) && Array.isArray(records.results)) records = records.results;
   }
   var opts = {
+    predictTop: a.predictTop,
+    predictMode: a.predictMode,
     game: a.game,
     steps: a.steps,
     span: a.span,
@@ -166,6 +185,7 @@ function main() {
   }
   printReport(result);
   if (a.ai) printAi(result, a.aiDetail);
+  if (a.predict) printPredict(Cha.predict(data.rows, opts, result));
 }
 
 main();

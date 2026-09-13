@@ -89,6 +89,28 @@ for t = 1 .. 16:                       # 下桿在顯示區裡上移 16 次
 
 `backtest()` 結果的 `aiFields` 就是這份統計；CLI `--ai` 會印出五個記錄各自的最高值與完整分布。
 
+## 預測下一期（predict）
+
+```
+1. backtest(rows)                      → 16 次回測，五個記錄的機率分布 aiFields
+2. sweep(rows, rows.length)            → 下桿放在空白第 1 列（App 第 17 列），上桿掃上方 6..1 列
+                                          標定連線 → 主角 entries（答案未知，hits = null，只有記錄 1/2/3/5）
+3. 每顆主角 × 9 個九宮差               → 號碼 = 主角 + 九宮差，加分
+4. 依分數排序，取前 predictTop 顆
+```
+
+預設計分規則 `predictMode = "field"`（這是假設，可換）：
+
+```
+score(號碼) += P1(同列) × P2(連線差) × P3(列距) × P5(桿距) × P4(九宮差)
+Pn = 該值在回測「有中的紀錄」裡的機率；回測沒出現過的值 = 0
+```
+
+`predictMode = "condition"`：四個條件完全相同的歷史紀錄若存在，改用那一組裡各九宮差的命中率；沒有就退回 field 規則。
+
+回傳 `ranked`（每顆號碼的分數與來源：哪顆主角加哪個九宮差）、`top`、`topNums`。
+CLI：`--predict [N]`、`--predict-mode condition`。
+
 ## 之後接機率邏輯的位置
 
 1. **`opts.scorer(record, ctx)`**：每筆 record 算完後呼叫，回傳的物件會合併到 record。

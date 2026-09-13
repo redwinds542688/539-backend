@@ -58,6 +58,8 @@
     offsetsChecked: null, // 9 個 boolean；null = 全部打勾
     intervals: null, // k2-k1 間隔打勾（App 的 cModeChaIntervals）；null = 全部打勾
     scorer: null, // 之後接「新計算機率邏輯」的掛勾：function(record, ctx) → 額外欄位
+    predictTop: 5, // predict() 取前幾顆
+    predictMode: "field", // predict() 計分規則："field"（五個記錄機率相乘）或 "condition"（同條件歷史命中率）
   };
 
   function resolveOpts(opts) {
@@ -548,6 +550,71 @@
     };
   }
 
+  /**
+   * 預測下一期（下桿放在空白第 1 列，也就是 App 的第 17 列）。
+   *
+   * 流程：
+   *   1. 先跑 16 次回測，得到五個記錄的機率分布（bt.aiFields）。
+   *   2. 下桿放在 rows.length（空白第 1 列），上桿掃上方 6..1 列，標定連線，
+   *      產生「主角」entries（答案未知，hits = null，只有記錄 1/2/3/5 四個條件）。
+   *   3. 每一顆主角依它的四個條件值，從回測統計查機率，再套九個九宮差，
+   *      把「主角 + 九宮差」得到的號碼加分。
+   *   4. 依分數排序，取前 topN 顆當預測號碼。
+   *
+   * 預設計分規則（mode = "field"，是假設，可換）：
+   *   score(號碼) += P1(同列) × P2(連線差) × P3(列距) × P5(桿距) × P4(九宮差)
+   *   Pn = 該值在回測「有中的紀錄」裡的機率（aiFieldStats 的 prob）；沒出現過的值機率 0。
+   * mode = "condition"：改用四個條件完全相同的歷史紀錄裡各九宮差的命中率（aggregateAi.byCondition），
+   *   歷史沒有這組條件時退回 field 規則。
+   */
+  function predict(rows, opts, backtestResult) {
+    var o = resolveOpts(opts);
+    var topN = o.predictTop || 5;
+    var mode = o.predictMode || "field";
+    var bt = backtestResult || backtest(rows, o);
+    var st = bt.aiFields;
+    var byCond = bt.ai.byCondition;
+    function P(field, value) {
+      var item = st.fields[field].list.find(function (x) { return x.value === value; });
+      return item ? item.prob : 0;
+    }
+    var lowerIdx = rows.length; // 空白第 1 列
+    var live = sweep(rows, lowerIdx, o);
+    var score = {};
+    var reasons = {};
+    for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
+    live.aiEntries.forEach(function (e) {
+      var condW = P("sameRow", e.sameRow) * P("linkDiff", e.linkDiff) * P("rowDist", e.rowDist) * P("gap", e.gap);
+      var cond = mode === "condition" ? byCond[aiConditionKey(e)] : null;
+      var drag = nineGridDrag(e.self, o.maxBall);
+      for (var pos = 0; pos < NINE_GRID_DRAG_OFFSETS.length; pos++) {
+        if (!o.offsetsChecked[pos]) continue;
+        var off = NINE_GRID_DRAG_OFFSETS[pos];
+        var w;
+        if (cond && cond.n > 0) w = cond.byOffset[off] / cond.n; // 同條件歷史命中率
+        else w = condW * P("offset", off);
+        if (w <= 0) continue;
+        var num = drag[pos];
+        score[num] += w;
+        reasons[num].push({ self: e.self, partner: e.partner, offset: off, weight: w, sameRow: e.sameRow, linkDiff: e.linkDiff, rowDist: e.rowDist, gap: e.gap, upperIdx: e.upperIdx });
+      }
+    });
+    var ranked = Object.keys(score)
+      .map(function (k) { return { n: parseInt(k, 10), score: score[k], reasons: reasons[k] }; })
+      .filter(function (x) { return x.score > 0; })
+      .sort(function (a, b) { return b.score - a.score || a.n - b.n; });
+    return {
+      lowerIdx: lowerIdx,
+      mode: mode,
+      live: live,
+      subjects: live.aiEntries.length,
+      ranked: ranked,
+      top: ranked.slice(0, topN),
+      topNums: ranked.slice(0, topN).map(function (x) { return x.n; }),
+      backtest: bt,
+    };
+  }
+
   function summarize(records) {
     var s = {
       runs: records.length,
@@ -614,6 +681,7 @@
     AI_FIELDS: AI_FIELDS,
     aiFieldStats: aiFieldStats,
     backtest: backtest,
+    predict: predict,
     summarize: summarize,
     fromRecords: fromRecords,
   };

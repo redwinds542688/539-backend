@@ -393,3 +393,53 @@ test("差數ai統計：沒中的紀錄不進機率分母，但算進命中率的
   assert.ok(r.aiFields.hitRecords > 0);
   assert.equal(r.aiFields.subjects, r.aiEntries.length);
 });
+
+// ---------- 預測下一期 ----------
+test("predict：下桿在空白第 1 列，主角答案未知，分數來自回測統計", () => {
+  const rows = [];
+  let s = 11;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 40; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    rows.push([...set].sort((a, b) => a - b));
+  }
+  const pr = Cha.predict(rows, { predictTop: 5 });
+  assert.equal(pr.lowerIdx, 40);
+  assert.equal(pr.live.positions.length, 6);
+  pr.live.aiEntries.forEach((e) => assert.equal(e.hits, null));
+  assert.equal(pr.subjects, pr.live.aiEntries.length);
+  assert.ok(pr.topNums.length <= 5);
+  pr.topNums.forEach((n) => assert.ok(n >= 1 && n <= 39));
+  // 分數遞減，且每顆都有來源
+  for (let i = 1; i < pr.ranked.length; i++) assert.ok(pr.ranked[i - 1].score >= pr.ranked[i].score);
+  pr.ranked.forEach((x) => assert.ok(x.reasons.length > 0));
+  // 每一筆來源都是「主角 + 九宮差 = 這顆號碼」
+  pr.ranked.forEach((x) => x.reasons.forEach((r) => {
+    const idx = Cha.NINE_GRID_DRAG_OFFSETS.indexOf(r.offset);
+    assert.equal(Cha.nineGridDrag(r.self, 39)[idx], x.n);
+  }));
+  // condition 模式也能跑，退回 field 時結果仍合法
+  const pc = Cha.predict(rows, { predictTop: 5, predictMode: "condition" });
+  assert.equal(pc.mode, "condition");
+  pc.topNums.forEach((n) => assert.ok(n >= 1 && n <= 39));
+});
+
+test("predict：field 規則的分數 = 四個條件機率相乘 × 九宮差機率，逐筆加總", () => {
+  const rows = [];
+  let s = 21;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 40; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    rows.push([...set].sort((a, b) => a - b));
+  }
+  const bt = Cha.backtest(rows);
+  const pr = Cha.predict(rows, {}, bt);
+  const P = (f, v) => { const it = bt.aiFields.fields[f].list.find((x) => x.value === v); return it ? it.prob : 0; };
+  pr.ranked.forEach((x) => {
+    const manual = x.reasons.reduce((acc, r) =>
+      acc + P("sameRow", r.sameRow) * P("linkDiff", r.linkDiff) * P("rowDist", r.rowDist) * P("gap", r.gap) * P("offset", r.offset), 0);
+    assert.ok(Math.abs(manual - x.score) < 1e-12);
+  });
+});
