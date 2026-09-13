@@ -58,6 +58,27 @@ for t = 1 .. 16:                       # 下桿在顯示區裡上移 16 次
 
 `summary` 給整體命中率、純機率基準與提升倍數；`frame` 給這次的顯示區與備用列索引範圍、實際跑了幾次。
 
+## 差數ai統計（紀錄層）
+
+每一組標定連線的「下桿側」兩顆號碼各當一次主角，一顆主角一筆 entry（`aiRecords()`）：
+
+| 順序 | 欄位 | 定義 | 例（主角 25，連線對手 35） |
+|---|---|---|---|
+| 1 | `sameRow` 同列 | 連線對手所在列 − 主角所在列，往下為正，同一列 0 | −4 |
+| 2 | `linkDiff` 連線差 | 連線對手號碼 − 主角號碼 | +10 |
+| 3 | `rowDist` 列距 | 主角所在列 − 下桿列（等於 −k） | −1 |
+| 4 | `hits` 九宮差 | 主角加哪些九宮差會變成真實的果；空陣列 = 沒中 x；答案未知 = null | [−1, 0] |
+| 5 | `gap` 桿距 | 上桿列 − 下桿列 | −5 |
+
+`flattenAiRecords()` 把 entry 攤成使用者定義的一筆一筆紀錄 `[同列, 連線差, 列距, 九宮差, 桿距]`：
+命中幾個九宮差就幾筆，沒中一筆、九宮差欄記 `"x"`。
+`aggregateAi()` 依條件（桿距、同列、連線差、列距）分組，給每組的主角數 `n`（分母）、沒中數 `x`、各九宮差命中數。
+
+回測時 `sweep()` 對每個上桿位置都會產生 entries（答案 = 下桿列真實開出）；
+實際預測（下桿在空白期）時 `hits` 為 null，只留條件欄位，等機率模型查表。
+測試檔用 2026-08-26 ~ 09-12 的實際 16 期資料驗證，標定結果與 App 截圖一致，
+主角 05/06/25/35/28/29 的紀錄與手算相同。
+
 ## 之後接機率邏輯的位置
 
 1. **`opts.scorer(record, ctx)`**：每筆 record 算完後呼叫，回傳的物件會合併到 record。
@@ -86,6 +107,8 @@ npm test                                          # 跑測試
 npm run cha-backtest -- --demo                    # 亂數資料試跑框架
 npm run cha-backtest -- --file data/results.json  # 真實資料（[{date, numbers}]）
 npm run cha-backtest -- --game lotto --span 5 --offsets -1,0,1,9,10,11
+npm run cha-backtest -- --ai                      # 加印 差數ai統計 彙總
+npm run cha-backtest -- --ai-detail               # 加印每一筆 [同列,連線差,列距,九宮差,桿距]
 npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後續邏輯用
 ```
 

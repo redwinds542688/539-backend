@@ -171,6 +171,7 @@
             var pair = {
               k1: k1, k2: k2, col1: col1, col2: col2, diff: p,
               upper: [aNum1, aNum2], lower: [bNum1, bNum2],
+              upperRows: [aIdx1, aIdx2], lowerRows: [bIdx1, bIdx2],
               sameRow: k1 === k2,
             };
             pairs.push(pair);
@@ -273,21 +274,127 @@
     return { earliestIdx: earliest, spareRowsUsed: Math.max(0, visibleStart(rows, o) - earliest) };
   }
 
-  /** 6期掃描（App 長按差數鍵）：逐位置跑 runSingle，次數加總。 */
+  /**
+   * 差數ai統計：紀錄產生器。
+   * 以每一組標定連線「下桿側」的兩顆號碼各當一次主角，一顆主角一筆 entry：
+   *   sameRow  同列   ：連線對手所在列 − 主角所在列（往下為正，同一列 0）
+   *   linkDiff 連線差 ：連線對手號碼 − 主角號碼
+   *   rowDist  列距   ：主角所在列 − 下桿列（往上為負，等於 −k）
+   *   hits     九宮差 ：主角 + 哪些九宮差 = 真實的果（陣列；空陣列 = 沒中 x；actual 未知時為 null）
+   *   gap      桿距   ：上桿列 − 下桿列（上桿在下桿上方幾期，負數）
+   * actual = 下桿列真正開出的號碼；回測時有，實際預測（下桿在空白期）時傳 null。
+   */
+  function aiRecords(rows, upperIdx, lowerIdx, actual, opts) {
+    var o = resolveOpts(opts);
+    var m = markCha(rows, upperIdx, lowerIdx, o);
+    var entries = [];
+    m.pairs.forEach(function (pair) {
+      for (var side = 0; side < 2; side++) {
+        var other = 1 - side;
+        var selfNum = pair.lower[side];
+        var partnerNum = pair.lower[other];
+        var selfRow = pair.lowerRows[side];
+        var partnerRow = pair.lowerRows[other];
+        var hits = null;
+        if (actual) {
+          hits = [];
+          var drag = nineGridDrag(selfNum, o.maxBall);
+          for (var pos = 0; pos < NINE_GRID_DRAG_OFFSETS.length; pos++) {
+            if (!o.offsetsChecked[pos]) continue;
+            if (actual.indexOf(drag[pos]) !== -1) hits.push(NINE_GRID_DRAG_OFFSETS[pos]);
+          }
+        }
+        entries.push({
+          upperIdx: upperIdx,
+          lowerIdx: lowerIdx,
+          gap: upperIdx - lowerIdx,
+          self: selfNum,
+          selfRow: selfRow,
+          partner: partnerNum,
+          partnerRow: partnerRow,
+          sameRow: partnerRow - selfRow,
+          linkDiff: partnerNum - selfNum,
+          rowDist: selfRow - lowerIdx,
+          pairDiff: pair.diff,
+          upperPair: pair.upper,
+          hits: hits,
+        });
+      }
+    });
+    return entries;
+  }
+
+  /**
+   * 把 entry 攤平成使用者定義的「一筆紀錄」：[同列, 連線差, 列距, 九宮差, 桿距]。
+   * 命中幾個九宮差就幾筆；沒中一筆、九宮差欄記 "x"；actual 未知時九宮差欄記 null。
+   */
+  function flattenAiRecords(entries) {
+    var out = [];
+    entries.forEach(function (e) {
+      var offsets = e.hits === null ? [null] : e.hits.length ? e.hits : ["x"];
+      offsets.forEach(function (off) {
+        out.push({
+          sameRow: e.sameRow, linkDiff: e.linkDiff, rowDist: e.rowDist, offset: off, gap: e.gap,
+          self: e.self, partner: e.partner, lowerIdx: e.lowerIdx, upperIdx: e.upperIdx,
+        });
+      });
+    });
+    return out;
+  }
+
+  /** 條件鍵：預設用全部四個條件（桿距、同列、連線差、列距）分組 */
+  function aiConditionKey(e) {
+    return "gap" + e.gap + "|same" + e.sameRow + "|link" + e.linkDiff + "|dist" + e.rowDist;
+  }
+
+  /**
+   * 差數ai統計：把 entries 依條件分組，算每個九宮差的命中次數與沒中次數。
+   * 回傳 { byCondition: {key: {n, x, hitEntries, byOffset:{offset: count}}}, byOffset: {offset: count}, total, x }
+   * n = 這個條件下出現過幾顆主角（分母），x = 其中沒中的顆數。
+   */
+  function aggregateAi(entries, keyFn) {
+    var key = keyFn || aiConditionKey;
+    var byCondition = {};
+    var byOffset = {};
+    var total = 0, x = 0;
+    NINE_GRID_DRAG_OFFSETS.forEach(function (off) { byOffset[off] = 0; });
+    entries.forEach(function (e) {
+      if (e.hits === null) return; // 未知答案不進統計
+      var k = key(e);
+      var c = byCondition[k];
+      if (!c) {
+        c = byCondition[k] = { n: 0, x: 0, hitEntries: 0, byOffset: {} };
+        NINE_GRID_DRAG_OFFSETS.forEach(function (off) { c.byOffset[off] = 0; });
+      }
+      c.n++; total++;
+      if (e.hits.length === 0) { c.x++; x++; return; }
+      c.hitEntries++;
+      e.hits.forEach(function (off) { c.byOffset[off]++; byOffset[off]++; });
+    });
+    return { byCondition: byCondition, byOffset: byOffset, total: total, x: x };
+  }
+
+  /** 6期掃描（App 長按差數鍵）：逐位置跑 runSingle，次數加總；同時產生差數ai統計的 entries。 */
   function sweep(rows, lowerIdx, opts) {
     var o = resolveOpts(opts);
     var positions = sweepPositions(rows, lowerIdx, o);
     var acc = emptyCounts(o.maxBall);
     var steps = [];
+    var aiEntries = [];
+    // 下桿列真正開出的號碼：回測時存在；實際預測（下桿在空白期、lowerIdx 超出 rows）時為 null
+    var actual = lowerIdx < rows.length && rows[lowerIdx] ? rows[lowerIdx].slice(0, o.colCount) : null;
     positions.forEach(function (u) {
       var r = runSingle(rows, u, lowerIdx, o);
       addCounts(acc, r.counts);
+      r.aiEntries = aiRecords(rows, u, lowerIdx, actual, o);
+      aiEntries = aiEntries.concat(r.aiEntries);
       steps.push(r);
     });
     var usage = spareUsage(rows, positions, o);
     return {
       lowerIdx: lowerIdx, positions: positions, accCounts: acc, steps: steps,
       earliestIdx: usage.earliestIdx, spareRowsUsed: usage.spareRowsUsed,
+      aiEntries: aiEntries,
     };
   }
 
@@ -346,6 +453,7 @@
         spareRowsUsed: sw.spareRowsUsed, // 其中有幾列是畫面外的備用列（內部統計用）
         accCounts: sw.accCounts,
         steps: sw.steps,
+        aiEntries: sw.aiEntries, // 差數ai統計：這次回測所有連線主角的紀錄（含命中的九宮差）
         predicted: predicted,
         predictedNums: predicted.map(function (p) { return p.n; }),
         actual: actual,
@@ -361,9 +469,13 @@
       }
       records.push(record);
     }
+    var allAi = [];
+    records.forEach(function (r) { allAi = allAi.concat(r.aiEntries); });
     return {
       records: records,
       summary: summarize(records),
+      ai: aggregateAi(allAi),
+      aiEntries: allAi,
       opts: o,
       frame: {
         visibleStart: visibleStart(rows, o), visibleEnd: end - 1,
@@ -432,6 +544,10 @@
     sweepPositions: sweepPositions,
     sweep: sweep,
     topRankList: topRankList,
+    aiRecords: aiRecords,
+    flattenAiRecords: flattenAiRecords,
+    aiConditionKey: aiConditionKey,
+    aggregateAi: aggregateAi,
     backtest: backtest,
     summarize: summarize,
     fromRecords: fromRecords,

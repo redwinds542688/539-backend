@@ -255,3 +255,99 @@ test("fromRecords：依日期排序、號碼由小到大、去掉特別號", () 
   const lotto = Cha.fromRecords([{ date: "2026-01-01", numbers: [1, 2, 3, 4, 5, 6], special: 7 }], { game: "lotto" });
   assert.deepEqual(lotto.rows, [[1, 2, 3, 4, 5, 6]]);
 });
+
+// ---------- 差數ai統計：用使用者截圖（2026-08-26 ~ 09-12）的 16 期實際資料驗證 ----------
+// 上桿 A = 09-07（idx10），下桿 B = 09-12（idx15），桿距 -5，搜期 6
+const SHOT_ROWS = [
+  [13, 19, 23, 35, 38], // 0  08-26
+  [2, 3, 7, 25, 33],    // 1  08-27
+  [2, 4, 9, 12, 36],    // 2  08-28
+  [3, 6, 17, 23, 33],   // 3  08-29
+  [5, 10, 12, 33, 39],  // 4  08-31
+  [2, 4, 22, 30, 38],   // 5  09-01
+  [7, 8, 13, 16, 18],   // 6  09-02
+  [18, 19, 22, 23, 34], // 7  09-03
+  [2, 4, 15, 17, 24],   // 8  09-04
+  [3, 8, 10, 28, 38],   // 9  09-05
+  [19, 25, 26, 31, 35], // 10 09-07  A
+  [3, 7, 25, 29, 30],   // 11 09-08
+  [5, 6, 8, 28, 29],    // 12 09-09
+  [4, 14, 30, 35, 38],  // 13 09-10
+  [12, 15, 23, 25, 27], // 14 09-11
+  [6, 17, 24, 25, 30],  // 15 09-12  B（真實的果）
+];
+
+test("截圖對照：標定號碼與 App 畫面完全一致", () => {
+  const m = Cha.markCha(SHOT_ROWS, 10, 15, { span: 6 });
+  const markedNums = [...m.marked].map((k) => {
+    const [r, c] = k.split(":").map(Number);
+    return SHOT_ROWS[r][c];
+  }).sort((a, b) => a - b);
+  // 畫面上圈起來的：33 38 18 19 34 28 35 05 06 29 25
+  assert.deepEqual(markedNums, [5, 6, 18, 19, 25, 28, 29, 33, 34, 35, 38]);
+  // 三組連線（程式以 k 小的列為第一顆）：(18,19)↔(05,06) 差+1；(34,33)↔(29,28) 差-1；(28,38)↔(25,35) 差+10
+  const sig = m.pairs.map((p) => p.upper.join("-") + "/" + p.lower.join("-") + "/" + p.diff).sort();
+  assert.deepEqual(sig, ["18-19/5-6/1", "28-38/25-35/10", "34-33/29-28/-1"]);
+});
+
+test("差數ai統計：主角 05、06 的三筆紀錄（使用者手算範例）", () => {
+  const entries = Cha.aiRecords(SHOT_ROWS, 10, 15, SHOT_ROWS[15], { span: 6 });
+  const e05 = entries.find((e) => e.self === 5);
+  const e06 = entries.find((e) => e.self === 6);
+  // 05：同列 0、連線差 +1、列距 -3、九宮差 +1（05+1=06）、桿距 -5
+  assert.deepEqual([e05.sameRow, e05.linkDiff, e05.rowDist, e05.hits, e05.gap], [0, 1, -3, [1], -5]);
+  // 06：同列 0、連線差 -1、列距 -3、九宮差 0（06）與 +11（17）兩筆、桿距 -5
+  assert.deepEqual([e06.sameRow, e06.linkDiff, e06.rowDist, e06.hits, e06.gap], [0, -1, -3, [0, 11], -5]);
+  const flat = Cha.flattenAiRecords([e05, e06]).map((r) => [r.sameRow, r.linkDiff, r.rowDist, r.offset, r.gap]);
+  assert.deepEqual(flat, [[0, 1, -3, 1, -5], [0, -1, -3, 0, -5], [0, -1, -3, 11, -5]]);
+});
+
+test("差數ai統計：跨列連線 25↔35 的同列欄位（使用者回答 2）", () => {
+  const entries = Cha.aiRecords(SHOT_ROWS, 10, 15, SHOT_ROWS[15], { span: 6 });
+  const e25 = entries.find((e) => e.self === 25);
+  const e35 = entries.find((e) => e.self === 35);
+  // 以 25 為基，35 在上面 4 列 → -4；以 35 為基，25 在下面 4 列 → +4
+  assert.equal(e25.sameRow, -4);
+  assert.equal(e35.sameRow, 4);
+  assert.deepEqual([e25.linkDiff, e25.rowDist, e25.hits], [10, -1, [-1, 0]]);   // 25-1=24、25+0=25
+  assert.deepEqual([e35.linkDiff, e35.rowDist, e35.hits], [-10, -5, [-11, -10, 10]]); // 24、25、45→06
+  // 28↔29：28 在上、29 在下，相差 3 列
+  const e28 = entries.find((e) => e.self === 28);
+  const e29 = entries.find((e) => e.self === 29);
+  assert.deepEqual([e28.sameRow, e28.linkDiff, e28.rowDist, e28.hits], [3, 1, -6, [-11]]); // 28-11=17
+  assert.deepEqual([e29.sameRow, e29.linkDiff, e29.rowDist, e29.hits], [-3, -1, -3, [1]]); // 29+1=30
+  assert.equal(entries.length, 6); // 三組連線 × 兩顆主角
+});
+
+test("差數ai統計：沒中記 x，答案未知記 null", () => {
+  const entries = Cha.aiRecords(SHOT_ROWS, 10, 15, [2, 3, 8, 9, 10], { span: 6 }); // 假答案：六顆主角的九宮拖牌都推不到
+  entries.forEach((e) => assert.deepEqual(e.hits, []));
+  const flat = Cha.flattenAiRecords(entries);
+  assert.equal(flat.length, 6);
+  flat.forEach((r) => assert.equal(r.offset, "x"));
+  // 實際預測：下桿在空白期（lowerIdx = rows.length），答案未知
+  const live = Cha.sweep(SHOT_ROWS, SHOT_ROWS.length, { span: 6 });
+  live.aiEntries.forEach((e) => assert.equal(e.hits, null));
+  assert.equal(Cha.aggregateAi(live.aiEntries).total, 0);
+});
+
+test("差數ai統計：aggregateAi 分母與各九宮差次數", () => {
+  const entries = Cha.aiRecords(SHOT_ROWS, 10, 15, SHOT_ROWS[15], { span: 6 });
+  const agg = Cha.aggregateAi(entries);
+  assert.equal(agg.total, 6);
+  assert.equal(agg.x, 0);
+  // 05:+1、06:0,+11、28:-11、29:+1、35:-11,-10,+10、25:-1,0
+  assert.deepEqual(agg.byOffset, { "-11": 2, "-10": 1, "-9": 0, "-1": 1, "0": 2, "1": 2, "9": 0, "10": 1, "11": 1 });
+  const k = Cha.aiConditionKey(entries.find((e) => e.self === 5));
+  assert.equal(k, "gap-5|same0|link1|dist-3");
+  assert.deepEqual([agg.byCondition[k].n, agg.byCondition[k].x, agg.byCondition[k].byOffset[1]], [1, 0, 1]);
+});
+
+test("backtest：每筆回測帶 aiEntries，結果帶 ai 彙總", () => {
+  const r = Cha.backtest(SHOT_ROWS, { steps: 1, sweepCount: 6 });
+  // t=1 下桿 idx15，上桿 9..14；上桿 idx10 那一步就是截圖的設定
+  const step = r.records[0].steps.find((s) => s.upperIdx === 10);
+  assert.equal(step.aiEntries.length, 6);
+  assert.ok(r.records[0].aiEntries.length >= 6);
+  assert.equal(r.ai.total, r.aiEntries.length);
+});

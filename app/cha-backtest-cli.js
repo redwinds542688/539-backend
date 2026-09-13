@@ -8,6 +8,8 @@
  *   node app/cha-backtest-cli.js --steps 16 --span 6 --sweep 6
  *   node app/cha-backtest-cli.js --spare 16                   # 備用列數（畫面外可往上讀的期數，預設 16）
  *   node app/cha-backtest-cli.js --offsets -11,-10,-9,-1,0,1,9,10,11   # 只勾這些偏移
+ *   node app/cha-backtest-cli.js --ai                  # 加印 差數ai統計 彙總（各九宮差命中次數、沒中 x）
+ *   node app/cha-backtest-cli.js --ai-detail           # 加印 差數ai統計 每一筆紀錄 [同列,連線差,列距,九宮差,桿距]
  *   node app/cha-backtest-cli.js --json                # 輸出完整 JSON（給後續機率邏輯用）
  *   node app/cha-backtest-cli.js --demo                # 用亂數資料跑一次，確認框架可動
  */
@@ -31,6 +33,8 @@ function parseArgs(argv) {
     else if (k === "--offsets") { a.offsets = v; i++; }
     else if (k === "--seed") { a.seed = parseInt(v, 10); i++; }
     else if (k === "--json") a.json = true;
+    else if (k === "--ai") a.ai = true;
+    else if (k === "--ai-detail") { a.ai = true; a.aiDetail = true; }
     else if (k === "--demo") a.demo = true;
     else if (k === "--help" || k === "-h") { a.help = true; }
   }
@@ -92,6 +96,29 @@ function printReport(result) {
     (s.randomRate * 100).toFixed(1) + "%），提升倍數 " + s.lift.toFixed(2));
 }
 
+function fmtOff(o) { return o === "x" || o === null ? String(o) : (o > 0 ? "+" + o : String(o)); }
+
+function printAi(result, detail) {
+  var agg = result.ai;
+  console.log("");
+  console.log("差數ai統計  主角總數 " + agg.total + "  沒中(x) " + agg.x + "  有中 " + (agg.total - agg.x));
+  console.log("九宮差  " + Cha.NINE_GRID_DRAG_OFFSETS.map(function (o) { return fmtOff(o).padStart(4); }).join(""));
+  console.log("命中數  " + Cha.NINE_GRID_DRAG_OFFSETS.map(function (o) { return String(agg.byOffset[o]).padStart(4); }).join(""));
+  if (!detail) return;
+  console.log("");
+  console.log("每一筆紀錄  [同列, 連線差, 列距, 九宮差, 桿距]  主角(連線對手)");
+  result.records.forEach(function (r) {
+    var flat = Cha.flattenAiRecords(r.aiEntries);
+    if (!flat.length) return;
+    var date = r.meta && r.meta.date ? r.meta.date : "-";
+    console.log("回測" + String(r.t).padStart(2) + "  " + date + "  真實的果 " + r.actual.map(pad2).join(" ") + "  共 " + flat.length + " 筆");
+    flat.forEach(function (x) {
+      console.log("    [" + [x.sameRow, fmtOff(x.linkDiff), x.rowDist, fmtOff(x.offset), x.gap].join(", ") + "]  " +
+        pad2(x.self) + "(" + pad2(x.partner) + ")");
+    });
+  });
+}
+
 function main() {
   var a = parseArgs(process.argv.slice(2));
   if (a.help) {
@@ -126,6 +153,7 @@ function main() {
     return;
   }
   printReport(result);
+  if (a.ai) printAi(result, a.aiDetail);
 }
 
 main();
