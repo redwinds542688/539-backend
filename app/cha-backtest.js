@@ -374,6 +374,68 @@
     return { byCondition: byCondition, byOffset: byOffset, total: total, x: x };
   }
 
+  /** 五個記錄的欄位名稱與順序 */
+  var AI_FIELDS = [
+    { key: "sameRow", label: "同列", no: 1 },
+    { key: "linkDiff", label: "連線差", no: 2 },
+    { key: "rowDist", label: "列距", no: 3 },
+    { key: "offset", label: "九宮差", no: 4 },
+    { key: "gap", label: "桿距", no: 5 },
+  ];
+
+  /**
+   * 差數ai統計：統計層。
+   * 把回測累積的 entries 攤成一筆一筆紀錄，對五個記錄各自算「每個值出現幾次、機率多少」，找出最高的。
+   *   - 機率的分母是「有中的紀錄數」（九宮差 = x 的不算，因為它們沒有第 4 個記錄）
+   *   - 另外附上每個值的「命中率」：這個值出現過幾顆主角（含沒中），其中幾顆有中
+   * 回傳 { totalRecords, hitRecords, subjects, fields: { sameRow: {label, no, list:[{value,count,prob,subjects,hitSubjects,hitRate}], top:[values]} , ... } }
+   */
+  function aiFieldStats(entries) {
+    var known = entries.filter(function (e) { return e.hits !== null; });
+    var flat = flattenAiRecords(known);
+    var hitFlat = flat.filter(function (r) { return r.offset !== "x"; });
+    var out = { totalRecords: flat.length, hitRecords: hitFlat.length, subjects: known.length, fields: {} };
+    AI_FIELDS.forEach(function (f) {
+      var counts = {};
+      hitFlat.forEach(function (r) {
+        var v = r[f.key];
+        counts[v] = (counts[v] || 0) + 1;
+      });
+      // 每個值的主角數與有中主角數（第 4 個記錄「九宮差」以主角總數當分母）
+      var subj = {}, subjHit = {};
+      known.forEach(function (e) {
+        if (f.key === "offset") {
+          e.hits.forEach(function (off) { subjHit[off] = (subjHit[off] || 0) + 1; });
+          return;
+        }
+        var v = e[f.key];
+        subj[v] = (subj[v] || 0) + 1;
+        if (e.hits.length) subjHit[v] = (subjHit[v] || 0) + 1;
+      });
+      var list = Object.keys(counts).map(function (k) {
+        var v = parseInt(k, 10);
+        var subjects = f.key === "offset" ? known.length : (subj[v] || 0);
+        var hitSubjects = subjHit[v] || 0;
+        return {
+          value: v,
+          count: counts[k],
+          prob: hitFlat.length ? counts[k] / hitFlat.length : 0,
+          subjects: subjects,
+          hitSubjects: hitSubjects,
+          hitRate: subjects ? hitSubjects / subjects : 0,
+        };
+      }).sort(function (a, b) { return b.count - a.count || a.value - b.value; });
+      var best = list.length ? list[0].count : 0;
+      out.fields[f.key] = {
+        label: f.label,
+        no: f.no,
+        list: list,
+        top: list.filter(function (x) { return x.count === best && best > 0; }).map(function (x) { return x.value; }),
+      };
+    });
+    return out;
+  }
+
   /** 6期掃描（App 長按差數鍵）：逐位置跑 runSingle，次數加總；同時產生差數ai統計的 entries。 */
   function sweep(rows, lowerIdx, opts) {
     var o = resolveOpts(opts);
@@ -475,6 +537,7 @@
       records: records,
       summary: summarize(records),
       ai: aggregateAi(allAi),
+      aiFields: aiFieldStats(allAi), // 五個記錄各自的機率分布與最高值
       aiEntries: allAi,
       opts: o,
       frame: {
@@ -548,6 +611,8 @@
     flattenAiRecords: flattenAiRecords,
     aiConditionKey: aiConditionKey,
     aggregateAi: aggregateAi,
+    AI_FIELDS: AI_FIELDS,
+    aiFieldStats: aiFieldStats,
     backtest: backtest,
     summarize: summarize,
     fromRecords: fromRecords,

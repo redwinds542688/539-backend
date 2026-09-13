@@ -351,3 +351,44 @@ test("backtest：每筆回測帶 aiEntries，結果帶 ai 彙總", () => {
   assert.ok(r.records[0].aiEntries.length >= 6);
   assert.equal(r.ai.total, r.aiEntries.length);
 });
+
+test("差數ai統計：五個記錄的機率分布（截圖那一組 10 筆有中紀錄）", () => {
+  const entries = Cha.aiRecords(SHOT_ROWS, 10, 15, SHOT_ROWS[15], { span: 6 });
+  const st = Cha.aiFieldStats(entries);
+  assert.equal(st.subjects, 6);
+  assert.equal(st.totalRecords, 10); // 6 顆主角全部有中：05×1、06×2、28×1、29×1、25×2、35×3 = 10 筆
+  assert.equal(st.hitRecords, 10);
+  // 第1個記錄 同列：0 出現 3 筆(05,06,06)、+4 出現 3 筆(35×3)、-4 兩筆(25×2)、+3、-3 各 1
+  const same = st.fields.sameRow;
+  assert.deepEqual(same.top, [0, 4]);
+  assert.deepEqual(same.list.map((x) => [x.value, x.count]), [[0, 3], [4, 3], [-4, 2], [-3, 1], [3, 1]]);
+  assert.equal(same.list[0].prob, 3 / 10);
+  // 第2個記錄 連線差：+1 三筆(05,28,29)、-10 三筆(35×3)
+  assert.deepEqual(st.fields.linkDiff.top, [-10, 1]);
+  // 第3個記錄 列距：-3 四筆(05,06,06,29)
+  assert.deepEqual(st.fields.rowDist.top, [-3]);
+  assert.equal(st.fields.rowDist.list[0].count, 4);
+  // 第4個記錄 九宮差：-11、0、+1 各 2 筆
+  assert.deepEqual(st.fields.offset.top, [-11, 0, 1]);
+  const off0 = st.fields.offset.list.find((x) => x.value === 0);
+  assert.deepEqual([off0.count, off0.subjects, off0.hitSubjects], [2, 6, 2]); // 6 顆主角裡 2 顆靠 0 中
+  // 第5個記錄 桿距：全部 -5
+  assert.deepEqual(st.fields.gap.top, [-5]);
+  assert.equal(st.fields.gap.list[0].count, 10);
+  assert.equal(st.fields.gap.list[0].hitRate, 1); // 6 顆主角 6 顆有中
+});
+
+test("差數ai統計：沒中的紀錄不進機率分母，但算進命中率的主角數", () => {
+  const entries = Cha.aiRecords(SHOT_ROWS, 10, 15, [30, 2, 3, 8, 9], { span: 6 }); // 只有 29+1=30 會中
+  const st = Cha.aiFieldStats(entries);
+  assert.equal(st.subjects, 6);
+  assert.equal(st.totalRecords, 6); // 5 筆 x + 1 筆有中
+  assert.equal(st.hitRecords, 1);
+  const dist = st.fields.rowDist.list.find((x) => x.value === -3);
+  assert.deepEqual([dist.count, dist.subjects, dist.hitSubjects], [1, 3, 1]); // 列距 -3 的主角 05/06/29，只中 29
+  const gap = st.fields.gap.list[0];
+  assert.deepEqual([gap.value, gap.count, gap.subjects, gap.hitSubjects], [-5, 1, 6, 1]);
+  const r = Cha.backtest(SHOT_ROWS, { steps: 1 });
+  assert.ok(r.aiFields.hitRecords > 0);
+  assert.equal(r.aiFields.subjects, r.aiEntries.length);
+});
