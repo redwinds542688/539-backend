@@ -145,6 +145,14 @@ for t = 1 .. 16:
 - 要拿來預測：`anchorOffsetCond: "pairDiff"`（每顆主角只套同 pairDiff 歷史主角最常中的九宮差）或 `anchorStatsCond: "pairDiff"`。
 - 分組欄位可換成 gap / rowDist / sameRow / linkDiff。
 
+`predictMode = "gapvote"`（桿距投票）：
+
+1. 差 6 統計差 6 的、差 5 統計差 5 的 … 差 1 統計差 1 的：每個桿距各自用同桿距的回溯主角做五個記錄的統計，
+   套到同桿距的即時主角（anchor 的算法），得到一份預測表，最多 6 份。回溯裡該桿距沒有命中紀錄的表空白。
+2. 6 份表比：哪一號出現的份數最多就取哪一號；份數相同時用各表分數總和排先後。
+3. `gapVoteTop`（預設 null）限制每份表只拿前幾顆投票。結果的 `gapvote_` 給每份表的主角數、九宮差前三名、表內號碼，以及每號的份數。
+   CLI：`--predict-mode gapvote --vote-top 5`。
+
 其他規則：
 
 - `predictMode = "field"`：`score(號碼) += P1(同列) × P2(連線差) × P3(列距) × P5(桿距) × P4(九宮差)`，Pn 是該值在回測有中紀錄裡的機率。
@@ -202,6 +210,21 @@ npm run cha-eval -- --file x.json --from 60 --to 300 --top 5
 最高的一格（pairDiff 0 加 −11，17%）在亂序資料的比對表裡也會出現同樣高的格子（亂序最高 16% ~ 17%）。
 同一顆主角在同一個目標期會被不同上桿位置、不同連線重複計到，格子的有效樣本數比顯示的主角數小很多，所以格子之間的高低是雜訊。
 
+再加「桿距投票」（`predictMode = "gapvote"`，6 份桿距表比份數）的 8 個變體：
+
+| 變體 | 真實順序 | 亂序 ×3 |
+| --- | --- | --- |
+| 6 份表全部號碼投票 | 11.3% | 13.2% ~ 13.7% |
+| 每份表前 3 顆投票 | 11.8% | 11.8% ~ 14.0% |
+| 每份表前 5 顆投票 | 11.0% | 12.9% ~ 13.6% |
+| 每份表前 10 顆投票 | 10.8% | 12.6% ~ 14.2% |
+| 前 5 顆 + 不看主角分數 | 12.0% | 12.5% ~ 14.2% |
+| 前 5 顆 + 九宮差前 1 | 12.9% | 12.1% ~ 14.1% |
+| 前 5 顆 + 九宮差全部 9 | 11.4% | 11.8% ~ 14.8% |
+| 前 5 顆 + 回溯 32 次 | 12.6% | 12.3% ~ 13.0% |
+
+真實順序全部落在或低於亂序範圍，份數最多的號碼並沒有比較常開出。
+
 anchor 模式的可調變體（給評估用，預設值就是使用者定義的規則）：
 `anchorSubjectScore`（sum / product / none）、`anchorOffsetWeight`（add / mul / none）、
 `anchorOffsetCond`（global / gap / rowDist / sameRow / linkDiff：九宮差排行只取同條件的歷史主角）、
@@ -239,6 +262,7 @@ npm run cha-backtest -- --game lotto --span 5 --offsets -1,0,1,9,10,11
 npm run cha-backtest -- --ai                      # 加印 差數ai統計 彙總與九宮差比對表
 npm run cha-backtest -- --ai-detail               # 加印每一筆 [同列,連線差,列距,九宮差,桿距]
 npm run cha-backtest -- --anchor-detail --stats-cond gap   # 預測：桿距分開統計，並列出每顆主角用的桶
+npm run cha-backtest -- --predict 5 --predict-mode gapvote --vote-top 5   # 預測：6 份桿距表投票
 npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後續邏輯用
 ```
 

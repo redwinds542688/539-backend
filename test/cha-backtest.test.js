@@ -770,3 +770,49 @@ test("offsetCrossTable：依標定連線的九宮差分組，數每組主角加�
   });
   assert.ok(checked > 0);
 });
+
+test("predict：gapvote 模式 = 差6統計差6…差1統計差1，6 份預測表比哪一號出現的份數最多", () => {
+  // 16 期真實資料前面補 16 期固定種子亂數，讓備用列夠讓 6 個桿距都有回溯資料
+  let seed = 99;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const SHOT32_ROWS = [];
+  for (let i = 0; i < 16; i++) {
+    const set = new Set();
+    while (set.size < 5) set.add(1 + Math.floor(rnd() * 39));
+    SHOT32_ROWS.push([...set].sort((a, b) => a - b));
+  }
+  SHOT_ROWS.forEach((r) => SHOT32_ROWS.push(r));
+  const bt = Cha.backtest(SHOT32_ROWS);
+  const pr = Cha.predict(SHOT32_ROWS, { predictMode: "gapvote", gapVoteTop: 5 }, bt);
+  assert.equal(pr.mode, "gapvote");
+  assert.ok(pr.gapvote_);
+  const tables = pr.gapvote_.tables;
+  assert.ok(tables.length >= 1 && tables.length <= 6);
+  // 每份表：只用同桿距的即時主角 + 同桿距的回溯主角
+  tables.forEach((t) => {
+    assert.equal(t.subjects, pr.live.aiEntries.filter((e) => e.gap === t.gap).length);
+    const hist = bt.aiEntries.filter((e) => e.gap === t.gap);
+    assert.equal(t.btSubjects, hist.length);
+    if (t.empty) { assert.equal(t.nums.length, 0); return; }
+    assert.ok(t.nums.length <= 5);
+    // 表內號碼 = 對這個桿距單獨跑 anchor（統計只用同桿距回溯）的前 5 顆
+    const st = Cha.aiFieldStats(hist);
+    const solo = Cha.predict(SHOT32_ROWS, { anchorStatsCond: "gap" }, bt);
+    const soloScore = {};
+    solo.anchor_.subjects.filter((sj) => sj.gap === t.gap).forEach((sj) => sj.outputs.forEach((o) => { soloScore[o.num] = (soloScore[o.num] || 0) + o.weight; }));
+    const expect = Object.keys(soloScore).map((k) => ({ n: +k, score: soloScore[k] })).sort((a, b) => b.score - a.score || a.n - b.n).slice(0, 5).map((x) => x.n);
+    assert.deepEqual(t.nums, expect);
+    assert.deepEqual(t.offsetTop.map((x) => x.value), st.fields.offset.list.slice(0, 3).map((x) => x.value));
+  });
+  // 份數 = 該號出現在幾份表；分數整數部分 = 份數，排序先看份數
+  pr.ranked.forEach((x) => {
+    const inTables = tables.filter((t) => t.nums.includes(x.n)).length;
+    assert.equal(pr.gapvote_.votes[x.n], inTables);
+    assert.equal(Math.floor(x.score), inTables);
+    assert.ok(inTables >= 1);
+  });
+  for (let i = 1; i < pr.ranked.length; i++) assert.ok(pr.gapvote_.votes[pr.ranked[i - 1].n] >= pr.gapvote_.votes[pr.ranked[i].n]);
+  // 不限每份表顆數時，表內是所有有分數的號碼
+  const all = Cha.predict(SHOT32_ROWS, { predictMode: "gapvote" }, bt);
+  all.gapvote_.tables.forEach((t) => assert.equal(t.nums.length, t.ranked.length));
+});

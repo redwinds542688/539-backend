@@ -12,7 +12,8 @@
  *   node app/cha-backtest-cli.js --ai-detail           # 加印 差數ai統計 每一筆紀錄 [同列,連線差,列距,九宮差,桿距]
  *   node app/cha-backtest-cli.js --target 49           # 預測目標列（統一列號：備用列 1..32、顯示區 33..48、空白第 1 列 49 = 預設）；回測從目標列上一列往上 16 次
  *   node app/cha-backtest-cli.js --predict [N]         # 用回測統計預測目標列，列前 N 顆（預設 5）；目標列已開出時附命中
- *   node app/cha-backtest-cli.js --predict-mode anchor|top|field|condition   # 計分規則：anchor=百分比相加（預設）、top=最高值篩選、field=機率相乘、condition=同條件命中率
+ *   node app/cha-backtest-cli.js --predict-mode anchor|top|field|condition|gapvote|app   # 計分規則：anchor=百分比相加（預設）、top=最高值篩選、field=機率相乘、condition=同條件命中率、gapvote=差6統計差6…6份表投票、app=App原邏輯
+ *   node app/cha-backtest-cli.js --predict-mode gapvote --vote-top 5   # 每份桿距表只拿前 5 顆投票（不給就全拿）
  *   node app/cha-backtest-cli.js --anchor-detail       # 加印 anchor 模式每顆主角的四個百分比與分數
  *   node app/cha-backtest-cli.js --stats-cond gap      # 桿距分開統計：差6只用回溯裡差6的資料、差5只用差5的（可逗號串多欄，例 gap,rowDist）
  *   node app/cha-backtest-cli.js --json                # 輸出完整 JSON（給後續機率邏輯用）
@@ -44,6 +45,7 @@ function parseArgs(argv) {
     else if (k === "--target") { a.target = parseInt(v, 10); i++; }
     else if (k === "--anchor-detail") { a.predict = true; a.anchorDetail = true; }
     else if (k === "--stats-cond") { a.statsCond = v; i++; }
+    else if (k === "--vote-top") { a.voteTop = parseInt(v, 10); i++; }
     else if (k === "--ai-detail") { a.ai = true; a.aiDetail = true; }
     else if (k === "--demo") a.demo = true;
     else if (k === "--help" || k === "-h") { a.help = true; }
@@ -174,6 +176,15 @@ function printPredict(pr, anchorDetail) {
       });
     }
   }
+  if (pr.gapvote_) {
+    console.log("桿距投票：差 6 統計差 6 … 差 1 統計差 1，共 " + pr.gapvote_.tableCount + " 份預測表，比哪一號出現的份數最多");
+    pr.gapvote_.tables.forEach(function (t) {
+      var head = "  差" + (-t.gap) + "  即時主角 " + t.subjects + " 顆  回溯主角 " + t.hitSubjects + "/" + t.btSubjects + " 有中";
+      if (t.empty) { console.log(head + "  → 沒有命中紀錄，這份表空白"); return; }
+      console.log(head + "  九宮差前 " + t.offsetTop.length + " 名 " + t.offsetTop.map(function (x) { return fmtOff(x.value); }).join("/") +
+        "  → 表內 " + t.nums.length + " 顆：" + t.ranked.map(function (x) { return pad2(x.n) + "(" + x.score.toFixed(2) + ")"; }).join(" "));
+    });
+  }
   console.log("預測第 " + pr.targetRowNo + " 列（上桿掃上方 " + pr.live.positions.length + " 個位置）  計分規則=" + pr.mode + "  主角 " + pr.subjects + " 顆");
   if (pr.top_) {
     var tv = pr.top_.topValues;
@@ -183,10 +194,12 @@ function printPredict(pr, anchorDetail) {
     console.log("  九宮差依機率：" + pr.top_.offsetRounds.slice(0, 4).map(function (r) { return r.offsets.map(fmtOff).join("/") + "(" + r.count + ")"; }).join("  →  "));
   }
   if (!pr.ranked.length) { console.log("  沒有任何標定連線，無法預測"); return; }
-  console.log("名次  號碼   分數      來源（主角+九宮差 → 這顆）");
+  console.log("名次  號碼   分數      來源（" + (pr.gapvote_ ? "份數 / 出現在哪幾份桿距表" : "主角+九宮差 → 這顆") + "）");
   pr.top.forEach(function (x, i) {
-    var src = x.reasons.slice().sort(function (a, b) { return b.weight - a.weight; }).slice(0, 4)
-      .map(function (r) { return pad2(r.self) + (r.offset >= 0 ? "+" : "") + r.offset; }).join(" ");
+    var src = pr.gapvote_
+      ? pr.gapvote_.votes[x.n] + " 份：" + x.reasons.map(function (r) { return "差" + (-r.gap); }).join(" ")
+      : x.reasons.slice().sort(function (a, b) { return b.weight - a.weight; }).slice(0, 4)
+        .map(function (r) { return pad2(r.self) + (r.offset >= 0 ? "+" : "") + r.offset; }).join(" ");
     console.log(String(i + 1).padStart(3) + "    " + pad2(x.n) + "   " + x.score.toFixed(4) + "   " + src + (x.reasons.length > 4 ? " …" : ""));
   });
   console.log("預測號碼：" + pr.topNums.map(pad2).join(" "));
@@ -221,6 +234,7 @@ function main() {
     spareRows: a.spare,
     offsetsChecked: offsetsToChecked(a.offsets),
     anchorStatsCond: a.statsCond ? (a.statsCond === "global" ? "global" : a.statsCond.split(",")) : "global",
+    gapVoteTop: a.voteTop || null,
   };
   var data = Cha.fromRecords(records, opts);
   if (a.target) opts.targetIdx = Cha.idxOfRowNo(data.rows, a.target, Cha.resolveOpts(opts)); // 統一列號 → 索引（49 = rows.length）

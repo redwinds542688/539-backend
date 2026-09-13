@@ -68,7 +68,9 @@
                                // 差6只用回溯裡差6的資料、差5只用差5的（五個記錄的百分比與九宮差排行都只從同桿距的歷史主角算）
     fieldCountMode: "records", // 第 1/2/3/5 個記錄的分布以什麼計數："records"（一筆紀錄一次，中 3 個九宮差算 3 次）或 "subjects"（一顆主角一次）
     predictTop: 5, // predict() 取前幾顆
-    predictMode: "anchor", // predict() 計分規則："anchor"（百分比相加，預設）、"top"（最高值篩選）、"field"（機率相乘）、"condition"（同條件命中率）
+    predictMode: "anchor", // predict() 計分規則："anchor"（百分比相加，預設）、"top"（最高值篩選）、"field"（機率相乘）、"condition"（同條件命中率）、
+                           // "gapvote"（差6統計差6…差1統計差1，6 份預測表各自做，再比哪一號出現的份數最多）、"app"（App 原 6 期掃描前二名）
+    gapVoteTop: null, // gapvote 模式每份表取前幾顆來投票；null = 表內有分數的號碼全部算
   };
 
   function resolveOpts(opts) {
@@ -766,6 +768,50 @@
     return { score: score, reasons: reasons, subjects: subjects, offsetTop: globalTop, statsCond: condFields };
   }
 
+  /**
+   * 桿距投票（gapvote）：差 6 統計差 6 的、差 5 統計差 5 的 … 差 1 統計差 1 的，
+   * 每個桿距各自用「同桿距的回溯主角」做統計、套到「同桿距的即時主角」，得到一份預測表；
+   * 最多 6 份表再比：哪一號出現的份數最多就取哪一號。份數相同時，用各表內分數的總和排先後。
+   * gapVoteTop 限制每份表只拿前幾顆來投票（null = 有分數的全拿）。
+   */
+  function predictByGapVote(live, o, btEntries) {
+    var gaps = [];
+    live.aiEntries.forEach(function (e) { if (gaps.indexOf(e.gap) === -1) gaps.push(e.gap); });
+    gaps.sort(function (a, b) { return b - a; }); // -1, -2, ... -6
+    var sub = {};
+    for (var key in o) sub[key] = o[key];
+    sub.anchorStatsCond = "global"; // 已依桿距切好，不再分桶
+    var tables = gaps.map(function (g) {
+      var subj = live.aiEntries.filter(function (e) { return e.gap === g; });
+      var hist = btEntries.filter(function (e) { return e.gap === g; });
+      var st = aiFieldStats(hist, o);
+      var t = { gap: g, subjects: subj.length, btSubjects: hist.length, hitSubjects: st.hitSubjects, hitRecords: st.hitRecords, empty: st.hitRecords === 0, ranked: [], nums: [], offsetTop: [] };
+      if (t.empty) return t; // 這個桿距的回溯沒有任何命中紀錄 → 這份表空白，不投票
+      var r = predictByAnchor({ aiEntries: subj }, st, sub, hist);
+      t.offsetTop = r.offsetTop;
+      t.anchorSubjects = r.subjects;
+      t.ranked = Object.keys(r.score).map(function (k) { return { n: parseInt(k, 10), score: r.score[k] }; })
+        .filter(function (x) { return x.score > 0; })
+        .sort(function (a, b) { return b.score - a.score || a.n - b.n; });
+      if (o.gapVoteTop) t.ranked = t.ranked.slice(0, o.gapVoteTop);
+      t.nums = t.ranked.map(function (x) { return x.n; });
+      return t;
+    });
+    var votes = {}, sumScore = {}, reasons = {}, total = 0;
+    for (var n = 1; n <= o.maxBall; n++) { votes[n] = 0; sumScore[n] = 0; reasons[n] = []; }
+    tables.forEach(function (t) {
+      t.ranked.forEach(function (x) {
+        votes[x.n]++;
+        sumScore[x.n] += x.score;
+        total += x.score;
+        reasons[x.n].push({ self: null, partner: null, offset: null, gap: t.gap, weight: x.score, note: "gap-vote" });
+      });
+    });
+    var score = {};
+    for (n = 1; n <= o.maxBall; n++) score[n] = votes[n] > 0 ? votes[n] + sumScore[n] / (1 + total) : 0; // 整數部分 = 份數，小數部分只排同份數的先後
+    return { score: score, reasons: reasons, votes: votes, tables: tables, tableCount: tables.filter(function (t) { return !t.empty; }).length };
+  }
+
   function predict(rows, opts, backtestResult) {
     var o = resolveOpts(opts);
     var topN = o.predictTop || 5;
@@ -800,6 +846,12 @@
       score = anchorInfo.score;
       reasons = anchorInfo.reasons;
     }
+    var voteInfo = null;
+    if (mode === "gapvote") {
+      voteInfo = predictByGapVote(live, o, bt.aiEntries);
+      score = voteInfo.score;
+      reasons = voteInfo.reasons;
+    }
     if (mode === "top") {
       topInfo = predictByTop(live, st, o, topN);
       if (topInfo.keptSubjects > 0) {
@@ -810,7 +862,7 @@
         topInfo.fallback = "field";
       }
     }
-    if (effectiveMode !== "top" && effectiveMode !== "anchor" && effectiveMode !== "app") live.aiEntries.forEach(function (e) {
+    if (effectiveMode !== "top" && effectiveMode !== "anchor" && effectiveMode !== "app" && effectiveMode !== "gapvote") live.aiEntries.forEach(function (e) {
       var condW = P("sameRow", e.sameRow) * P("linkDiff", e.linkDiff) * P("rowDist", e.rowDist) * P("gap", e.gap);
       var cond = mode === "condition" ? byCond[aiConditionKey(e)] : null;
       var drag = nineGridDrag(e.self, o.maxBall);
@@ -844,6 +896,7 @@
       hits: known ? topNums.filter(function (n) { return known.indexOf(n) !== -1; }) : null,
       effectiveMode: effectiveMode,
       anchor_: anchorInfo ? { subjects: anchorInfo.subjects, offsetTop: anchorInfo.offsetTop, statsCond: anchorInfo.statsCond, table: score } : null, // 預測統計表 = table
+      gapvote_: voteInfo ? { votes: voteInfo.votes, tables: voteInfo.tables, tableCount: voteInfo.tableCount } : null, // 每個桿距一份預測表 + 份數
       top_: topInfo ? { topValues: topInfo.topValues, matchLevel: topInfo.matchLevel, keptSubjects: topInfo.keptSubjects, offsetRounds: topInfo.offsetRounds, fallback: topInfo.fallback || null } : null,
       backtest: bt,
     };
@@ -923,6 +976,7 @@
     bucketStats: bucketStats,
     backtest: backtest,
     predict: predict,
+    predictByGapVote: predictByGapVote,
     summarize: summarize,
     fromRecords: fromRecords,
   };
