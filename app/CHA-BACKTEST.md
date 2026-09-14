@@ -305,6 +305,8 @@ npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後�
 
 ## 接進 App（長按 Ai 鍵）
 
+> 2026-09-14 使用者指示「C 式差數 統計表都不用顯示」：紀錄法與同差法的 39 格統計表照算、開關狀態照舊，但建好後 `display:none` 不畫在畫面上；畫面上只有 Ai 欄與空白期填號。下面關於「開統計表」的敘述都指這個看不見的狀態。
+
 `app/名揚四海彩卷系統-紀錄法.html` = 使用者 2026-09-13 上傳的 App 原檔 + 三處改動（原檔其餘一字不動）：
 
 1. 第一個 `<script>` 前內嵌整個 `cha-backtest.js`（`window.ChaBacktest`），App 在手機上是單一檔案，不能外連 js。
