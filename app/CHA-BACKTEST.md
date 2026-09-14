@@ -318,7 +318,8 @@ npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後�
    統計表本身只有標題與 39 格，沒有文字說明。
 
 App 目前用 `sweepAll: true`（使用者 2026-09-14 指示「上下桿差 6 到 1 都要加入統計」）：上桿差 1 到差 6 各跑一次紀錄法，
-全部累進同一張 39 格表，畫面上的 A 位置不影響結果，只有 B 決定預測期。
+全部累進同一張 39 格表，畫面上的 A 位置不影響結果，只有 B 決定預測期。回溯次數 `steps: 7`（使用者 2026-09-14 指示「回溯 16 改成 7」，
+回溯 N-1 … N-7）；CLI 與模組預設仍是 16，用 `--steps 7` 可對照。
 
 `appPredict({records, upperDate, lowerDate, blanksBelow, sweepAll, game, span, offsetsChecked, intervals})`：
 B 在空白列時用 `blanksBelow`（B 在最後一期下面第幾列）換算 `targetIdx`；上桿不在已開出的期、上下桿距離超過 6、上桿上面不足搜期都回 `error`。
