@@ -914,6 +914,15 @@ test("appPredict：App 長按 Ai 的入口 = 用日期對應上下桿、空白�
   const s7 = Cha.appPredict({ records: recs, lowerDate: "2026-09-16", sweepAll: true, steps: 7, game: "539" });
   assert.equal(s7.pr.backtest.records.length, 7);
   assert.deepEqual(s7.pr.backtest.records.map((x) => x.lowerIdx), [14, 13, 12, 11, 10, 9, 8]);
+  // spareRows：備用列期數可調；48 次回溯 + 100 期備用列在長資料上每一步都搜得滿
+  const longRecs = [];
+  let sd = 77; const rr = () => { sd = (sd * 1103515245 + 12345) & 0x7fffffff; return sd / 0x7fffffff; };
+  for (let i = 0; i < 200; i++) { const set = new Set(); while (set.size < 5) set.add(1 + Math.floor(rr() * 39)); longRecs.push({ date: "2026-" + String(1 + Math.floor(i / 28)).padStart(2, "0") + "-" + String(1 + (i % 28)).padStart(2, "0"), numbers: [...set].sort((a, b) => a - b) }); }
+  const s48 = Cha.appPredict({ records: longRecs, lowerDate: longRecs[199].date, sweepAll: true, steps: 48, spareRows: 100, game: "539" });
+  assert.equal(s48.error, undefined);
+  assert.equal(s48.pr.backtest.records.length, 48);
+  assert.equal(s48.pr.backtest.opts.spareRows, 100);
+  s48.pr.backtest.records.forEach((x) => assert.equal(x.upperPositions.length, 6));
   // 錯誤情況
   assert.ok(Cha.appPredict({ records: recs, upperDate: "2026-09-17", lowerDate: "2026-09-16" }).error);
   assert.ok(Cha.appPredict({ records: recs, upperDate: "2026-09-16", lowerDate: "2026-09-11" }).error);
