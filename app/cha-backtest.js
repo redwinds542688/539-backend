@@ -1111,6 +1111,7 @@
    *   records     App 的 currentAllData（[{date, numbers}]，空白期 numbers 為 null 會被濾掉）
    *   upperDate   上桿 A 那一列的日期（tr.dataset.date）
    *   lowerDate   下桿 B 那一列的日期；B 在空白列時給 blanksBelow = B 在最後一期下面第幾列（1 = 空白第 1 列）
+   *   sweepAll    true = 上桿差 1 到差 6 全部各跑一次紀錄法、累進同一張統計表（使用者 2026-09-14 指示）；false = 只用 upperDate 那個位置
    *   game / span / offsetsChecked / intervals   App 目前的設定（物件或陣列都可）
    * 回傳 { error } 或 { pr（predict 結果）, table（39 格次數）, upperIdx, lowerIdx, upperDate, lowerDate, gap, histCount }
    */
@@ -1125,27 +1126,30 @@
     var dateIdx = {};
     data.meta.forEach(function (m, i) { dateIdx[String(m.date)] = i; });
     var upperIdx = dateIdx[String(p.upperDate)];
-    if (upperIdx === undefined) return { error: "上桿要放在已開出的期" };
+    if (upperIdx === undefined && !p.sweepAll) return { error: "上桿要放在已開出的期" };
     var lowerIdx = dateIdx[String(p.lowerDate)];
     if (lowerIdx === undefined) {
       var below = parseInt(p.blanksBelow, 10);
       if (!(below >= 1)) return { error: "下桿位置無法對應到資料" };
       lowerIdx = data.rows.length - 1 + below;
     }
-    if (upperIdx >= lowerIdx) return { error: "上桿必須在下桿上面" };
     var ro = resolveOpts(o);
-    if (lowerIdx - upperIdx > ro.sweepCount) return { error: "上下桿距離超過 " + ro.sweepCount + " 期" };
-    if (upperIdx - ro.span < 0) return { error: "上桿上面不足 " + ro.span + " 期" };
+    if (!p.sweepAll) {
+      if (upperIdx >= lowerIdx) return { error: "上桿必須在下桿上面" };
+      if (lowerIdx - upperIdx > ro.sweepCount) return { error: "上下桿距離超過 " + ro.sweepCount + " 期" };
+      if (upperIdx - ro.span < 0) return { error: "上桿上面不足 " + ro.span + " 期" };
+    }
+    if (lowerIdx - 1 - ro.span < 0) return { error: "下桿上面不足 " + (ro.span + 1) + " 期" };
     o.targetIdx = lowerIdx;
-    o.upperIdx = upperIdx;
+    o.upperIdx = p.sweepAll ? null : upperIdx;
     o.predictMode = "records";
     o.predictTop = ro.maxBall;
     o.frameEnd = Math.min(data.rows.length, lowerIdx); // 顯示區以下桿為底
     var pr = predict(data.rows, o);
     return {
-      pr: pr, table: pr.records_.table, upperIdx: upperIdx, lowerIdx: lowerIdx,
-      upperDate: data.meta[upperIdx].date, lowerDate: data.meta[lowerIdx] ? data.meta[lowerIdx].date : p.lowerDate,
-      gap: upperIdx - lowerIdx, histCount: pr.records_.histCount,
+      pr: pr, table: pr.records_.table, upperIdx: p.sweepAll ? null : upperIdx, lowerIdx: lowerIdx,
+      upperDate: p.sweepAll ? null : data.meta[upperIdx].date, lowerDate: data.meta[lowerIdx] ? data.meta[lowerIdx].date : p.lowerDate,
+      gap: p.sweepAll ? null : upperIdx - lowerIdx, positions: pr.records_.positions, histCount: pr.records_.histCount,
       subjects: pr.records_.subjects, actual: pr.actual, hits: pr.hits,
     };
   }

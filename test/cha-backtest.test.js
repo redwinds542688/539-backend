@@ -904,6 +904,12 @@ test("appPredict：App 長按 Ai 的入口 = 用日期對應上下桿、空白�
   const b = Cha.appPredict({ records: recs, upperDate: "2026-09-12", lowerDate: "2026-09-17", blanksBelow: 1, game: "539" });
   assert.equal(b.error, undefined);
   assert.deepEqual([b.upperIdx, b.lowerIdx, b.actual], [11, 16, null]);
+  // sweepAll：上桿差 1~6 全部跑、累進同一張表（等於 predict 不指定 upperIdx）
+  const all = Cha.appPredict({ records: recs, lowerDate: "2026-09-16", sweepAll: true, game: "539" });
+  assert.equal(all.error, undefined);
+  assert.equal(all.positions.length, 6);
+  assert.deepEqual(all.table, Cha.predict(SHOT_ROWS, { predictMode: "records", targetIdx: 15, predictTop: 39 }).records_.table);
+  assert.ok(all.subjects.length > r.subjects.length);
   // 錯誤情況
   assert.ok(Cha.appPredict({ records: recs, upperDate: "2026-09-17", lowerDate: "2026-09-16" }).error);
   assert.ok(Cha.appPredict({ records: recs, upperDate: "2026-09-16", lowerDate: "2026-09-11" }).error);

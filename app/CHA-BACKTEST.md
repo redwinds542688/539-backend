@@ -317,7 +317,10 @@ npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後�
    （`#c-ding-ai-box`，彩球圖下方，每格一列高、底色依次數、左上角次數角標）；關統計表或退出 C 式就清掉。
    統計表本身只有標題與 39 格，沒有文字說明。
 
-`appPredict({records, upperDate, lowerDate, blanksBelow, game, span, offsetsChecked, intervals})`：
+App 目前用 `sweepAll: true`（使用者 2026-09-14 指示「上下桿差 6 到 1 都要加入統計」）：上桿差 1 到差 6 各跑一次紀錄法，
+全部累進同一張 39 格表，畫面上的 A 位置不影響結果，只有 B 決定預測期。
+
+`appPredict({records, upperDate, lowerDate, blanksBelow, sweepAll, game, span, offsetsChecked, intervals})`：
 B 在空白列時用 `blanksBelow`（B 在最後一期下面第幾列）換算 `targetIdx`；上桿不在已開出的期、上下桿距離超過 6、上桿上面不足搜期都回 `error`。
 `test/cha-backtest.test.js` 有對應測試；scratchpad 的 Playwright 冒煙測試確認頁面載入無錯誤、模組與掛勾存在、用 App 內嵌資料能跑出統計表。
 
