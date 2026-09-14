@@ -914,6 +914,14 @@ test("appPredict：App 長按 Ai 的入口 = 用日期對應上下桿、空白�
   const sw = Cha.sweep(SHOT_ROWS, 15, { frameEnd: 15 });
   assert.deepEqual(all.sameOffsetTable, sw.accCounts);
   assert.ok(Object.keys(all.sameOffsetTable).some((k) => all.sameOffsetTable[k] > 0));
+  // appSameOffset：只算同差法（不跑回溯），結果跟 appPredict 的 sameOffsetTable 一樣
+  const so = Cha.appSameOffset({ records: recs, lowerDate: "2026-09-16", game: "539" });
+  assert.deepEqual(so.table, all.sameOffsetTable);
+  assert.equal(so.positions.length, 6);
+  assert.deepEqual(so.actual, SHOT_ROWS[15]);
+  const soBlank = Cha.appSameOffset({ records: recs, lowerDate: "2026-09-17", blanksBelow: 1, game: "539" });
+  assert.equal(soBlank.actual, null);
+  assert.ok(Cha.appSameOffset({ records: [], lowerDate: "x" }).error);
   // steps：回溯次數可調（App 給 7）
   const s7 = Cha.appPredict({ records: recs, lowerDate: "2026-09-16", sweepAll: true, steps: 7, game: "539" });
   assert.equal(s7.pr.backtest.records.length, 7);

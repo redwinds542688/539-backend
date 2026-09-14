@@ -1160,6 +1160,35 @@
     };
   }
 
+  /**
+   * 給 App 用：只算「同差法」統計表（不跑回溯）。上桿差 1..sweepCount 各位置：上桿標定號碼加哪個九宮差落在上桿列，
+   * 對應下桿號碼就加同一個九宮差，累計成 39 格（= App computeCModeChaStatCounts 的 6 期掃描）。
+   * params 同 appPredict（records, lowerDate, blanksBelow, game, span, offsetsChecked, intervals）。
+   */
+  function appSameOffset(params) {
+    var p = params || {};
+    var o = { game: p.game || "539" };
+    if (p.span) o.span = p.span;
+    if (p.offsetsChecked) o.offsetsChecked = p.offsetsChecked;
+    if (p.intervals) o.intervals = p.intervals;
+    var data = fromRecords(p.records || [], o);
+    if (!data.rows.length) return { error: "沒有開獎資料" };
+    var dateIdx = {};
+    data.meta.forEach(function (m, i) { dateIdx[String(m.date)] = i; });
+    var lowerIdx = dateIdx[String(p.lowerDate)];
+    if (lowerIdx === undefined) {
+      var below = parseInt(p.blanksBelow, 10);
+      if (!(below >= 1)) return { error: "下桿位置無法對應到資料" };
+      lowerIdx = data.rows.length - 1 + below;
+    }
+    var ro = resolveOpts(o);
+    if (lowerIdx - 1 - ro.span < 0) return { error: "下桿上面不足 " + (ro.span + 1) + " 期" };
+    o.frameEnd = Math.min(data.rows.length, lowerIdx);
+    var sw = sweep(data.rows.slice(0, lowerIdx), lowerIdx, o);
+    return { table: sw.accCounts, positions: sw.positions, lowerIdx: lowerIdx, lowerDate: data.meta[lowerIdx] ? data.meta[lowerIdx].date : p.lowerDate,
+      actual: lowerIdx < data.rows.length ? data.rows[lowerIdx] : null };
+  }
+
   return {
     NINE_GRID_DRAG_OFFSETS: NINE_GRID_DRAG_OFFSETS,
     GAME_PROFILES: GAME_PROFILES,
@@ -1199,5 +1228,6 @@
     summarize: summarize,
     fromRecords: fromRecords,
     appPredict: appPredict,
+    appSameOffset: appSameOffset,
   };
 });
