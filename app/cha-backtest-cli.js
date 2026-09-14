@@ -47,6 +47,7 @@ function parseArgs(argv) {
     else if (k === "--stats-cond") { a.statsCond = v; i++; }
     else if (k === "--vote-top") { a.voteTop = parseInt(v, 10); i++; }
     else if (k === "--app-table") a.appTable = true;
+    else if (k === "--records") a.records = true;
     else if (k === "--ai-detail") { a.ai = true; a.aiDetail = true; }
     else if (k === "--demo") a.demo = true;
     else if (k === "--help" || k === "-h") { a.help = true; }
@@ -84,6 +85,7 @@ function demoRecords(count, game, seed) {
 function pad2(n) { return String(n).padStart(2, "0"); }
 
 function fmtOff(o) { return o === "x" || o === null ? String(o) : (o > 0 ? "+" + o : String(o)); }
+function fmtSigned(o) { return o >= 0 ? "+" + o : String(o); } // 算式用：0 也印 +0
 
 /** 全形/半形混排的固定寬度：中文算 2 格 */
 function padW(str, width) {
@@ -148,6 +150,39 @@ function printReport(result) {
   var steps = {}; result.aiEntries.forEach(function (e) { steps[e.lowerIdx] = true; });
   console.log(padW("全部", 6) + padW(Object.keys(steps).length + "次", 7) + padW(String(result.aiEntries.length), 6) + padW(String(all.hitSubjects), 6) + padW(String(all.hitRecords), 6) +
     padW(topStr(all.fields, "sameRow"), 14) + padW(topStr(all.fields, "linkDiff"), 14) + padW(topStr(all.fields, "rowDist"), 14) + padW(topStr(all.fields, "offset", 3), 26) + topStr(all.fields, "gap", 3));
+}
+
+/** 回溯紀錄：每一次回溯、每個桿差，列出每一顆上桿標定號碼的 [桿距, 位置, 上桿命中, 下桿命中] */
+function printUpperRecords(result) {
+  var o = result.opts;
+  var meta = result.meta || [];
+  var dateOf = function (idx) { return meta[idx] && meta[idx].date ? meta[idx].date.slice(5) : "--"; };
+  var rowOf = function (idx) { return Cha.rowNo(result.rows, idx, o); };
+  console.log("");
+  console.log("回溯紀錄  一筆 = 一顆上桿標定號碼 × 上桿命中的九宮差 × 下桿命中的九宮差；任一邊沒命中不記；上下桿同號（回音）照記");
+  console.log("紀錄1 桿距 = 上桿在下桿上幾期；紀錄2 位置 = 標定號碼在上桿上幾期；紀錄3 = 標定號碼加哪個九宮差落在上桿列；紀錄4 = 對應下桿號碼加哪個九宮差落在下桿列（真實的果）");
+  var total = 0, sameTotal = 0;
+  result.records.forEach(function (r) {
+    if (!r.upperPositions.length) return;
+    console.log("");
+    console.log("回溯 " + r.t + "  下桿第 " + r.lowerRowNo + " 列 " + dateOf(r.lowerIdx) + "（真實的果 " + r.actual.map(pad2).join(" ") + "）");
+    r.steps.slice().sort(function (a, b) { return a.upperIdx - b.upperIdx; }).forEach(function (st) {
+      var gap = st.upperIdx - r.lowerIdx;
+      var upperRow = result.rows[st.upperIdx].slice(0, o.colCount);
+      var recs = st.upperRecords;
+      console.log("  桿差 " + (-gap) + "  上桿第 " + rowOf(st.upperIdx) + " 列 " + dateOf(st.upperIdx) + "（" + upperRow.map(pad2).join(" ") + "）  標定連線 " + st.pairs.length + " 組  紀錄 " + recs.length + " 筆" +
+        (recs.length ? "" : (st.pairs.length ? "（都沒命中）" : "（沒有標定）")));
+      recs.forEach(function (e) {
+        total++; if (e.same) sameTotal++;
+        console.log("    " + pad2(e.upperNum) + "(" + dateOf(e.upperRow) + ") 上桿" + fmtOff(-e.k) + "  對應 " + pad2(e.lowerNum) + "(" + dateOf(e.lowerRow) + ")   " +
+          "[" + [fmtOff(e.r1), fmtOff(e.r2), fmtOff(e.r3), fmtOff(e.r4)].join(", ") + "]   " +
+          pad2(e.upperNum) + fmtSigned(e.r3) + "=" + pad2(e.r3Num) + "  " + pad2(e.lowerNum) + fmtSigned(e.r4) + "=" + pad2(e.r4Num) +
+          (e.same ? "  ★同" : "") + (e.echo ? "  回音" : ""));
+      });
+    });
+  });
+  console.log("");
+  console.log("合計 " + total + " 筆，紀錄3 = 紀錄4 的有 " + sameTotal + " 筆");
 }
 
 /** App 原本的 6 期掃描統計（預期的果 = 前二名補第三名） */
@@ -303,8 +338,10 @@ function main() {
     return;
   }
   result.rows = data.rows;
+  result.meta = data.meta;
   printReport(result);
   if (a.appTable) printAppTable(result);
+  if (a.records) printUpperRecords(result);
   if (a.ai) printAi(result, a.aiDetail);
   if (a.predict) printPredict(Cha.predict(data.rows, opts, result), a.anchorDetail);
 }

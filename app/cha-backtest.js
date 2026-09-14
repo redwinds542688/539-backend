@@ -451,6 +451,60 @@
     return out;
   }
 
+  /**
+   * 回溯紀錄（使用者 2026-09-14 定義）：以每一顆「上桿側標定號碼」為主，四個紀錄：
+   *   紀錄1 桿距   = 上桿在下桿的上幾期（upperIdx − lowerIdx，例 −6）
+   *   紀錄2 位置   = 這顆標定號碼在上桿的上幾期（−k）
+   *   紀錄3 上桿命中 = 這顆標定號碼加哪個九宮差會落在「上桿那一列」
+   *   紀錄4 下桿命中 = 下桿側同 k 同欄的對應號碼加哪個九宮差會落在「下桿那一列」（真實的果）
+   * 規則：紀錄3 命中 m 個、紀錄4 命中 n 個 → 拆成 m×n 筆；任一邊沒命中 → 整筆不記；
+   *       上下桿同號（回音）照記；同一顆標定號碼在幾條連線裡都只以那一格算一次。
+   * 下桿列（actualLower）未知時回傳空陣列（預測期不算）。
+   */
+  function upperRecords(rows, upperIdx, lowerIdx, actualLower, opts) {
+    var o = resolveOpts(opts);
+    if (!actualLower) return [];
+    var m = markCha(rows, upperIdx, lowerIdx, o);
+    var upperRow = rowCells(rows, upperIdx, lowerIdx, o);
+    if (!upperRow) return [];
+    function hits(num, targetRow) {
+      var drag = nineGridDrag(num, o.maxBall), out = [];
+      for (var pos = 0; pos < NINE_GRID_DRAG_OFFSETS.length; pos++) {
+        if (!o.offsetsChecked[pos]) continue;
+        if (targetRow.indexOf(drag[pos]) !== -1) out.push({ offset: NINE_GRID_DRAG_OFFSETS[pos], num: drag[pos] });
+      }
+      return out;
+    }
+    var cells = {}, order = [];
+    m.pairs.forEach(function (pair) {
+      for (var side = 0; side < 2; side++) {
+        var k = side === 0 ? pair.k1 : pair.k2, col = side === 0 ? pair.col1 : pair.col2;
+        var key = pair.upperRows[side] + ":" + col;
+        var link = { upper: pair.upper, lower: pair.lower, diff: pair.diff };
+        if (cells[key]) { cells[key].links.push(link); continue; }
+        cells[key] = { k: k, col: col, upperNum: pair.upper[side], upperRow: pair.upperRows[side], lowerNum: pair.lower[side], lowerRow: pair.lowerRows[side], links: [link] };
+        order.push(key);
+      }
+    });
+    var out = [];
+    order.forEach(function (key) {
+      var c = cells[key];
+      var h3 = hits(c.upperNum, upperRow), h4 = hits(c.lowerNum, actualLower);
+      if (!h3.length || !h4.length) return; // 沒命中整筆不記
+      h3.forEach(function (a) {
+        h4.forEach(function (b) {
+          out.push({
+            upperIdx: upperIdx, lowerIdx: lowerIdx, gap: upperIdx - lowerIdx, k: c.k, col: c.col,
+            upperNum: c.upperNum, upperRow: c.upperRow, lowerNum: c.lowerNum, lowerRow: c.lowerRow,
+            r1: upperIdx - lowerIdx, r2: -c.k, r3: a.offset, r3Num: a.num, r4: b.offset, r4Num: b.num,
+            same: a.offset === b.offset, echo: c.upperNum === c.lowerNum, links: c.links,
+          });
+        });
+      });
+    });
+    return out;
+  }
+
   /** 6期掃描（App 長按差數鍵）：逐位置跑 runSingle，次數加總；同時產生差數ai統計的 entries。 */
   function sweep(rows, lowerIdx, opts) {
     var o = resolveOpts(opts);
@@ -458,6 +512,7 @@
     var acc = emptyCounts(o.maxBall);
     var steps = [];
     var aiEntries = [];
+    var upperEntries = [];
     // 下桿列真正開出的號碼：回測時存在；實際預測（下桿在空白期、lowerIdx 超出 rows）時為 null
     var actual = lowerIdx < rows.length && rows[lowerIdx] ? rows[lowerIdx].slice(0, o.colCount) : null;
     positions.forEach(function (u) {
@@ -465,6 +520,8 @@
       addCounts(acc, r.counts);
       r.aiEntries = aiRecords(rows, u, lowerIdx, actual, o);
       aiEntries = aiEntries.concat(r.aiEntries);
+      r.upperRecords = upperRecords(rows, u, lowerIdx, actual, o);
+      upperEntries = upperEntries.concat(r.upperRecords);
       steps.push(r);
     });
     var usage = spareUsage(rows, positions, o);
@@ -472,6 +529,7 @@
       lowerIdx: lowerIdx, positions: positions, accCounts: acc, steps: steps,
       earliestIdx: usage.earliestIdx, spareRowsUsed: usage.spareRowsUsed,
       aiEntries: aiEntries,
+      upperRecords: upperEntries, // 回溯紀錄（上桿標定號碼為主的四個紀錄）
     };
   }
 
@@ -552,6 +610,7 @@
         accCounts: sw.accCounts,
         steps: sw.steps,
         aiEntries: sw.aiEntries, // 差數ai統計：這次回測所有連線主角的紀錄（含命中的九宮差）
+        upperRecords: sw.upperRecords, // 回溯紀錄：這次回測所有上桿標定號碼的 [桿距, 位置, 上桿命中, 下桿命中]
         predicted: predicted,
         predictedNums: predicted.map(function (p) { return p.n; }),
         actual: actual,
@@ -567,8 +626,8 @@
       }
       records.push(record);
     }
-    var allAi = [];
-    records.forEach(function (r) { allAi = allAi.concat(r.aiEntries); });
+    var allAi = [], allUpper = [];
+    records.forEach(function (r) { allAi = allAi.concat(r.aiEntries); allUpper = allUpper.concat(r.upperRecords); });
     return {
       records: records,
       summary: summarize(records),
@@ -577,6 +636,7 @@
       byGap: gapFieldStats(allAi, o), // 差 1 … 差 6 各自的統計（差 6 只算差 6 的）
       offsetByPairDiff: offsetCrossTable(allAi, "pairDiff"), // 九宮差比對表：+11 的標定往往加哪個九宮差會中
       aiEntries: allAi,
+      upperRecords: allUpper, // 全部回溯的回溯紀錄
       opts: o,
       targetIdx: target,
       frame: {
@@ -983,6 +1043,7 @@
     sweep: sweep,
     topRankList: topRankList,
     aiRecords: aiRecords,
+    upperRecords: upperRecords,
     flattenAiRecords: flattenAiRecords,
     aiConditionKey: aiConditionKey,
     aggregateAi: aggregateAi,

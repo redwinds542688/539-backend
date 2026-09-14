@@ -816,3 +816,37 @@ test("predict：gapvote 模式 = 差6統計差6…差1統計差1，6 份預測�
   const all = Cha.predict(SHOT32_ROWS, { predictMode: "gapvote" }, bt);
   all.gapvote_.tables.forEach((t) => assert.equal(t.nums.length, t.ranked.length));
 });
+
+test("upperRecords：回溯紀錄（上桿標定號碼為主）= 使用者用截圖手算的回溯第 1 期桿差 6 共 11 筆", () => {
+  // 下桿 09-11（idx14）、上桿 09-04（idx8），真實的果 = 09-11
+  const recs = Cha.upperRecords(SHOT_ROWS, 8, 14, SHOT_ROWS[14], {});
+  const flat = recs.map((e) => [e.upperNum, e.lowerNum, e.r1, e.r2, e.r3, e.r4]);
+  assert.deepEqual(flat, [
+    [7, 5, -6, -2, 10, 10],   // 07+10=17 在上桿列、05+10=15 在下桿列
+    [8, 6, -6, -2, 9, 9],
+    [23, 28, -6, -5, 1, -1],
+    [33, 38, -6, -5, -9, -11],
+    [33, 38, -6, -5, 10, -11], // 33 上桿命中兩個 → 拆兩筆
+    [3, 3, -6, -5, -1, 9],     // 03 上桿命中兩個 → 拆兩筆；上下同號（回音）照記
+    [3, 3, -6, -5, 1, 9],
+    [2, 2, -6, -6, 0, 10],
+    [4, 4, -6, -6, 0, 11],
+    [4, 4, -6, -6, 11, 11],
+    [12, 17, -6, -6, -10, 10],
+  ]);
+  assert.equal(recs.filter((e) => e.same).length, 3);
+  assert.equal(recs.filter((e) => e.echo).length, 5);
+  // 沒命中整筆不記：拿一個讓下桿全部不中的假答案 → 0 筆
+  assert.equal(Cha.upperRecords(SHOT_ROWS, 8, 14, [20, 21, 22, 23, 24], {}).length, 0); // 八顆對應下桿號碼的九宮拖牌都碰不到 20~24
+  // 3 命中 × 2 命中 = 6 筆（回溯 1 桿差 2 的 18(09-02)）：紀錄3 三個、紀錄4 三個 → 9 筆
+  const g2 = Cha.upperRecords(SHOT_ROWS, 12, 14, SHOT_ROWS[14], {}).filter((e) => e.upperNum === 18);
+  assert.equal(g2.length, 9);
+  assert.deepEqual([...new Set(g2.map((e) => e.r3))], [-10, 10, 11]);
+  assert.deepEqual([...new Set(g2.map((e) => e.r4))], [-9, -1, 1]);
+  // 預測期（答案未知）不產生紀錄
+  assert.deepEqual(Cha.upperRecords(SHOT_ROWS, 10, 16, null, {}), []);
+  // backtest 會把每次回溯的紀錄掛在 record.upperRecords，並彙整到 result.upperRecords
+  const bt = Cha.backtest(SHOT_ROWS, { targetIdx: 15 });
+  assert.equal(bt.records[0].upperRecords.filter((e) => e.gap === -6).length, 11);
+  assert.equal(bt.upperRecords.length, bt.records.reduce((a, r) => a + r.upperRecords.length, 0));
+});
