@@ -434,6 +434,23 @@
     return out;
   }
 
+  /**
+   * 各桿距分開的回溯統計：差 1 只算差 1 的、差 6 只算差 6 的。
+   * 回傳 [{ gap, steps（幾次回測有這個桿距）, subjects, hitSubjects, hitRecords, fields }]，桿距由 -1 到 -sweepCount。
+   */
+  function gapFieldStats(entries, opts) {
+    var o = resolveOpts(opts);
+    var out = [];
+    for (var g = -1; g >= -o.sweepCount; g--) {
+      var sub = entries.filter(function (e) { return e.gap === g; });
+      var lowers = {};
+      sub.forEach(function (e) { lowers[e.lowerIdx] = true; });
+      var st = aiFieldStats(sub, o);
+      out.push({ gap: g, steps: Object.keys(lowers).length, subjects: sub.length, hitSubjects: st.hitSubjects, hitRecords: st.hitRecords, fields: st.fields });
+    }
+    return out;
+  }
+
   /** 6期掃描（App 長按差數鍵）：逐位置跑 runSingle，次數加總；同時產生差數ai統計的 entries。 */
   function sweep(rows, lowerIdx, opts) {
     var o = resolveOpts(opts);
@@ -557,6 +574,7 @@
       summary: summarize(records),
       ai: aggregateAi(allAi),
       aiFields: aiFieldStats(allAi, o), // 五個記錄各自的機率分布與最高值
+      byGap: gapFieldStats(allAi, o), // 差 1 … 差 6 各自的統計（差 6 只算差 6 的）
       offsetByPairDiff: offsetCrossTable(allAi, "pairDiff"), // 九宮差比對表：+11 的標定往往加哪個九宮差會中
       aiEntries: allAi,
       opts: o,
@@ -972,6 +990,7 @@
     offsetCrossTable: offsetCrossTable,
     AI_FIELDS: AI_FIELDS,
     aiFieldStats: aiFieldStats,
+    gapFieldStats: gapFieldStats,
     statsCondFields: statsCondFields,
     bucketStats: bucketStats,
     backtest: backtest,

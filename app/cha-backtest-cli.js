@@ -46,6 +46,7 @@ function parseArgs(argv) {
     else if (k === "--anchor-detail") { a.predict = true; a.anchorDetail = true; }
     else if (k === "--stats-cond") { a.statsCond = v; i++; }
     else if (k === "--vote-top") { a.voteTop = parseInt(v, 10); i++; }
+    else if (k === "--app-table") a.appTable = true;
     else if (k === "--ai-detail") { a.ai = true; a.aiDetail = true; }
     else if (k === "--demo") a.demo = true;
     else if (k === "--help" || k === "-h") { a.help = true; }
@@ -82,16 +83,77 @@ function demoRecords(count, game, seed) {
 
 function pad2(n) { return String(n).padStart(2, "0"); }
 
+function fmtOff(o) { return o === "x" || o === null ? String(o) : (o > 0 ? "+" + o : String(o)); }
+
+/** 全形/半形混排的固定寬度：中文算 2 格 */
+function padW(str, width) {
+  var s = String(str), w = 0;
+  for (var i = 0; i < s.length; i++) w += s.charCodeAt(i) > 255 ? 2 : 1;
+  return w >= width ? s : s + new Array(width - w + 1).join(" ");
+}
+
+/**
+ * 回溯統計表：
+ *   下桿在預測期 N（= 錨定期），回溯 N-1 … N-16。每一次回測下桿那一列只當「真實的果」對答案，不進計算；
+ *   標定與統計只讀它上面的列（搜尋範圍欄）。
+ */
 function printReport(result) {
   var o = result.opts;
+  var f = result.frame;
   var offsetsOn = Cha.NINE_GRID_DRAG_OFFSETS.filter(function (_, i) { return o.offsetsChecked[i]; });
-  console.log("C式差數 回測  彩券=" + o.game + "  球數=" + o.maxBall + "  搜期=" + o.span +
-    "  掃描=" + o.sweepCount + "位置  顯示區=" + o.windowSize + "期  備用列=" + o.spareRows + "期  偏移=" + offsetsOn.join(","));
-  console.log("列號：備用列 " + result.frame.spareRowNo[0] + "~" + result.frame.spareRowNo[1] + "、顯示區 " +
-    result.frame.visibleRowNo[0] + "~" + result.frame.visibleRowNo[1] + "、空白第 1 列 " + (result.frame.visibleRowNo[1] + 1) +
-    "   預測期(錨定期)=第 " + result.frame.targetRowNo + " 列  回溯=" + result.frame.stepsRun + "次（下桿從第 " +
-    result.frame.firstLowerRowNo + " 列往上到第 " + result.frame.lastLowerRowNo + " 列）");
+  var rowOf = function (idx) { return Cha.rowNo(result.rows, idx, o); };
+  console.log("C式差數 回溯統計表  彩券=" + o.game + "  球數=" + o.maxBall + "  搜期=" + o.span + "  上桿掃描=" + o.sweepCount + "位置（差1~差" + o.sweepCount + "）  偏移=" + offsetsOn.join(","));
+  console.log("列號：備用列 " + f.spareRowNo[0] + "~" + f.spareRowNo[1] + "、顯示區 " + f.visibleRowNo[0] + "~" + f.visibleRowNo[1] + "、空白第 1 列 " + (f.visibleRowNo[1] + 1) +
+    "   預測期(錨定期)=第 " + f.targetRowNo + " 列   回溯 " + f.stepsRun + " 次：第 " + f.firstLowerRowNo + " 列 → 第 " + f.lastLowerRowNo + " 列");
+  console.log("規則：下桿在哪一列，那一列就不進計算，只當真實的果對答案；標定與統計只讀搜尋範圍內的列。");
   console.log("");
+  console.log(padW("回溯", 5) + padW("下桿列", 7) + padW("日期", 7) + padW("上桿位置(桿距)", 25) + padW("搜尋範圍 下桿側/上桿側", 24) + padW("標定", 5) + padW("主角", 5) + padW("有中", 5) + padW("紀錄", 5) + padW("真實的果", 16) + "命中號碼(幾顆主角推到)");
+  result.records.forEach(function (r) {
+    var date = r.meta && r.meta.date ? r.meta.date.slice(5) : "-";
+    var ups = r.upperPositions.length ? r.upperPositions.map(function (u) { return "差" + (r.lowerIdx - u); }).join(" ") : "(上桿往上搜不滿" + o.span + "期)";
+    var range = "-";
+    if (r.upperPositions.length) {
+      var lowestUpper = Math.max.apply(null, r.upperPositions);
+      var highestUpper = Math.min.apply(null, r.upperPositions);
+      // 下桿側：lowerIdx-1 … lowerIdx-span；上桿側：最低上桿-1 … 最高上桿-span
+      range = rowOf(r.lowerIdx - 1) + "~" + rowOf(r.lowerIdx - o.span) + " / " + rowOf(lowestUpper - 1) + "~" + rowOf(highestUpper - o.span);
+    }
+    var pairs = {};
+    r.aiEntries.forEach(function (e) { pairs[e.upperIdx + ":" + e.upperPair.join("-") + ":" + [e.self, e.partner].sort().join("-")] = true; });
+    var hitSubjects = r.aiEntries.filter(function (e) { return e.hits && e.hits.length; });
+    var recs = 0; hitSubjects.forEach(function (e) { recs += e.hits.length; });
+    var byNum = {};
+    hitSubjects.forEach(function (e) {
+      var drag = Cha.nineGridDrag(e.self, o.maxBall);
+      e.hits.forEach(function (h) { var n = drag[Cha.NINE_GRID_DRAG_OFFSETS.indexOf(h)]; byNum[n] = (byNum[n] || 0) + 1; });
+    });
+    var hitNums = Object.keys(byNum).map(function (k) { return { n: +k, c: byNum[k] }; }).sort(function (a, b) { return b.c - a.c || a.n - b.n; })
+      .map(function (x) { return pad2(x.n) + "(" + x.c + ")"; }).join(" ") || "-";
+    console.log(padW(String(r.t), 5) + padW(String(r.lowerRowNo), 7) + padW(date, 7) + padW(ups, 25) + padW(range, 24) +
+      padW(String(Object.keys(pairs).length), 5) + padW(String(r.aiEntries.length), 5) + padW(String(hitSubjects.length), 5) + padW(String(recs), 5) +
+      padW(r.actual.map(pad2).join(" "), 16) + hitNums);
+  });
+  console.log("");
+  console.log("各桿距分開統計（差 6 只算差 6 的）  最高值(佔有中紀錄的 %)");
+  console.log(padW("桿距", 6) + padW("有資料", 7) + padW("主角", 6) + padW("有中", 6) + padW("紀錄", 6) + padW("同列", 14) + padW("連線差", 14) + padW("列距", 14) + padW("九宮差前三", 26) + "桿距");
+  function topStr(fs, key, n) {
+    var list = fs[key].list.slice(0, n || 1);
+    return list.map(function (x) { return fmtOff(x.value) + " " + (x.prob * 100).toFixed(0) + "%"; }).join(" ") || "-";
+  }
+  result.byGap.forEach(function (g) {
+    console.log(padW("差" + (-g.gap), 6) + padW(g.steps + "次", 7) + padW(String(g.subjects), 6) + padW(String(g.hitSubjects), 6) + padW(String(g.hitRecords), 6) +
+      padW(topStr(g.fields, "sameRow"), 14) + padW(topStr(g.fields, "linkDiff"), 14) + padW(topStr(g.fields, "rowDist"), 14) + padW(topStr(g.fields, "offset", 3), 26) + topStr(g.fields, "gap"));
+  });
+  var all = result.aiFields;
+  var steps = {}; result.aiEntries.forEach(function (e) { steps[e.lowerIdx] = true; });
+  console.log(padW("全部", 6) + padW(Object.keys(steps).length + "次", 7) + padW(String(result.aiEntries.length), 6) + padW(String(all.hitSubjects), 6) + padW(String(all.hitRecords), 6) +
+    padW(topStr(all.fields, "sameRow"), 14) + padW(topStr(all.fields, "linkDiff"), 14) + padW(topStr(all.fields, "rowDist"), 14) + padW(topStr(all.fields, "offset", 3), 26) + topStr(all.fields, "gap", 3));
+}
+
+/** App 原本的 6 期掃描統計（預期的果 = 前二名補第三名） */
+function printAppTable(result) {
+  console.log("");
+  console.log("App 原邏輯（6 期掃描累計，取前二名不足補第三名）");
   console.log("回溯  列號 日期        上桿位置        備用  預期的果(號碼×次數)                          真實的果             命中");
   result.records.forEach(function (r) {
     var date = r.meta && r.meta.date ? r.meta.date : "-";
@@ -105,14 +167,10 @@ function printReport(result) {
     );
   });
   var s = result.summary;
-  console.log("");
-  console.log("合計：跑 " + s.runs + " 次，" + s.runsWithPrediction + " 次有預期號碼，" + s.runsWithHit + " 次至少命中 1 顆");
-  console.log("預期號碼總數 " + s.totalPredicted + "，命中 " + s.totalHits + " 顆，命中率 " + (s.hitRate * 100).toFixed(1) + "%");
-  console.log("純機率基準：同樣顆數隨機挑平均會中 " + s.totalExpectedRandomHits.toFixed(2) + " 顆（" +
-    (s.randomRate * 100).toFixed(1) + "%），提升倍數 " + s.lift.toFixed(2));
+  console.log("合計：跑 " + s.runs + " 次，" + s.runsWithPrediction + " 次有預期號碼，" + s.runsWithHit + " 次至少命中 1 顆；預期號碼 " + s.totalPredicted + " 顆，命中 " + s.totalHits + " 顆，命中率 " +
+    (s.hitRate * 100).toFixed(1) + "%（純機率 " + (s.randomRate * 100).toFixed(1) + "%，提升 " + s.lift.toFixed(2) + "）");
 }
 
-function fmtOff(o) { return o === "x" || o === null ? String(o) : (o > 0 ? "+" + o : String(o)); }
 
 function printAi(result, detail) {
   var agg = result.ai;
@@ -244,7 +302,9 @@ function main() {
     console.log(JSON.stringify(result, function (k, v) { return v instanceof Set ? Array.from(v) : v; }, 2));
     return;
   }
+  result.rows = data.rows;
   printReport(result);
+  if (a.appTable) printAppTable(result);
   if (a.ai) printAi(result, a.aiDetail);
   if (a.predict) printPredict(Cha.predict(data.rows, opts, result), a.anchorDetail);
 }
