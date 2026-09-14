@@ -320,7 +320,7 @@ npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後�
    桿子落定後（App 原本重算掃描表的同一個地方）自動再跑一次長按 Ai 的功能。
 
 App 目前用 `sweepAll: true`（使用者 2026-09-14 指示「上下桿差 6 到 1 都要加入統計」）：上桿差 1 到差 6 各跑一次紀錄法，
-全部累進同一張 39 格表，畫面上的 A 位置不影響結果，只有 B 決定預測期。回溯次數 `steps: 48`、備用列 `spareRows: 100`（使用者 2026-09-14 指示；回溯 N-1 … N-48，不夠往備用列讀）；CLI 與模組預設仍是 16，用 `--steps 7` 可對照。
+全部累進同一張 39 格表，畫面上的 A 位置不影響結果，只有 B 決定預測期。回溯次數 `steps: 100`、備用列 `spareRows: 96`（使用者 2026-09-14 指示；16+96 = 112 列，回溯第 100 次差 6 的上桿往上搜 6 期剛好到備用列第 1 期）；CLI 與模組預設仍是 16，用 `--steps 7` 可對照。
 
 `appPredict({records, upperDate, lowerDate, blanksBelow, sweepAll, game, span, offsetsChecked, intervals})`：
 B 在空白列時用 `blanksBelow`（B 在最後一期下面第幾列）換算 `targetIdx`；上桿不在已開出的期、上下桿距離超過 6、上桿上面不足搜期都回 `error`。

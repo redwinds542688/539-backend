@@ -1111,8 +1111,8 @@
    *   records     App 的 currentAllData（[{date, numbers}]，空白期 numbers 為 null 會被濾掉）
    *   upperDate   上桿 A 那一列的日期（tr.dataset.date）
    *   lowerDate   下桿 B 那一列的日期；B 在空白列時給 blanksBelow = B 在最後一期下面第幾列（1 = 空白第 1 列）
-   *   steps       回溯幾次（不給用預設 16；App 長按 Ai 給 48）
-   *   spareRows   備用列期數（不給用預設 32；App 長按 Ai 給 100）
+   *   steps       回溯幾次（不給用預設 16；App 長按 Ai 給 100）
+   *   spareRows   備用列期數（不給用預設 32；App 長按 Ai 給 96）
    *   sweepAll    true = 上桿差 1 到差 6 全部各跑一次紀錄法、累進同一張統計表（使用者 2026-09-14 指示）；false = 只用 upperDate 那個位置
    *   game / span / offsetsChecked / intervals   App 目前的設定（物件或陣列都可）
    * 回傳 { error } 或 { pr（predict 結果）, table（39 格次數）, upperIdx, lowerIdx, upperDate, lowerDate, gap, histCount }
@@ -1120,8 +1120,8 @@
   function appPredict(params) {
     var p = params || {};
     var o = { game: p.game || "539" };
-    if (p.steps) o.steps = p.steps; // 回溯幾次（App 目前給 48：回溯 N-1 … N-48）
-    if (p.spareRows) o.spareRows = p.spareRows; // 備用列期數（App 目前給 100）
+    if (p.steps) o.steps = p.steps; // 回溯幾次（App 目前給 100：回溯 N-1 … N-100）
+    if (p.spareRows) o.spareRows = p.spareRows; // 備用列期數（App 目前給 96：16+96=112 列，剛好撐 100 次回溯差 6 搜滿）
     if (p.span) o.span = p.span;
     if (p.offsetsChecked) o.offsetsChecked = p.offsetsChecked;
     if (p.intervals) o.intervals = p.intervals;
