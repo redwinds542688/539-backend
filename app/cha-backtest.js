@@ -1105,6 +1105,51 @@
     return { rows: rows, meta: meta };
   }
 
+  /**
+   * 給 App 用的入口（長按 Ai 鍵）：把 App 目前的資料與上下桿位置換成 predict() 的參數，跑紀錄法。
+   * params：
+   *   records     App 的 currentAllData（[{date, numbers}]，空白期 numbers 為 null 會被濾掉）
+   *   upperDate   上桿 A 那一列的日期（tr.dataset.date）
+   *   lowerDate   下桿 B 那一列的日期；B 在空白列時給 blanksBelow = B 在最後一期下面第幾列（1 = 空白第 1 列）
+   *   game / span / offsetsChecked / intervals   App 目前的設定（物件或陣列都可）
+   * 回傳 { error } 或 { pr（predict 結果）, table（39 格次數）, upperIdx, lowerIdx, upperDate, lowerDate, gap, histCount }
+   */
+  function appPredict(params) {
+    var p = params || {};
+    var o = { game: p.game || "539" };
+    if (p.span) o.span = p.span;
+    if (p.offsetsChecked) o.offsetsChecked = p.offsetsChecked;
+    if (p.intervals) o.intervals = p.intervals;
+    var data = fromRecords(p.records || [], o);
+    if (!data.rows.length) return { error: "沒有開獎資料" };
+    var dateIdx = {};
+    data.meta.forEach(function (m, i) { dateIdx[String(m.date)] = i; });
+    var upperIdx = dateIdx[String(p.upperDate)];
+    if (upperIdx === undefined) return { error: "上桿要放在已開出的期" };
+    var lowerIdx = dateIdx[String(p.lowerDate)];
+    if (lowerIdx === undefined) {
+      var below = parseInt(p.blanksBelow, 10);
+      if (!(below >= 1)) return { error: "下桿位置無法對應到資料" };
+      lowerIdx = data.rows.length - 1 + below;
+    }
+    if (upperIdx >= lowerIdx) return { error: "上桿必須在下桿上面" };
+    var ro = resolveOpts(o);
+    if (lowerIdx - upperIdx > ro.sweepCount) return { error: "上下桿距離超過 " + ro.sweepCount + " 期" };
+    if (upperIdx - ro.span < 0) return { error: "上桿上面不足 " + ro.span + " 期" };
+    o.targetIdx = lowerIdx;
+    o.upperIdx = upperIdx;
+    o.predictMode = "records";
+    o.predictTop = ro.maxBall;
+    o.frameEnd = Math.min(data.rows.length, lowerIdx); // 顯示區以下桿為底
+    var pr = predict(data.rows, o);
+    return {
+      pr: pr, table: pr.records_.table, upperIdx: upperIdx, lowerIdx: lowerIdx,
+      upperDate: data.meta[upperIdx].date, lowerDate: data.meta[lowerIdx] ? data.meta[lowerIdx].date : p.lowerDate,
+      gap: upperIdx - lowerIdx, histCount: pr.records_.histCount,
+      subjects: pr.records_.subjects, actual: pr.actual, hits: pr.hits,
+    };
+  }
+
   return {
     NINE_GRID_DRAG_OFFSETS: NINE_GRID_DRAG_OFFSETS,
     GAME_PROFILES: GAME_PROFILES,
@@ -1143,5 +1188,6 @@
     predictByGapVote: predictByGapVote,
     summarize: summarize,
     fromRecords: fromRecords,
+    appPredict: appPredict,
   };
 });

@@ -887,3 +887,26 @@ test("predict：records 紀錄法 = 上桿標定號碼的紀錄1/2/3 到回溯�
   const prAll = Cha.predict(SHOT_ROWS, { predictMode: "records", targetIdx: 15 });
   assert.equal(prAll.records_.positions.length, 6);
 });
+
+test("appPredict：App 長按 Ai 的入口 = 用日期對應上下桿、空白列用 blanksBelow，跑紀錄法", () => {
+  const recs = SHOT_ROWS.map((n, i) => ({ date: "2026-09-" + String(i + 1).padStart(2, "0"), numbers: n }));
+  recs.push({ date: "2026-09-17", numbers: null }); // 空白期會被濾掉
+  // 上桿 = 第 11 筆（idx10）、下桿 = 第 16 筆（idx15）：跟截圖真正位置一樣，桿差 -5
+  const r = Cha.appPredict({ records: recs, upperDate: "2026-09-11", lowerDate: "2026-09-16", game: "539", span: 6,
+    offsetsChecked: { 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true }, intervals: { 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true } });
+  assert.equal(r.error, undefined);
+  assert.deepEqual([r.upperIdx, r.lowerIdx, r.gap], [10, 15, -5]);
+  assert.equal(r.subjects.length, 7);
+  const direct = Cha.predict(SHOT_ROWS, { predictMode: "records", targetIdx: 15, upperIdx: 10, predictTop: 39 });
+  assert.deepEqual(r.table, direct.records_.table);
+  assert.deepEqual(r.actual, SHOT_ROWS[15]);
+  // 下桿在空白第 1 列：日期不在資料裡 → blanksBelow 1 → lowerIdx = 16
+  const b = Cha.appPredict({ records: recs, upperDate: "2026-09-12", lowerDate: "2026-09-17", blanksBelow: 1, game: "539" });
+  assert.equal(b.error, undefined);
+  assert.deepEqual([b.upperIdx, b.lowerIdx, b.actual], [11, 16, null]);
+  // 錯誤情況
+  assert.ok(Cha.appPredict({ records: recs, upperDate: "2026-09-17", lowerDate: "2026-09-16" }).error);
+  assert.ok(Cha.appPredict({ records: recs, upperDate: "2026-09-16", lowerDate: "2026-09-11" }).error);
+  assert.ok(Cha.appPredict({ records: recs, upperDate: "2026-09-03", lowerDate: "2026-09-16" }).error); // 距離超過 6
+  assert.ok(Cha.appPredict({ records: [], upperDate: "x", lowerDate: "y" }).error);
+});

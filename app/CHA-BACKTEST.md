@@ -303,6 +303,21 @@ npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後�
 </script>
 ```
 
+## 接進 App（長按 Ai 鍵）
+
+`app/名揚四海彩卷系統-紀錄法.html` = 使用者 2026-09-13 上傳的 App 原檔 + 三處改動（原檔其餘一字不動）：
+
+1. 第一個 `<script>` 前內嵌整個 `cha-backtest.js`（`window.ChaBacktest`），App 在手機上是單一檔案，不能外連 js。
+2. C 式閉包裡（`attachCSubModeLongPress(fullBtn, …)` 之後）加 `window.__chaRecordsPredictShow`：
+   讀 `findCModeTargetRows()` 的 A/B 列日期、`currentAllData`、搜期、九宮拖牌打勾、間隔打勾，
+   呼叫 `ChaBacktest.appPredict()`，把 39 格統計表用 `renderCModeDingStatGridContent` 畫成「差數 紀錄法 統計表（長按Ai）」，
+   下面附每顆上桿標定號碼的查找明細；B 已開出時附真實的果與命中。
+3. Ai 鍵長按：C 式 + 差數定位中 → 跑紀錄法；其他子模式維持原本的第四顆長按（搜期 3→6）。非 C 式照舊開檢視器。
+
+`appPredict({records, upperDate, lowerDate, blanksBelow, game, span, offsetsChecked, intervals})`：
+B 在空白列時用 `blanksBelow`（B 在最後一期下面第幾列）換算 `targetIdx`；上桿不在已開出的期、上下桿距離超過 6、上桿上面不足搜期都回 `error`。
+`test/cha-backtest.test.js` 有對應測試；scratchpad 的 Playwright 冒煙測試確認頁面載入無錯誤、模組與掛勾存在、用 App 內嵌資料能跑出統計表。
+
 ## 與 App 的對照
 
 | App 函式 | 這裡 |
