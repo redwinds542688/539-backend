@@ -326,6 +326,16 @@ npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後�
    移動桿子時開著的那張歸零、落定後重算同一張。
 7. 統計表開著時移動上下桿：拖曳開始就把 39 格歸零、Ai 欄清空（`window.__chaRecordsReset`），
    桿子落定後（App 原本重算掃描表的同一個地方）自動再跑一次長按 Ai 的功能。
+8. 號碼在格子裡置中（使用者 2026-09-14 指示「不管是什麼字體、螢幕顯示還是存圖檔，號碼都必須在格子裡置中」）：
+   App 原本靠手調的 `.cell-shift{transform:translate(百分比)}` 逐一補償，換字體就偏掉；存圖時 `textBaseline="middle"` 畫在 span 盒子中心也會隨字體偏。
+   改成量字形墨跡：canvas `measureText` 的 `actualBoundingBox*`（用 200px 量再等比縮回，避開小字級的整數化；量前把 textAlign/textBaseline 歸零）
+   算出真正的墨跡框，把墨跡中心對到格子 padding box（格線之間）的中心。
+   - 畫面：新加的全域 `<script>` 對 `table.road` 的 `td.num` / 非月初 `td.day` 裡的 `.cell-shift` 以 inline `transform:translate(px)` 修正（保留 CSS 原本的 scale），
+     表格重畫、body class 改變（定期模式、字體、色系、放大鏡）、字型載入完成、視窗尺寸改變時重算；祖先縮放用整張表格的尺寸估（小格子的整數 offsetWidth 誤差太大）。
+   - 存圖：body 帶 `capturing-*` 時先清掉 inline 修正（文字透明、由 canvas 補畫）；三處 `fillText`（一般格、點擊圈、C 式標定圈）都改 `fillTextInkCentered()`。
+     定期/C 式截圖原本是讓 html2canvas 原生排字再用 `capturing-plain` 的手調偏移補償，現在 `td.num` / `td.day` 的號碼也改成 canvas 補畫（重新標定之後才收集、顏色取當下 computed、畫完還原）。
+   - 模擬器量測（scratchpad `pw/center.js`，墨跡中心對格線內緣中心，CSS px）：存圖 539/六合彩 平均偏移 0.0～0.4、最大 1.0 以內（改前約 1 px、且隨字體變）；
+     螢幕在放大鏡 2.3 倍下逐列有 ±1 px 的像素貼齊殘差（瀏覽器排字的整數貼齊），正常倍率看不出來。
 
 App 目前用 `sweepAll: true`（使用者 2026-09-14 指示「上下桿差 6 到 1 都要加入統計」）：上桿差 1 到差 6 各跑一次紀錄法，
 全部累進同一張 39 格表，畫面上的 A 位置不影響結果，只有 B 決定預測期。回溯次數 `steps: 100`、備用列 `spareRows: 96`（使用者 2026-09-14 指示；16+96 = 112 列，回溯第 100 次差 6 的上桿往上搜 6 期剛好到備用列第 1 期）；CLI 與模組預設仍是 16，用 `--steps 7` 可對照。
