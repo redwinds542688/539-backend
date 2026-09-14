@@ -313,8 +313,9 @@ npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後�
    呼叫 `ChaBacktest.appPredict()`，把 39 格統計表用 `renderCModeDingStatGridContent` 畫成「差數 紀錄法 統計表（長按Ai）」，
    下面附每顆上桿標定號碼的查找明細；B 已開出時附真實的果與命中。
 3. Ai 鍵長按：C 式 + 差數定位中 → 跑紀錄法；其他子模式維持原本的第四顆長按（搜期 3→6）。非 C 式照舊開檢視器。
-4. 統計表開出的同時，把最高排行前三名（次數多在前、同次數號碼小在前，取 3 顆）用 App 原本的 `showCModeChaTopInBlankCells`
-   填進 Ai 欄的空白格（號碼＋次數角標）；下桿在空白列時第一格就是下桿那一列。
+4. 統計表開出的同時，把最高排行前三名（次數多在前、同次數號碼小在前，取 3 顆）直排顯示在左側 Ai 欄
+   （`#c-ding-ai-box`，彩球圖下方，每格一列高、底色依次數、左上角次數角標）；關統計表或退出 C 式就清掉。
+   統計表本身只有標題與 39 格，沒有文字說明。
 
 `appPredict({records, upperDate, lowerDate, blanksBelow, game, span, offsetsChecked, intervals})`：
 B 在空白列時用 `blanksBelow`（B 在最後一期下面第幾列）換算 `targetIdx`；上桿不在已開出的期、上下桿距離超過 6、上桿上面不足搜期都回 `error`。
