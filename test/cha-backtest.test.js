@@ -910,6 +910,10 @@ test("appPredict：App 長按 Ai 的入口 = 用日期對應上下桿、空白�
   assert.equal(all.positions.length, 6);
   assert.deepEqual(all.table, Cha.predict(SHOT_ROWS, { predictMode: "records", targetIdx: 15, predictTop: 39 }).records_.table);
   assert.ok(all.subjects.length > r.subjects.length);
+  // 同差法表 = 6 期掃描的累計（App computeCModeChaStatCounts 的純函式版）
+  const sw = Cha.sweep(SHOT_ROWS, 15, { frameEnd: 15 });
+  assert.deepEqual(all.sameOffsetTable, sw.accCounts);
+  assert.ok(Object.keys(all.sameOffsetTable).some((k) => all.sameOffsetTable[k] > 0));
   // steps：回溯次數可調（App 給 7）
   const s7 = Cha.appPredict({ records: recs, lowerDate: "2026-09-16", sweepAll: true, steps: 7, game: "539" });
   assert.equal(s7.pr.backtest.records.length, 7);

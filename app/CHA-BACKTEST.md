@@ -319,7 +319,10 @@ npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後�
 5. `aiArm()` 不再把 `period-btn` 的 armed 熄掉：那顆的 armed 是「定期十六」的旗標，`__reapplyMagnifierState()` 在切回 App 重畫後用它反推
    recentOnly；長按 Ai 熄掉它之後一切回 App，四欄會全部攤開、16+4 壓縮套在四欄上（使用者回報「畫面都亂了」，版面監視記錄與模擬器都重現）。
    這是 App 原本雙擊/長按 Ai 就有的潛在問題，這裡一併修掉。
-6. 統計表開著時移動上下桿：拖曳開始就把 39 格歸零、Ai 欄清空（`window.__chaRecordsReset`），
+6. 第二張表「差數 同差法 統計表」（使用者 2026-09-14 指示）疊在紀錄法表下方：上桿標定號碼加哪個九宮差落在上桿列（可能不只一個），
+   對應下桿號碼就加同一個九宮差，上桿差 6 到差 1 全部累計（= App 原本 computeCModeChaStatCounts 的 6 期掃描，`appPredict` 回傳 `sameOffsetTable`）；
+   前三名用 App 原本的填空白格機制填進下方空白期欄位。兩張表同進退：任一 ✕、退出 C 式都一起關；移動桿子時一起歸零、落定後一起重算。
+7. 統計表開著時移動上下桿：拖曳開始就把 39 格歸零、Ai 欄清空（`window.__chaRecordsReset`），
    桿子落定後（App 原本重算掃描表的同一個地方）自動再跑一次長按 Ai 的功能。
 
 App 目前用 `sweepAll: true`（使用者 2026-09-14 指示「上下桿差 6 到 1 都要加入統計」）：上桿差 1 到差 6 各跑一次紀錄法，

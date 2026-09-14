@@ -1115,7 +1115,7 @@
    *   spareRows   備用列期數（不給用預設 32；App 長按 Ai 給 96）
    *   sweepAll    true = 上桿差 1 到差 6 全部各跑一次紀錄法、累進同一張統計表（使用者 2026-09-14 指示）；false = 只用 upperDate 那個位置
    *   game / span / offsetsChecked / intervals   App 目前的設定（物件或陣列都可）
-   * 回傳 { error } 或 { pr（predict 結果）, table（39 格次數）, upperIdx, lowerIdx, upperDate, lowerDate, gap, histCount }
+   * 回傳 { error } 或 { pr（predict 結果）, table（紀錄法 39 格次數）, sameOffsetTable（同差法 39 格次數）, upperIdx, lowerIdx, upperDate, lowerDate, gap, histCount }
    */
   function appPredict(params) {
     var p = params || {};
@@ -1154,6 +1154,8 @@
       pr: pr, table: pr.records_.table, upperIdx: p.sweepAll ? null : upperIdx, lowerIdx: lowerIdx,
       upperDate: p.sweepAll ? null : data.meta[upperIdx].date, lowerDate: data.meta[lowerIdx] ? data.meta[lowerIdx].date : p.lowerDate,
       gap: p.sweepAll ? null : upperIdx - lowerIdx, positions: pr.records_.positions, histCount: pr.records_.histCount,
+      // 同差法（App 原本 computeCModeChaStatCounts 的 6 期掃描累計）：上桿標定號碼加哪個九宮差落在上桿列，對應下桿號碼就加同一個九宮差
+      sameOffsetTable: pr.live.accCounts,
       subjects: pr.records_.subjects, actual: pr.actual, hits: pr.hits,
     };
   }
