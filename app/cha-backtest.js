@@ -69,8 +69,10 @@
     fieldCountMode: "records", // 第 1/2/3/5 個記錄的分布以什麼計數："records"（一筆紀錄一次，中 3 個九宮差算 3 次）或 "subjects"（一顆主角一次）
     predictTop: 5, // predict() 取前幾顆
     predictMode: "anchor", // predict() 計分規則："anchor"（百分比相加，預設）、"top"（最高值篩選）、"field"（機率相乘）、"condition"（同條件命中率）、
-                           // "gapvote"（差6統計差6…差1統計差1，6 份預測表各自做，再比哪一號出現的份數最多）、"app"（App 原 6 期掃描前二名）
+                           // "gapvote"（差6統計差6…差1統計差1，6 份預測表各自做，再比哪一號出現的份數最多）、"app"（App 原 6 期掃描前二名）、
+                           // "records"（紀錄法：上桿標定號碼的紀錄 1/2/3 到回溯紀錄找相同的，取紀錄 4 最多的九宮差套到對應下桿號碼）
     gapVoteTop: null, // gapvote 模式每份表取前幾顆來投票；null = 表內有分數的號碼全部算
+    upperIdx: null, // records 模式：真正的上桿位置（索引）；null = 用 6 期掃描的全部位置
   };
 
   function resolveOpts(opts) {
@@ -505,6 +507,74 @@
     return out;
   }
 
+  /**
+   * 即時（預測期）的上桿標定號碼：跟 upperRecords 一樣的主角，但下桿列未開，只有紀錄 1、2、3；
+   * 紀錄 3 可能有多個上桿命中（r3s），沒有命中的標定號碼 r3s 為空（不預測）。
+   */
+  function upperLive(rows, upperIdx, lowerIdx, opts) {
+    var o = resolveOpts(opts);
+    var m = markCha(rows, upperIdx, lowerIdx, o);
+    var upperRow = rowCells(rows, upperIdx, lowerIdx, o);
+    if (!upperRow) return [];
+    var cells = {}, order = [];
+    m.pairs.forEach(function (pair) {
+      for (var side = 0; side < 2; side++) {
+        var k = side === 0 ? pair.k1 : pair.k2, col = side === 0 ? pair.col1 : pair.col2;
+        var key = pair.upperRows[side] + ":" + col;
+        var link = { upper: pair.upper, lower: pair.lower, diff: pair.diff };
+        if (cells[key]) { cells[key].links.push(link); continue; }
+        cells[key] = { k: k, col: col, upperNum: pair.upper[side], upperRow: pair.upperRows[side], lowerNum: pair.lower[side], lowerRow: pair.lowerRows[side], links: [link] };
+        order.push(key);
+      }
+    });
+    return order.map(function (key) {
+      var c = cells[key];
+      var drag = nineGridDrag(c.upperNum, o.maxBall), r3s = [];
+      for (var pos = 0; pos < NINE_GRID_DRAG_OFFSETS.length; pos++) {
+        if (!o.offsetsChecked[pos]) continue;
+        if (upperRow.indexOf(drag[pos]) !== -1) r3s.push({ offset: NINE_GRID_DRAG_OFFSETS[pos], num: drag[pos] });
+      }
+      return { upperIdx: upperIdx, lowerIdx: lowerIdx, gap: upperIdx - lowerIdx, k: c.k, col: c.col, upperNum: c.upperNum, upperRow: c.upperRow,
+        lowerNum: c.lowerNum, lowerRow: c.lowerRow, r1: upperIdx - lowerIdx, r2: -c.k, r3s: r3s, echo: c.upperNum === c.lowerNum, links: c.links };
+    });
+  }
+
+  /**
+   * 紀錄法預測（predictMode = "records"，使用者 2026-09-14 定義）：
+   *   每顆即時上桿標定號碼的 (紀錄1 桿距, 紀錄2 位置, 紀錄3 上桿命中) 到回溯紀錄裡找三個都相同的，
+   *   取紀錄4 出現最多的九宮差（同樣最多的全部都取），套到對應下桿號碼 = 預測號碼，存進 39 格統計表（次數 +1）。
+   *   上桿沒命中（紀錄3 空）的不預測；回溯裡找不到相同的也不預測。
+   * live 可以是一個或多個上桿位置的 upperLive 結果串起來。
+   */
+  function predictByRecords(liveEntries, hist, o) {
+    var score = {}, reasons = {};
+    for (var n = 1; n <= o.maxBall; n++) { score[n] = 0; reasons[n] = []; }
+    var subjects = [];
+    liveEntries.forEach(function (e) {
+      if (!e.r3s.length) { subjects.push({ entry: e, r3: null, matched: 0, top: [], outputs: [], skipped: "no-upper-hit" }); return; }
+      e.r3s.forEach(function (h) {
+        var same = hist.filter(function (r) { return r.r1 === e.r1 && r.r2 === e.r2 && r.r3 === h.offset; });
+        var cnt = {};
+        same.forEach(function (r) { cnt[r.r4] = (cnt[r.r4] || 0) + 1; });
+        var list = Object.keys(cnt).map(function (x) { return { offset: parseInt(x, 10), count: cnt[x] }; })
+          .sort(function (a, b) { return b.count - a.count || a.offset - b.offset; });
+        var sj = { entry: e, r3: h.offset, r3Num: h.num, matched: same.length, dist: list, top: [], outputs: [] };
+        if (!list.length) { sj.skipped = "no-history"; subjects.push(sj); return; }
+        var best = list[0].count;
+        sj.top = list.filter(function (x) { return x.count === best; }).map(function (x) { return x.offset; });
+        var drag = nineGridDrag(e.lowerNum, o.maxBall);
+        sj.top.forEach(function (offv) {
+          var num = drag[NINE_GRID_DRAG_OFFSETS.indexOf(offv)];
+          score[num] += 1;
+          reasons[num].push({ self: e.lowerNum, partner: null, offset: offv, weight: 1, upperNum: e.upperNum, r1: e.r1, r2: e.r2, r3: h.offset, matched: same.length, count: best, upperIdx: e.upperIdx, gap: e.gap });
+          sj.outputs.push({ offset: offv, num: num, count: best });
+        });
+        subjects.push(sj);
+      });
+    });
+    return { score: score, reasons: reasons, subjects: subjects };
+  }
+
   /** 6期掃描（App 長按差數鍵）：逐位置跑 runSingle，次數加總；同時產生差數ai統計的 entries。 */
   function sweep(rows, lowerIdx, opts) {
     var o = resolveOpts(opts);
@@ -924,6 +994,17 @@
       score = anchorInfo.score;
       reasons = anchorInfo.reasons;
     }
+    var recordsInfo = null;
+    if (mode === "records") {
+      // 上桿位置：指定 upperIdx（真正的上桿）就只用那一個；否則用 6 期掃描的全部位置
+      var positionsUsed = o.upperIdx !== null && o.upperIdx !== undefined ? [o.upperIdx] : live.positions;
+      var liveEntries = [];
+      positionsUsed.forEach(function (u) { liveEntries = liveEntries.concat(upperLive(rows.slice(0, lowerIdx), u, lowerIdx, liveOpts)); });
+      recordsInfo = predictByRecords(liveEntries, bt.upperRecords, o);
+      recordsInfo.positions = positionsUsed;
+      score = recordsInfo.score;
+      reasons = recordsInfo.reasons;
+    }
     var voteInfo = null;
     if (mode === "gapvote") {
       voteInfo = predictByGapVote(live, o, bt.aiEntries);
@@ -940,7 +1021,7 @@
         topInfo.fallback = "field";
       }
     }
-    if (effectiveMode !== "top" && effectiveMode !== "anchor" && effectiveMode !== "app" && effectiveMode !== "gapvote") live.aiEntries.forEach(function (e) {
+    if (effectiveMode !== "top" && effectiveMode !== "anchor" && effectiveMode !== "app" && effectiveMode !== "gapvote" && effectiveMode !== "records") live.aiEntries.forEach(function (e) {
       var condW = P("sameRow", e.sameRow) * P("linkDiff", e.linkDiff) * P("rowDist", e.rowDist) * P("gap", e.gap);
       var cond = mode === "condition" ? byCond[aiConditionKey(e)] : null;
       var drag = nineGridDrag(e.self, o.maxBall);
@@ -975,6 +1056,7 @@
       effectiveMode: effectiveMode,
       anchor_: anchorInfo ? { subjects: anchorInfo.subjects, offsetTop: anchorInfo.offsetTop, statsCond: anchorInfo.statsCond, table: score } : null, // 預測統計表 = table
       gapvote_: voteInfo ? { votes: voteInfo.votes, tables: voteInfo.tables, tableCount: voteInfo.tableCount } : null, // 每個桿距一份預測表 + 份數
+      records_: recordsInfo ? { subjects: recordsInfo.subjects, positions: recordsInfo.positions, table: score, histCount: bt.upperRecords.length } : null, // 紀錄法：每顆上桿標定號碼的查找結果 + 39 格統計表
       top_: topInfo ? { topValues: topInfo.topValues, matchLevel: topInfo.matchLevel, keptSubjects: topInfo.keptSubjects, offsetRounds: topInfo.offsetRounds, fallback: topInfo.fallback || null } : null,
       backtest: bt,
     };
@@ -1044,6 +1126,8 @@
     topRankList: topRankList,
     aiRecords: aiRecords,
     upperRecords: upperRecords,
+    upperLive: upperLive,
+    predictByRecords: predictByRecords,
     flattenAiRecords: flattenAiRecords,
     aiConditionKey: aiConditionKey,
     aggregateAi: aggregateAi,

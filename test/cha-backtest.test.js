@@ -850,3 +850,40 @@ test("upperRecords：回溯紀錄（上桿標定號碼為主）= 使用者用截
   assert.equal(bt.records[0].upperRecords.filter((e) => e.gap === -6).length, 11);
   assert.equal(bt.upperRecords.length, bt.records.reduce((a, r) => a + r.upperRecords.length, 0));
 });
+
+test("predict：records 紀錄法 = 上桿標定號碼的紀錄1/2/3 到回溯找相同，取紀錄4 最多（平手全取）套到對應下桿號碼", () => {
+  // 手算：回溯紀錄 hist 只放幾筆，live 一顆上桿標定號碼 07(上桿-2) 對應 05，桿差 -6，上桿命中 +10
+  const o = Cha.resolveOpts({});
+  const live = [{ upperIdx: 8, lowerIdx: 14, gap: -6, k: 2, col: 0, upperNum: 7, lowerNum: 5, r1: -6, r2: -2, r3s: [{ offset: 10, num: 17 }], links: [] }];
+  const hist = [
+    { r1: -6, r2: -2, r3: 10, r4: 10 }, { r1: -6, r2: -2, r3: 10, r4: 10 }, { r1: -6, r2: -2, r3: 10, r4: -1 },
+    { r1: -6, r2: -2, r3: 9, r4: 11 },   // 紀錄3 不同 → 不算
+    { r1: -5, r2: -2, r3: 10, r4: 11 },  // 桿距不同 → 不算
+  ];
+  const r = Cha.predictByRecords(live, hist, o);
+  assert.equal(r.subjects[0].matched, 3);
+  assert.deepEqual(r.subjects[0].top, [10]);
+  assert.deepEqual(r.subjects[0].outputs, [{ offset: 10, num: 15, count: 2 }]);
+  assert.equal(r.score[15], 1);
+  // 平手全取：+10 與 -1 各 1 筆 → 05+10=15、05-1=04 都記
+  const tie = Cha.predictByRecords(live, hist.slice(1, 3), o);
+  assert.deepEqual(tie.subjects[0].top, [-1, 10]);
+  assert.equal(tie.score[15], 1); assert.equal(tie.score[4], 1);
+  // 上桿沒命中 → 不預測；回溯沒有相同的 → 不預測
+  const none = Cha.predictByRecords([Object.assign({}, live[0], { r3s: [] })], hist, o);
+  assert.equal(none.subjects[0].skipped, "no-upper-hit");
+  assert.equal(Object.keys(none.score).filter((n) => none.score[n] > 0).length, 0);
+  const noHist = Cha.predictByRecords(live, [], o);
+  assert.equal(noHist.subjects[0].skipped, "no-history");
+  // 截圖真正位置：上桿 idx10、下桿 idx15，桿差 -5 → upperLive 六顆，38 與 33 沒有上桿命中
+  const lv = Cha.upperLive(SHOT_ROWS, 10, 15, o);
+  assert.deepEqual(lv.map((e) => [e.upperNum, e.lowerNum, e.r1, e.r2, e.r3s.map((h) => h.offset)]), [
+    [28, 25, -5, -1, [-9]], [38, 35, -5, -5, []], [18, 5, -5, -3, [1]], [19, 6, -5, -3, [0]], [34, 29, -5, -3, [-9, 1]], [33, 28, -5, -6, []],
+  ]);
+  // predict 整合：指定 upperIdx 只用那個位置；不指定就 6 個位置都掃
+  const pr = Cha.predict(SHOT_ROWS, { predictMode: "records", targetIdx: 15, upperIdx: 10 });
+  assert.deepEqual(pr.records_.positions, [10]);
+  assert.equal(pr.records_.subjects.length, 7); // 34 兩個上桿命中 → 兩筆
+  const prAll = Cha.predict(SHOT_ROWS, { predictMode: "records", targetIdx: 15 });
+  assert.equal(prAll.records_.positions.length, 6);
+});

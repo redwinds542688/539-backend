@@ -12,7 +12,7 @@
  *   node app/cha-backtest-cli.js --ai-detail           # 加印 差數ai統計 每一筆紀錄 [同列,連線差,列距,九宮差,桿距]
  *   node app/cha-backtest-cli.js --target 49           # 預測目標列（統一列號：備用列 1..32、顯示區 33..48、空白第 1 列 49 = 預設）；回測從目標列上一列往上 16 次
  *   node app/cha-backtest-cli.js --predict [N]         # 用回測統計預測目標列，列前 N 顆（預設 5）；目標列已開出時附命中
- *   node app/cha-backtest-cli.js --predict-mode anchor|top|field|condition|gapvote|app   # 計分規則：anchor=百分比相加（預設）、top=最高值篩選、field=機率相乘、condition=同條件命中率、gapvote=差6統計差6…6份表投票、app=App原邏輯
+ *   node app/cha-backtest-cli.js --predict-mode anchor|top|field|condition|gapvote|records|app   # 計分規則：anchor=百分比相加（預設）、top=最高值篩選、field=機率相乘、condition=同條件命中率、gapvote=差6統計差6…6份表投票、app=App原邏輯
  *   node app/cha-backtest-cli.js --predict-mode gapvote --vote-top 5   # 每份桿距表只拿前 5 顆投票（不給就全拿）
  *   node app/cha-backtest-cli.js --anchor-detail       # 加印 anchor 模式每顆主角的四個百分比與分數
  *   node app/cha-backtest-cli.js --stats-cond gap      # 桿距分開統計：差6只用回溯裡差6的資料、差5只用差5的（可逗號串多欄，例 gap,rowDist）
@@ -48,6 +48,7 @@ function parseArgs(argv) {
     else if (k === "--vote-top") { a.voteTop = parseInt(v, 10); i++; }
     else if (k === "--app-table") a.appTable = true;
     else if (k === "--records") a.records = true;
+    else if (k === "--upper") { a.upper = parseInt(v, 10); i++; }
     else if (k === "--ai-detail") { a.ai = true; a.aiDetail = true; }
     else if (k === "--demo") a.demo = true;
     else if (k === "--help" || k === "-h") { a.help = true; }
@@ -269,6 +270,20 @@ function printPredict(pr, anchorDetail) {
       });
     }
   }
+  if (pr.records_) {
+    var rowOfP = function (idx) { return Cha.rowNo(pr.rows || [], idx, {}); };
+    console.log("紀錄法：回溯紀錄 " + pr.records_.histCount + " 筆  上桿位置 " + pr.records_.positions.map(function (u) { return "差" + (pr.lowerIdx - u); }).join(" ") +
+      "  每顆上桿標定號碼拿 [桿距, 位置, 上桿命中] 找回溯裡三個都相同的，取紀錄4 最多的九宮差（同樣最多全取）套到對應下桿號碼");
+    pr.records_.subjects.forEach(function (sj) {
+      var e = sj.entry;
+      var head = "  差" + (-e.gap) + "  " + pad2(e.upperNum) + " 上桿" + fmtOff(e.r2) + "  對應 " + pad2(e.lowerNum);
+      if (sj.skipped === "no-upper-hit") { console.log(head + "   上桿沒命中 → 不預測"); return; }
+      var line = head + "   [" + [fmtOff(e.r1), fmtOff(e.r2), fmtOff(sj.r3)].join(", ") + "]  回溯相同 " + sj.matched + " 筆";
+      if (sj.skipped === "no-history") { console.log(line + " → 沒有資料，不預測"); return; }
+      console.log(line + "  紀錄4：" + sj.dist.map(function (x) { return fmtOff(x.offset) + "×" + x.count; }).join(" ") + "  → " +
+        sj.outputs.map(function (x) { return pad2(e.lowerNum) + fmtSigned(x.offset) + "=" + pad2(x.num); }).join(" "));
+    });
+  }
   if (pr.gapvote_) {
     console.log("桿距投票：差 6 統計差 6 … 差 1 統計差 1，共 " + pr.gapvote_.tableCount + " 份預測表，比哪一號出現的份數最多");
     pr.gapvote_.tables.forEach(function (t) {
@@ -287,7 +302,7 @@ function printPredict(pr, anchorDetail) {
     console.log("  九宮差依機率：" + pr.top_.offsetRounds.slice(0, 4).map(function (r) { return r.offsets.map(fmtOff).join("/") + "(" + r.count + ")"; }).join("  →  "));
   }
   if (!pr.ranked.length) { console.log("  沒有任何標定連線，無法預測"); return; }
-  console.log("名次  號碼   分數      來源（" + (pr.gapvote_ ? "份數 / 出現在哪幾份桿距表" : "主角+九宮差 → 這顆") + "）");
+  console.log("名次  號碼   分數      來源（" + (pr.gapvote_ ? "份數 / 出現在哪幾份桿距表" : pr.records_ ? "對應下桿號碼+紀錄4 → 這顆" : "主角+九宮差 → 這顆") + "）");
   pr.top.forEach(function (x, i) {
     var src = pr.gapvote_
       ? pr.gapvote_.votes[x.n] + " 份：" + x.reasons.map(function (r) { return "差" + (-r.gap); }).join(" ")
@@ -331,6 +346,7 @@ function main() {
   };
   var data = Cha.fromRecords(records, opts);
   if (a.target) opts.targetIdx = Cha.idxOfRowNo(data.rows, a.target, Cha.resolveOpts(opts)); // 統一列號 → 索引（49 = rows.length）
+  if (a.upper) opts.upperIdx = Cha.idxOfRowNo(data.rows, a.upper, Cha.resolveOpts(opts));
   var result = Cha.backtest(data.rows, opts, data.meta);
   if (a.json) {
     // steps 裡有 Set，輸出時轉成陣列
