@@ -1422,8 +1422,73 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
 /*
 ================================================================================
 名揚四海彩卷系統 — 完整技術文件（給未來接手者/未來對話參考）
-最後更新：2026-09-08
+最後更新：2026-09-14
 ================================================================================
+
+【★★設計守則（2026-09-13 使用者定案，之後任何修改都不能違反）】
+  九宮邏輯(NINE_GRID_DRAG_OFFSETS：-11,-10,-9,-1,0,+1,+9,+10,+11、拖牌打勾)與抓取標定號碼的邏輯(runCModeChaSearch/markCha：
+  上下桿上方同 k 期、同欄、同九宮差、差有打勾、下桿側可讀到上桿列)不可改變——「這些是c式差數的靈魂」。
+  以下所有新功能都只動「標定之後的統計/顯示」，標定結果本身一律沿用。
+
+【★2026-09-14(一)：C式差數「回溯紀錄法」（長按Ai鍵）——定義定案】
+  程式：第一個<script>內嵌的ChaBacktest模組(原始碼 repo app/cha-backtest.js，upperRecords/predictByRecords/appPredict)，
+  App端掛勾在attachCSubModeLongPress(fullBtn,…)之後：window.__chaRecordsPredictShow / showCModeChaRecordsStatTable。
+  1. 下桿在第N期：N同時是「預測期」也是「錨定期」；回溯就是把下桿往上移到 N-1、N-2 … N-100(App：steps=100)，每一次都用
+     當時的上下桿位置重跑標定。下桿在哪一列，那一列(真實的果)就不進計算，只拿來當答案。
+  2. 上下桿距(桿差)：App用 sweepAll——上桿差6、差5 … 差1 各跑一遍，全部累進同一張39格統計表(使用者 2026-09-14：「上下桿差6到1都要加入統計」)；
+     畫面上的A位置不影響結果，只有B(下桿)決定預測期。
+  3. 回溯紀錄＝每一顆「上桿標定號碼」一筆：紀錄1＝桿距(上桿在下桿上幾期，負數)；紀錄2＝這顆標定號碼在上桿的上幾期(負數)；
+     紀錄3＝這顆號碼加哪個九宮差會落在上桿列(上桿命中)；紀錄4＝對應的下桿號碼(同k同欄)加哪個九宮差會落在下桿列(下桿命中)。
+     紀錄3命中m個、紀錄4命中n個 → 拆成 m×n 筆；任一邊沒命中 → 整筆不記；上下桿標定號碼相同(echo)照記。
+  4. 備用列96期(spareRows=96)：16+96=112列，回溯第100次差6的上桿再往上搜6期剛好到備用列第1期，所以回溯最多100次。
+  5. 預測(紀錄法)：拿「真實」上下桿位置的每一顆上桿標定號碼，算出它的(紀錄1,紀錄2,紀錄3)，到回溯紀錄裡找完全相同的三個值，
+     取紀錄4出現最多的那個九宮差(並列最高的全取)，讓對應的下桿號碼各加上去，存進39格統計表。上桿沒有命中的號碼不預測；找不到歷史紀錄也不預測。
+
+【★2026-09-14(二)：紀錄法統計表／Ai欄／空白期的顯示規則】
+  1. 長按Ai(C式且差數定位中)：只顯示「差數 紀錄法 統計表」——標題＋39格，沒有任何文字說明(showCModeChaRecordsStatTable)。
+     其他子模式維持原本第四顆長按(搜期3→6)；非C式照舊開檢視器。
+  2. 左側Ai欄(#c-ding-ai-box，彩球圖下方)直排顯示紀錄法最高排行前5名：次數多在前、同次數號碼小在前，每格左上角次數角標
+     (renderCModeChaRecordsInAiBox)。關統計表或退出C式就清掉。
+  3. 下方空白期欄位一律填「同差法」前三名：次數最高的三個名次、同次數並列全算、次數必須大於1、最多15顆(fillCModeChaSameBlanks →
+     App原本的showCModeChaTopInBlankCells)。
+  4. 統計表開著時移動上下桿：拖曳開始就把39格歸零、Ai欄清空(window.__chaRecordsReset)，桿子落定後(App原本重算掃描表的地方)自動再跑一次。
+  5. 按「返回」或任何退出C式的路徑：紀錄法表、同差法表、Ai欄、空白期填號全部關閉清除。
+
+【★2026-09-14(三)：「差數 同差法 統計表」（單擊差數鍵／雙擊Ai鍵）】
+  定義：上桿標定號碼加哪個九宮差會落在上桿列(可能不只一個)，對應的下桿號碼就加同一個九宮差；上桿差6跑到差1全部累計
+  (＝App原本computeCModeChaStatCounts的6期掃描；模組appSameOffset，不跑回溯)。
+  單擊「差數」鍵(第三顆)開這張表，再單擊關(window.__chaSameShow/__chaSameClose)；雙擊Ai(差數定位中)等同單擊差數。
+  兩張表互斥(開一張就關另一張)；前三名同樣填進空白期。
+
+【★2026-09-14(四)：切回App畫面亂掉(四欄全攤開、16+4壓縮套在四欄上)——根因與修正】
+  aiArm()原本會把period-btn的armed一起熄掉；但period-btn的armed是「定期十六」的旗標，__reapplyMagnifierState()在切回App重畫後
+  用它反推recentOnly，熄掉之後就變成全頁四欄。修正：aiArm()不再動period-btn，Ai自動解除armed的檢查也排除period-btn。
+  這是App原本雙擊/長按Ai就有的潛在問題，一併修掉。版面監視(MutationObserver記「版面」log)保留供追查。
+
+【★2026-09-14(五)：號碼在格子裡置中（畫面與存圖，不分字體）】
+  原則：只要是號碼在格子裡，不管什麼字體、螢幕還是存圖，號碼都必須在格子裡置中。
+  作法(第一個<script>之後的「號碼在格子裡置中」模組)：不再靠手調的.cell-shift百分比位移；用canvas measureText的actualBoundingBox
+  量出該字體/該字串真正的墨跡框(用200px量再等比縮回，避開小字級整數化；量前先把textAlign/textBaseline歸零)，把墨跡中心對到
+  格子padding box(格線之間)的中心。
+  ・畫面：td.num與非月初td.day的.cell-shift以inline transform:translate(px)修正、保留CSS原本的scale；表格重畫、body class改變
+    (定期/字體/色系/放大鏡)、字型載入完成、視窗尺寸改變時重算；祖先縮放用整張表格尺寸估。
+  ・存圖：body帶capturing-*時清掉inline修正(字是透明的、由canvas補畫)；三處fillText(一般格/點擊圈/C式標定圈)都用fillTextInkCentered()；
+    定期/C式截圖的號碼也改由canvas補畫(重新標定之後才收集、顏色取當下computed、畫完還原)，不再靠html2canvas原生排字＋手調偏移。
+
+【★2026-09-14(六)：格子完整——任何標定/指定/上下桿/連線的顯示與存檔都不可破壞格線】
+  原則：不改td的border。全程式盤點後修掉的：
+  1. 合匯上桿列真實命中格原本加四條1.5px邊框(顏色同底色看不見，卻把格線推歪、格子縮小)→所有模式一律不加(renderCModeHeSelection)。
+  2. 合匯下桿指定格原本用1.5px邊框畫黃色上下框線→改成格內絕對定位的<i class="c-mode-he-b-ring">(CSS畫上下/兩端線)，
+     換指定格、clearCModeCellColors時一併移除(paintHeBDesignatedCell)。
+  3. 截圖：c-mode-ab-suppress-circle的格子(合匯上/下桿指定格等)畫面上只有底色不畫圈，存圖原本仍畫圈(直徑1.1倍格高蓋到格線)→比照畫面不畫
+     (drawCModeMatchCirclesOntoCanvas)。
+  保留不動(原設計、不改格子位置)：拖曳標記的0.5px邊框＋0.7px外框、點擊/標定圓圈、上下桿列與週起始列的inset陰影線、空白期1px外框、
+  C式最後一列白色遮蓋列(border:none)、連線SVG。
+
+【★2026-09-14(七)：存圖的星期欄徽章(td.wd .badge)改由canvas補畫】
+  html2canvas對「flex徽章＋截圖transform」的排版跟畫面不同(徽章底色只畫到格子上半、字跑到格外或縮成小方塊)，淺色系徽章跟格子同色看不出來，
+  暗色系就露餡；原App就有。修正：三條截圖路徑(定期/C式、首頁印存、空白單)都把徽章設visibility:hidden，用window.drawWdBadges()在格子中心畫
+  「邊長＝格子內寬」的圓角正方形底色＋字形墨跡置中的星期字(字級＝邊長×0.82、圓角＝邊長×0.22，顏色/透明度取computed；首頁印存路徑字色取截圖前的textJobs)。
 
 【★2026-09-13：彩卷版一般首頁＋抓牌首頁左下角漂浮抓牌/AI鍵(#bug-log-fab)移除】只在body沒有recent-only-mode/c-mode-active/pinch-fullscreen-mode/c-ding-entering任何一個class(＝一般首頁、抓牌首頁3×3選單畫面)時display:none；定期十六、C式定位/合匯/差數、E式等距/概率、全頁等功能裡照常顯示、完全不動。只有彩卷版；抓牌版不動。】
 
