@@ -1606,6 +1606,9 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      長按 Ai 後 Ai 亮著(紀錄顯示中)，按定位或搜期清除 Ai 顯示、截圖不清，跟差數相同(這幾條本來就不分子模式)。
   6. 模擬器(scratchpad pw/ding.js、dingmarks.js、dingdbg.js)：進入定位自動掃描並填空白期、移桿重掃、長按 Ai→Ai 欄有號碼且 Ai 亮、
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
+  8. 使用者截圖回報「六合 大樂 會破壞畫面」：7顆球(6＋特別號)在較窄手機一排放不下、特別號掉到第二排，紅線區鎖死202px於是把
+     印/期數/抓那排按鍵切掉一半(原App就有，模擬器360px寬重現)。只動球：body.game-wide 時球列不換行，球徑＝min(48px,(球列寬−33px)÷7)、
+     字級等比；360px寬約42px、412px仍48px；模擬器360/393/412三種寬度六合彩/大樂透按鍵列位置都與539相同、無裁切。紅線區高度規則不動。
   7. 使用者截圖回報 C式定位裡「搜期」兩字上下疊成兩行：#fullpage-btn 內容寬 59px、兩個 30px 字要 60px，差 1px 就換行(其他三顆剛好 60px)。
      CSS 給五顆鍵的 .fullpage-mode-label 加 white-space:nowrap、置中、左右各 -2px，四顆一律左右顯示(模擬器量 定位/差數 四顆 label 都 60×31)。
 
@@ -3558,6 +3561,15 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
     background:
       radial-gradient(circle at 32% 28%, #b3d1ff 0%, #6ba3ff 22%, #1a5ce0 55%, #0033a3 82%, #001f66 100%);
     color:#E8E8E8; text-shadow:0 1px 2px rgba(0,0,0,0.6);
+  }
+  /* 2026-09-15：使用者截圖回報六合彩/大樂透會破壞畫面——7顆球(6顆＋特別號)在較窄的手機上一排放不下、特別號掉到第二排，
+     紅線區高度鎖死202px(2026/08/23規則，不能動)於是把下面的印/期數/抓那排按鍵切掉一半。
+     改法只動球的大小、不動紅線區：六合彩/大樂透(body.game-wide)時球列不換行，球的直徑＝min(48px, (球列寬−6個間距5.5px)÷7)，
+     字級等比(30/48)；寬螢幕仍是原本的48px，窄螢幕才縮小(360px寬的手機約42px)，7顆一定在同一排。539/天天樂5顆不受影響。 */
+  body.game-wide .hero-balls{ flex-wrap:nowrap; container-type:inline-size; }
+  body.game-wide .ball{
+    width:min(48px, calc((100cqw - 33px) / 7)); height:min(48px, calc((100cqw - 33px) / 7));
+    font-size:min(30px, calc((100cqw - 33px) / 7 * 0.625)); flex-shrink:0;
   }
   body.game-mark6 .ball:not(.ball-special){
     background:
