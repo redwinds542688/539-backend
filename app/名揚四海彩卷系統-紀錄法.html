@@ -24,13 +24,13 @@
   function measureInk(c,font,text){
     c.textAlign="left"; c.textBaseline="alphabetic"; /* actualBoundingBox 是相對目前的 textAlign/textBaseline，量測前一定要歸零 */
     var mm=font.match(/(\d*\.?\d+)px/); var px=mm?parseFloat(mm[1]):0;
-    if(!(px>0)){ c.font=font; var t0=c.measureText(text); if(typeof t0.actualBoundingBoxAscent!=="number")return null; return{asc:t0.actualBoundingBoxAscent,desc:t0.actualBoundingBoxDescent,left:t0.actualBoundingBoxLeft,right:t0.actualBoundingBoxRight}; }
+    if(!(px>0)){ c.font=font; var t0=c.measureText(text); if(typeof t0.actualBoundingBoxAscent!=="number")return null; return{asc:t0.actualBoundingBoxAscent,desc:t0.actualBoundingBoxDescent,left:t0.actualBoundingBoxLeft,right:t0.actualBoundingBoxRight,adv:t0.width}; }
     c.font=probeFont(font,px); var t=c.measureText(text);
     if(typeof t.actualBoundingBoxAscent!=="number")return null;
     /* 字型還在載入時 canvas 會忽略 ctx.font 的指定(字級留在原值)：讀回實際生效的字級來算縮放比，避免量錯 */
     var back=String(c.font).match(/(\d*\.?\d+)px/); var usedPx=back?parseFloat(back[1]):PROBE_PX; if(!(usedPx>0))usedPx=PROBE_PX;
     var k=px/usedPx;
-    return{asc:t.actualBoundingBoxAscent*k,desc:t.actualBoundingBoxDescent*k,left:t.actualBoundingBoxLeft*k,right:t.actualBoundingBoxRight*k};
+    return{asc:t.actualBoundingBoxAscent*k,desc:t.actualBoundingBoxDescent*k,left:t.actualBoundingBoxLeft*k,right:t.actualBoundingBoxRight*k,adv:t.width*k};
   }
   function inkMetrics(font,text){
     var k=font+"|"+text; if(cache[k])return cache[k];
@@ -80,6 +80,45 @@
     el.removeChild(marker);
     var off=sy?(base-top)/sy:0; baseCache[k]=off; return off;
   }
+  var padCache={},probeEl=null;
+  /* tabular-nums 補白：同字體(200px 探針)同一個字，tabular-nums 與 normal 的前進寬差(換算回實際字級)；沒差就是 0 */
+  function tabPad(font,ch,tab){
+    if(!tab)return 0; var k=font+"|"+ch; if(padCache[k]!==undefined)return padCache[k];
+    var pad=0;
+    try{
+      if(!probeEl){ probeEl=document.createElement("span"); probeEl.style.cssText="position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre;display:inline-block;padding:0;margin:0;border:0;letter-spacing:0;pointer-events:none;"; probeEl.setAttribute("aria-hidden","true"); }
+      if(!probeEl.parentNode)document.body.appendChild(probeEl);
+      var mm=font.match(/(\d*\.?\d+)px/); var px=mm?parseFloat(mm[1]):0;
+      probeEl.style.font=probeFont(font,px); probeEl.textContent=ch;
+      probeEl.style.fontVariantNumeric="normal"; var w0=probeEl.getBoundingClientRect().width;
+      probeEl.style.fontVariantNumeric="tabular-nums"; var w1=probeEl.getBoundingClientRect().width;
+      var d=w1-w0; if(px>0&&isFinite(d)&&d>0.01)pad=d*px/PROBE_PX;
+    }catch(e){ pad=0; }
+    padCache[k]=pad; return pad;
+  }
+  function perCharInkCenter(el,text,font,sx){
+    try{
+      if(!text||text.length>6||typeof document.createRange!=="function")return null;
+      var ecs=getComputedStyle(el); var tab=/tabular-nums/.test(ecs.fontVariantNumeric||"")||/["']tnum["']\s*(1|on)?\b(?!\s*0)/.test(ecs.fontFeatureSettings||"");
+      var tn=null; for(var c=el.firstChild;c;c=c.nextSibling){ if(c.nodeType===3&&c.nodeValue.trim()){ if(tn)return null; tn=c; } else if(c.nodeType===1)return null; }
+      if(!tn)return null; var start=tn.nodeValue.indexOf(text); if(start<0)return null;
+      var minX=Infinity,maxX=-Infinity;
+      for(var i=0;i<text.length;i++){
+        var rg=document.createRange(); rg.setStart(tn,start+i); rg.setEnd(tn,start+i+1);
+        var b=rg.getBoundingClientRect(); if(!(b.width>0))return null;
+        var g=inkMetrics(font,text.charAt(i)); if(!g)return null;
+        /* 起點＝前進框左緣，再加 tabular-nums 的補白一半：App 的 td.num 設了 font-variant-numeric:tabular-nums(等寬數字)，
+           手機字體(Roboto 等)的 1 比其他數字窄，等寬時字形置中放在固定寬度裡，canvas 量不到這個特性(canvas 沒有 tabular 設定)，
+           這就是「11」偏右的原因。補白量用 DOM 探針量「同字體同字 normal 與 tabular-nums 的寬度差」(tabPad)，不是用前進框寬減 canvas 字寬——
+           後者會把「小字級排版把前進寬取整」(字形仍畫在起點、不置中)誤當成補白。 */
+        var ox=b.left+tabPad(font,text.charAt(i),tab)*sx/2;
+        var l=ox-g.left*sx,rt=ox+g.right*sx;
+        if(l<minX)minX=l; if(rt>maxX)maxX=rt;
+      }
+      if(!isFinite(minX)||!isFinite(maxX)||maxX<=minX)return null;
+      return (minX+maxX)/2;
+    }catch(e){ return null; }
+  }
   function inCapture(){ var b=document.body; return !!b&&CAPTURE_CLASSES.some(function(c){return b.classList.contains(c)}); }
   function clearInline(els){
     els.forEach(function(el){ if(el.getAttribute("data-ink-centered")){ el.style.transform=""; el.removeAttribute("data-ink-centered"); } });
@@ -103,6 +142,11 @@
       var sx=box.sx*mt.s,sy=box.sy*mt.s; /* span 的螢幕縮放 = 祖先縮放(由整張表格估) × 自己的 scale */
       var padL=(parseFloat(cs.paddingLeft)||0)+(parseFloat(cs.borderLeftWidth)||0);
       var inkCx=r.left+padL*sx+(m.right-m.left)/2*sx;
+      /* 2026-09-15：使用者回報全頁(放大 5 倍)裡「11」沒有置中——字的位置是瀏覽器在小字級(約 12px)排版時決定的(每個字的前進寬度會被
+         取整/微調)，再被 transform 放大 5 倍，所以整串用 canvas 量出來的墨跡中心跟實際畫面對不上(含 1 的號碼偏右、0/8 偏左)。
+         改成逐字：每個字的「起點」直接用 DOM Range 量到的實際字框(已含排版取整、tabular-nums、字距)，只有字形本身的墨跡範圍用 canvas 量，
+         合起來就是畫面上真正的墨跡範圍。量不到(舊瀏覽器/多個文字節點)就退回整串量測。 */
+      var perChar=perCharInkCenter(el,text,font,sx); if(perChar!==null)inkCx=perChar;
       var inkCy=r.top+baselineOffset(el,cs,sy)*sy+(m.desc-m.asc)/2*sy;
       var dx=(box.cx-inkCx)/(box.sx||1),dy=(box.cy-inkCy)/(box.sy||1);
       if(!isFinite(dx)||!isFinite(dy))return;
@@ -142,8 +186,8 @@
     window.addEventListener("resize",function(){ schedule(null); });
     window.addEventListener("orientationchange",function(){ schedule(null); });
     if(document.fonts){
-      if(document.fonts.ready)document.fonts.ready.then(function(){ cache={}; baseCache={}; schedule(null); });
-      if(document.fonts.addEventListener)document.fonts.addEventListener("loadingdone",function(){ cache={}; baseCache={}; schedule(null); });
+      if(document.fonts.ready)document.fonts.ready.then(function(){ cache={}; baseCache={}; padCache={}; schedule(null); });
+      if(document.fonts.addEventListener)document.fonts.addEventListener("loadingdone",function(){ cache={}; baseCache={}; padCache={}; schedule(null); });
     }
     schedule(null);
   }
@@ -1617,6 +1661,10 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      長按 Ai 後 Ai 亮著(紀錄顯示中)，按定位或搜期清除 Ai 顯示、截圖不清，跟差數相同(這幾條本來就不分子模式)。
   6. 模擬器(scratchpad pw/ding.js、dingmarks.js、dingdbg.js)：進入定位自動掃描並填空白期、移桿重掃、長按 Ai→Ai 欄有號碼且 Ai 亮、
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
+  10. 使用者截圖回報「在全頁 11 為什麼沒有置中」(放大 5 倍)：(a)td.num 的 tabular-nums 讓手機字體的 1 被放進固定寬度／換成等寬版字形，canvas 量測沒有
+     tabular 設定 → 含 1 的號碼偏右(模擬器用 Fira Sans/Merriweather Sans 重現：11 偏 +6.6px)。改成號碼格一律比例數字(td.num font-variant-numeric:normal)。
+     (b)小字級排版把每個字的前進寬取整，再被 transform 放大 5 倍，整串量測會偏：置中改成逐字——每個字的起點用 DOM Range 量到的實際字框，
+     字形墨跡用 canvas 量(perCharInkCenter；量不到就退回整串)。模擬器內建字體／Fira／Merriweather／Cabin／Source Sans 3 五種字體放大 5 倍(格 80px)全部 ±0.5px 內。
   9. 使用者截圖回報「暗色系 調整期數的期數顯示不明顯」：暗色系只改了期數字色(#eee)與按鍵色，期數框仍是白底，淺字落在白底上看不見。
      補 body.theme-dark .blank-stepper 底色 #1c1c1c(跟紅線區同色)、期數字改亮綠 #33D17A；紅框與尺寸不變。模擬器暗色系大樂透：底 rgb(28,28,28)、字綠、按鍵列位置不變。
   8. 使用者截圖回報「六合 大樂 會破壞畫面」：7顆球(6＋特別號)在較窄手機一排放不下、特別號掉到第二排，紅線區鎖死202px於是把
@@ -4519,6 +4567,11 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   body.sheet-font-mono-light table.road td.num{ font-family:"Roboto Mono","DejaVu Sans Mono","Courier New",Courier,monospace !important; font-weight:400 !important; font-variant-numeric:tabular-nums; }
   body.sheet-font-sans-bold table.road td.num{ font-family:Arial,Helvetica,"Noto Sans TC",sans-serif !important; font-weight:700 !important; font-variant-numeric:tabular-nums; }
   body.sheet-font-sans-light table.road td.num{ font-family:Arial,Helvetica,"Noto Sans TC",sans-serif !important; font-weight:400 !important; font-variant-numeric:tabular-nums; }
+  /* 2026-09-15：使用者回報全頁(放大)裡「11」沒有置中。原因：上面四種字體都對 td.num 設了 tabular-nums(等寬數字)，手機字體(Roboto 等)的 1 比其他數字窄，
+     等寬時字形被放進固定寬度、字形本身也可能換成另一個版本；置中用的 canvas 量測沒有 tabular 設定，量到的是比例字距的字形，兩邊對不上就偏掉。
+     置中已經是每一格各自對墨跡置中，不需要等寬對齊，所以號碼格一律用一般(比例)數字：畫面與存圖(canvas 本來就是比例字)一致，任何字體都能準確置中。
+     ★版面守則：td.num 不可再加 tabular-nums / "tnum"。 */
+  table.road td.num, table.road td.num .cell-shift{ font-variant-numeric:normal !important; }
 
   #period-btn .fullpage-mode-label, #fullpage-btn .fullpage-mode-label, #pin-btn .fullpage-mode-label, #float-save-btn .fullpage-mode-label, #float-back-btn .fullpage-mode-label, #home-exit-btn .fullpage-mode-label{ font-size:30px; line-height:31px; display:block; font-weight:700; }
 /* 2026-09-15：使用者截圖回報 C式定位裡「搜期」兩個字上下疊成兩行(其他三顆正常)。原因：#fullpage-btn 的內容寬 59px、兩個 30px 的字要 60px，差 1px 就換行；其他三顆剛好 60px。改成不換行、置中、左右各放寬 2px，四顆一律左右顯示 */
