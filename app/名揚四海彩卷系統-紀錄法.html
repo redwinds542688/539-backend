@@ -1514,6 +1514,17 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
   上下桿上方同 k 期、同欄、同九宮差、差有打勾、下桿側可讀到上桿列)不可改變——「這些是c式差數的靈魂」。
   以下所有新功能都只動「標定之後的統計/顯示」，標定結果本身一律沿用。
 
+【★★設計守則：版面鎖定（2026-09-15 使用者定案「現在好了 把設定寫進程式 不要隨便又因為什麼問題又亂掉了」，之後任何修改都不能違反）】
+  這兩條是版面的硬規定，程式裡除了 CSS 之外另有執行期守衛 window.__layoutGuard（本檔最後一個 <script>，換彩種、視窗尺寸改變、
+  字型載入完成、body class 改變後都會重新檢查；違反時自動修正並在 bugLog 記「版面守衛」）。改任何 CSS/字體/尺寸之前先想這兩條：
+  1. 首頁紅線區(#hero，高度鎖死 202px 的規則不動)：不論哪個彩種、幾顆球(539/天天樂 5 顆、六合彩/大樂透 6＋特別號 7 顆)，
+     球一律在同一排；印／期數／抓那排按鍵必須完整在紅線區裡，不可被切掉。做法：球徑＝min(48px, (球列寬−間距)÷球數)、字級等比
+     (CSS body.game-wide .ball；守衛量到球有兩排或按鍵列超出紅線區時，會再把球縮到剛好放得下)。
+     ★禁止：加大球徑/間距/紅線區內邊距、在球列加東西、讓球列換行、改紅線區高度——任何一項都會再把按鍵切掉。
+  2. 下方五顆功能鍵(Ai／截圖／定位·合匯·差數·等距／搜期／返回)的文字一律一行左右顯示，不可上下疊成兩行(30px 字、按鍵內容寬 59~60px，
+     差 1px 就會換行)。做法：.fullpage-mode-label white-space:nowrap＋置中＋左右 -2px(守衛量到 label 高度超過一行時會再補 nowrap 並縮字)。
+     ★禁止：加大 label 字級/字距、縮小按鍵寬度、改成 inline-block 讓它能換行。
+
 【★2026-09-14(一)：C式差數「回溯紀錄法」（長按Ai鍵）——定義定案】
   程式：第一個<script>內嵌的ChaBacktest模組(原始碼 repo app/cha-backtest.js，upperRecords/predictByRecords/appPredict)，
   App端掛勾在attachCSubModeLongPress(fullBtn,…)之後：window.__chaRecordsPredictShow / showCModeChaRecordsStatTable。
@@ -6695,5 +6706,57 @@ setInterval(function(){
   lastCrawlerSyncAt=now;
   syncCrawlerDataFromGithub().catch(function(e){console.warn("定期同步爬蟲資料失敗（不影響其他功能）：",e)})
 },6e4);</script>
+<script>
+/* ★★版面守衛(2026-09-15 使用者定案「把設定寫進程式 不要隨便又因為什麼問題又亂掉了」)——執行期檢查兩條版面硬規定，違反就自動修正並記錄：
+   1. 首頁紅線區：球一律同一排、印／期數／抓那排按鍵完整在紅線區內(不可被 202px 鎖高切掉)。
+   2. 五顆功能鍵的文字一律一行左右顯示。
+   觸發：載入、換彩種(#game-tabs 點擊)、resize、字型載入完成、body class 改變(進出各模式)。只修正、不動 CSS 規則本身。 */
+(function(){
+  function log(d){try{if(typeof logEvent==="function")logEvent("版面守衛",d)}catch(e){}}
+  function fixHero(){
+    var hero=document.getElementById("hero"),balls=document.getElementById("hero-balls");if(!hero||!balls)return;
+    if(getComputedStyle(hero).display==="none"||document.getElementById("hero-nine-grid")&&getComputedStyle(document.getElementById("hero-nine-grid")).display!=="none")return;
+    var kids=Array.prototype.slice.call(balls.children).filter(function(b){return b.classList&&b.classList.contains("ball")});if(!kids.length)return;
+    var controls=hero.querySelector(".hero-controls-row");
+    function bad(){
+      var tops=kids.map(function(b){return Math.round(b.getBoundingClientRect().top)});
+      var twoRows=Math.max.apply(null,tops)-Math.min.apply(null,tops)>2;
+      var heroR=hero.getBoundingClientRect();var over=controls&&controls.getBoundingClientRect().bottom>heroR.bottom-parseFloat(getComputedStyle(hero).paddingBottom)+1;
+      return twoRows||over;
+    }
+    /* 先拿掉上次守衛加的尺寸再量(同一個同步流程裡量完馬上補回，不會閃)，否則 CSS 修好後守衛的補丁會一直留著、或補丁被拿掉後沒再檢查 */
+    kids.forEach(function(b){if(b.dataset.guardSized){b.style.removeProperty("width");b.style.removeProperty("height");b.style.removeProperty("font-size");delete b.dataset.guardSized}});
+    if(!bad())return;
+    var w=balls.getBoundingClientRect().width;var gap=parseFloat(getComputedStyle(balls).columnGap||getComputedStyle(balls).gap)||5.5;
+    var size=Math.floor((w-gap*(kids.length-1))/kids.length);if(!(size>10))return;
+    var tries=0;
+    while(tries++<6){
+      kids.forEach(function(b){b.style.setProperty("width",size+"px","important");b.style.setProperty("height",size+"px","important");b.style.setProperty("font-size",Math.round(size*0.625)+"px","important");b.dataset.guardSized="1"});
+      if(!bad())break;size-=2;
+    }
+    log("紅線區：球"+kids.length+"顆放不下/按鍵列被切 → 球徑改 "+size+"px");
+  }
+  function fixLabels(){
+    ["float-save-btn","float-back-btn","fullpage-btn","period-btn","bug-log-fab","home-exit-btn"].forEach(function(id){
+      var b=document.getElementById(id);if(!b)return;var l=b.querySelector(".fullpage-mode-label");if(!l||getComputedStyle(b).display==="none")return;
+      if(l.dataset.guardNowrap){l.style.removeProperty("white-space");l.style.removeProperty("font-size");delete l.dataset.guardNowrap}
+      var lh=parseFloat(getComputedStyle(l).lineHeight)||31;var h=l.getBoundingClientRect().height;
+      if(h<=lh+1)return;
+      l.style.setProperty("white-space","nowrap","important");l.dataset.guardNowrap="1";
+      var fs=parseFloat(getComputedStyle(l).fontSize)||30;var tries=0;
+      while(tries++<12&&l.scrollWidth>b.clientWidth+2){fs-=1;l.style.setProperty("font-size",fs+"px","important")}
+      log("功能鍵 "+id+" 文字疊成兩行 → 改一行"+(tries>1?"、字級 "+fs+"px":""));
+    });
+  }
+  var timer=null;function run(){if(timer)clearTimeout(timer);timer=setTimeout(function(){timer=null;try{fixHero();fixLabels()}catch(e){log("失敗 "+e)}},120)}
+  window.__layoutGuard=run;
+  window.addEventListener("load",run);window.addEventListener("resize",run);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(run);
+  var tabs=document.getElementById("game-tabs");if(tabs)tabs.addEventListener("click",function(){setTimeout(run,50);setTimeout(run,600)});
+  try{new MutationObserver(run).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
+  try{var hb=document.getElementById("hero-balls");if(hb)new MutationObserver(run).observe(hb,{childList:true})}catch(e){}
+  run();
+})();
+</script>
 </body>
 </html>
