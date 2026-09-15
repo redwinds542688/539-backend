@@ -1606,6 +1606,8 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      長按 Ai 後 Ai 亮著(紀錄顯示中)，按定位或搜期清除 Ai 顯示、截圖不清，跟差數相同(這幾條本來就不分子模式)。
   6. 模擬器(scratchpad pw/ding.js、dingmarks.js、dingdbg.js)：進入定位自動掃描並填空白期、移桿重掃、長按 Ai→Ai 欄有號碼且 Ai 亮、
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
+  7. 使用者截圖回報 C式定位裡「搜期」兩字上下疊成兩行：#fullpage-btn 內容寬 59px、兩個 30px 字要 60px，差 1px 就換行(其他三顆剛好 60px)。
+     CSS 給五顆鍵的 .fullpage-mode-label 加 white-space:nowrap、置中、左右各 -2px，四顆一律左右顯示(模擬器量 定位/差數 四顆 label 都 60×31)。
 
 【★2026-09-15：E/C式截圖「畫面顯示什麼、存檔就是什麼」（原：截圖鍵存的圖要跟手機真正的截圖一致）】
   使用者拿「截圖鍵存的圖」與「手機截圖」對照：存的圖少了左側Ai欄(含539圖與排行方塊)、A/B把手、空白期上方紅線、空白期填號。
@@ -4489,6 +4491,8 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   body.sheet-font-sans-light table.road td.num{ font-family:Arial,Helvetica,"Noto Sans TC",sans-serif !important; font-weight:400 !important; font-variant-numeric:tabular-nums; }
 
   #period-btn .fullpage-mode-label, #fullpage-btn .fullpage-mode-label, #pin-btn .fullpage-mode-label, #float-save-btn .fullpage-mode-label, #float-back-btn .fullpage-mode-label, #home-exit-btn .fullpage-mode-label{ font-size:30px; line-height:31px; display:block; font-weight:700; }
+/* 2026-09-15：使用者截圖回報 C式定位裡「搜期」兩個字上下疊成兩行(其他三顆正常)。原因：#fullpage-btn 的內容寬 59px、兩個 30px 的字要 60px，差 1px 就換行；其他三顆剛好 60px。改成不換行、置中、左右各放寬 2px，四顆一律左右顯示 */
+#fullpage-btn .fullpage-mode-label, #pin-btn .fullpage-mode-label, #float-save-btn .fullpage-mode-label, #float-back-btn .fullpage-mode-label, #home-exit-btn .fullpage-mode-label{ white-space:nowrap; text-align:center; margin-left:-2px; margin-right:-2px; }
   #float-save-btn, #float-back-btn{ overflow:hidden; padding:0; }
   /* 抓牌系統第五顆「鎖屏」(2026-08-30)：文字最大化；休息灰底白字、鎖定中(armed)黃底黑字，與其他按鍵配色一致 */
   #pin-btn{ overflow:hidden; padding:0; background:#8a8a8a !important; color:#ffffff !important; animation:none; }
