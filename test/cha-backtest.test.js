@@ -78,7 +78,7 @@ test("countCha：偏移沒打勾就不計", () => {
   assert.equal(Object.values(c.counts).reduce((a, b) => a + b, 0), 0);
 });
 
-test("countCha：上下號碼相同的格子略過", () => {
+test("countCha：差數的上下同號格子一樣列入計算（2026-09-15 使用者指示）；skipEqual:true 才略過", () => {
   const rows = [
     [10, 19, 25, 30, 35],
     [20, 21, 22, 23, 24],
@@ -87,8 +87,102 @@ test("countCha：上下號碼相同的格子略過", () => {
   ];
   const m = Cha.markCha(rows, 1, 3, HAND_OPTS);
   assert.equal(m.marked.size, 4);
+  // 上桿列 r1 = 20..24：10+10=20、10+11=21、19+1=20、19+0 沒有 → 命中偏移套回同號的下桿號碼 → 20、21、20
   const c = Cha.countCha(rows, 1, 3, m.marked, HAND_OPTS);
-  assert.equal(Object.values(c.counts).reduce((a, b) => a + b, 0), 0);
+  assert.equal(c.counts[20], 2);
+  assert.equal(c.counts[21], 1);
+  assert.equal(Object.values(c.counts).reduce((a, b) => a + b, 0), 3);
+  const c2 = Cha.countCha(rows, 1, 3, m.marked, { ...HAND_OPTS, skipEqual: true });
+  assert.equal(Object.values(c2.counts).reduce((a, b) => a + b, 0), 0);
+});
+
+// ---------- C式定位的標定（markDing）：標定號碼 → 標定拖牌 ----------
+// r0 (上桿上方 k=1) : 10 19 25 30 35
+// r1 (上桿)         : 20 21 22 23 24
+// r2 (下桿上方 k=1) : 10  7 33 36 38   → 欄0 同號 10 = 標定號碼（上下都標）
+// r3 (下桿)
+// 錨點 10 九宮拖牌 = 38 39 1 9 10 11 19 20 21 → r0 的 19（欄1）命中 → 標定拖牌，r2 欄1 的 7 也標定拖牌
+const DING_ROWS = [
+  [10, 19, 25, 30, 35],
+  [20, 21, 22, 23, 24],
+  [10, 7, 33, 36, 38],
+  [1, 2, 3, 4, 5],
+];
+const DING_OPTS = { span: 1, windowSize: 4, spareRows: 0, game: "539", marker: "ding" };
+
+test("markDing：同欄相等 = 標定號碼；錨點九宮拖牌命中的上桿格與同期同欄的下桿格 = 標定拖牌", () => {
+  const m = Cha.markDing(DING_ROWS, 1, 3, DING_OPTS);
+  assert.deepEqual([...m.marked].sort(), ["0:0", "0:1", "2:0", "2:1"]);
+  assert.equal(m.pairs.length, 2);
+  assert.equal(m.echoes.length, 1);
+  assert.deepEqual(m.echoes[0].upper, [10, 10]);
+  assert.equal(m.pairs.every((p) => p.ding && p.k1 === p.k2 && p.col1 === p.col2), true);
+  // 九宮拖牌全不打勾 → 只剩標定號碼
+  const m2 = Cha.markDing(DING_ROWS, 1, 3, { ...DING_OPTS, offsetsChecked: [false, false, false, false, false, false, false, false, false] });
+  assert.deepEqual([...m2.marked].sort(), ["0:0", "2:0"]);
+});
+
+test("markDing：搜索範圍是所有欄位、不是只有錨點那一欄；錨點自己不算拖牌", () => {
+  const rows = [
+    [10, 25, 30, 35, 11], // 欄4 的 11 = 10+1 → 命中（不同欄）
+    [20, 21, 22, 23, 24],
+    [10, 33, 36, 38, 2],
+    [1, 2, 3, 4, 5],
+  ];
+  const m = Cha.markDing(rows, 1, 3, DING_OPTS);
+  assert.deepEqual([...m.marked].sort(), ["0:0", "0:4", "2:0", "2:4"]);
+});
+
+test("markFor / countCha：定位版本的同差法 = 標定格對應、上下同號不計算（skipEqual 預設 true）", () => {
+  const m = Cha.markFor(DING_ROWS, 1, 3, DING_OPTS);
+  assert.equal(m.pairs.length, 2);
+  // 對應格 (19 上 / 7 下)：19 九宮拖牌 8 9 10 18 19 20 28 29 30 → 上桿列 20..24 只有 20(+1) → 7+1 = 8 → +1
+  // 對應格 (10 上 / 10 下) 同號 → 不算
+  const c = Cha.countCha(DING_ROWS, 1, 3, m.marked, DING_OPTS);
+  assert.equal(c.counts[8], 1);
+  assert.equal(Object.values(c.counts).reduce((a, b) => a + b, 0), 1);
+  // 差數預設不略過同號
+  assert.equal(Cha.resolveOpts({ marker: "cha" }).skipEqual, false);
+  assert.equal(Cha.resolveOpts({ marker: "ding" }).skipEqual, true);
+  assert.equal(Cha.resolveOpts({ marker: "ding", skipEqual: false }).skipEqual, false);
+});
+
+test("upperLive / upperRecords：定位版本略過上下同號的標定號碼；差數版本保留（echo）", () => {
+  const live = Cha.upperLive(DING_ROWS, 1, 3, DING_OPTS);
+  assert.deepEqual(live.map((e) => e.upperNum), [19]);
+  assert.equal(live[0].r3s.length, 1);
+  assert.equal(live[0].r3s[0].offset, 1);
+  const recs = Cha.upperRecords(DING_ROWS, 1, 3, [8, 30, 31, 32, 33], DING_OPTS);
+  assert.equal(recs.length, 1);
+  assert.equal(recs[0].upperNum, 19);
+  assert.equal(recs[0].r3, 1);
+  assert.equal(recs[0].r4, 1);
+  assert.equal(recs[0].echo, false);
+  const liveKeep = Cha.upperLive(DING_ROWS, 1, 3, { ...DING_OPTS, skipEqual: false });
+  assert.deepEqual(liveKeep.map((e) => e.upperNum).sort((a, b) => a - b), [10, 19]);
+});
+
+test("appSameOffset / appPredict：marker:\"ding\" 走定位的標定邏輯", () => {
+  const records = [];
+  const base = [
+    [10, 19, 25, 30, 35],
+    [20, 21, 22, 23, 24],
+    [10, 7, 33, 36, 38],
+    [1, 2, 3, 4, 5],
+    [6, 8, 9, 12, 13],
+    [14, 15, 16, 17, 18],
+    [26, 27, 28, 29, 31],
+    [32, 34, 37, 39, 3],
+  ];
+  for (let i = 0; i < 40; i++) records.push({ date: String(20260101 + i), numbers: base[i % base.length] });
+  const p = { records, lowerDate: "20260140", game: "539", span: 3, marker: "ding" };
+  const a = Cha.appSameOffset(p);
+  assert.equal(a.error, undefined);
+  const b = Cha.appSameOffset({ ...p, marker: "cha" });
+  assert.notDeepEqual(a.table, b.table);
+  const r = Cha.appPredict({ ...p, sweepAll: true, steps: 5, spareRows: 8, upperDate: "20260137" });
+  assert.equal(r.error, undefined);
+  assert.equal(typeof r.table, "object");
 });
 
 // ---------- 前幾名 ----------

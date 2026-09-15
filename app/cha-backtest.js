@@ -2,7 +2,7 @@
  * C式差數 回測框架（純邏輯，不依賴 DOM）
  *
  * 這個模組把「名揚四海彩卷系統」裡 C式差數的三段核心邏輯
- *   1. 標定   runCModeChaSearch()        → markCha()
+ *   1. 標定   runCModeChaSearch()        → markCha()   （C式定位：runCModeDingSearch()+renderCModeDingAutoDragDesignation() → markDing()）
  *   2. 統計   computeCModeChaStatCounts() → countCha()
  *   3. 前幾名 computeCModeTopRankList()   → topRankList()
  * 逐行對照移植成只吃「號碼陣列」的純函式，再往上架：
@@ -73,6 +73,9 @@
                            // "records"（紀錄法：上桿標定號碼的紀錄 1/2/3 到回溯紀錄找相同的，取紀錄 4 最多的九宮差套到對應下桿號碼）
     gapVoteTop: null, // gapvote 模式每份表取前幾顆來投票；null = 表內有分數的號碼全部算
     upperIdx: null, // records 模式：真正的上桿位置（索引）；null = 用 6 期掃描的全部位置
+    marker: "cha", // 標定方式："cha"（C式差數 markCha：同 k 同欄差值相等且為九宮差）或 "ding"（C式定位 markDing：同 k 同欄相等 → 標定號碼，再九宮拖牌 → 標定拖牌）
+    skipEqual: null, // 同差法／紀錄法是否略過「上下桿同號」的格子；null = 依 marker 決定（cha 不略過、ding 略過）。2026-09-15 使用者指示：
+                     // 差數的上下桿相同一樣列入計算；定位裡上下桿相同號碼就不計算
   };
 
   function resolveOpts(opts) {
@@ -85,6 +88,7 @@
     if (o.colCount === undefined) o.colCount = profile.colCount;
     o.offsetsChecked = normalizeChecked(o.offsetsChecked, NINE_GRID_DRAG_OFFSETS.length);
     o.intervals = normalizeChecked(o.intervals, o.span + 1);
+    if (o.skipEqual === null || o.skipEqual === undefined) o.skipEqual = o.marker === "ding";
     return o;
   }
 
@@ -199,6 +203,76 @@
   }
 
   /**
+   * 第一段（C式定位版）：runCModeDingSearch + renderCModeDingAutoDragDesignation 的純函式版（定位自己的標定邏輯，不可改）。
+   *   階段 1 標定號碼：k=1..span，下桿上方 k 列與上桿上方 k 列同一欄位號碼相等 → 上下兩格都標定。
+   *   階段 2 標定拖牌：以階段 1「上桿側」的格子為錨點，錨點號碼做九宮拖牌（受 offsetsChecked 過濾）得到一組號碼；
+   *     在 k2=1..span 的上桿側各列「所有欄位」找號碼落在這組裡、且不是錨點自己的格子 → 標定拖牌，
+   *     同 k2 同欄位的下桿側對應格也一併標定拖牌（App 的 markDingAutoDragCell）。
+   * 回傳 { marked, pairs, echoes }：pairs = 同 k 同欄位上下兩格都有標定的對應格（k1=k2、col1=col2、upper/lower 各放兩份同值，
+   * 跟 markCha 的形狀一致，讓 countCha / upperRecords / upperLive 不用分辨來源）；echoes = 階段 1 的相等對（上下同號）。
+   * 定位沒有「間隔」設定，intervals 不用。
+   */
+  function markDing(rows, upperIdx, lowerIdx, opts) {
+    var o = resolveOpts(opts);
+    var marked = new Set();
+    var pairs = [];
+    var echoes = [];
+    var anchors = [];
+    var k, col;
+    for (k = 1; k <= o.span; k++) {
+      var bIdx = lowerIdx - k, aIdx = upperIdx - k;
+      var bCells = rowCells(rows, bIdx, lowerIdx, o), aCells = rowCells(rows, aIdx, lowerIdx, o);
+      if (!bCells || !aCells) continue;
+      for (col = 0; col < o.colCount; col++) {
+        if (bCells[col] !== aCells[col]) continue;
+        marked.add(cellKey(aIdx, col));
+        marked.add(cellKey(bIdx, col));
+        anchors.push({ k: k, col: col, val: aCells[col], key: cellKey(aIdx, col) });
+      }
+    }
+    anchors.forEach(function (an) {
+      var dragFull = nineGridDrag(an.val, o.maxBall), set = {};
+      for (var pos = 0; pos < NINE_GRID_DRAG_OFFSETS.length; pos++) if (o.offsetsChecked[pos]) set[dragFull[pos]] = true;
+      if (!Object.keys(set).length) return;
+      for (var k2 = 1; k2 <= o.span; k2++) {
+        var aIdx2 = upperIdx - k2, bIdx2 = lowerIdx - k2;
+        var aCells2 = rowCells(rows, aIdx2, lowerIdx, o), bCells2 = rowCells(rows, bIdx2, lowerIdx, o);
+        if (!aCells2 || !bCells2) continue;
+        for (var col2 = 0; col2 < o.colCount; col2++) {
+          var key2 = cellKey(aIdx2, col2);
+          if (key2 === an.key) continue; // 不是錨點自己
+          if (!set[aCells2[col2]]) continue;
+          marked.add(key2);
+          marked.add(cellKey(bIdx2, col2));
+        }
+      }
+    });
+    for (k = 1; k <= o.span; k++) {
+      var bI = lowerIdx - k, aI = upperIdx - k;
+      var bC = rowCells(rows, bI, lowerIdx, o), aC = rowCells(rows, aI, lowerIdx, o);
+      if (!bC || !aC) continue;
+      for (col = 0; col < o.colCount; col++) {
+        if (!marked.has(cellKey(aI, col)) || !marked.has(cellKey(bI, col))) continue;
+        var pair = {
+          k1: k, k2: k, col1: col, col2: col, diff: null,
+          upper: [aC[col], aC[col]], lower: [bC[col], bC[col]],
+          upperRows: [aI, aI], lowerRows: [bI, bI],
+          sameRow: true, ding: true,
+        };
+        pairs.push(pair);
+        if (aC[col] === bC[col]) echoes.push(pair);
+      }
+    }
+    return { marked: marked, pairs: pairs, echoes: echoes };
+  }
+
+  /** 依 opts.marker 選標定方式（"ding" → markDing，其他 → markCha） */
+  function markFor(rows, upperIdx, lowerIdx, opts) {
+    var o = resolveOpts(opts);
+    return o.marker === "ding" ? markDing(rows, upperIdx, lowerIdx, o) : markCha(rows, upperIdx, lowerIdx, o);
+  }
+
+  /**
    * 第二段：統計（computeCModeChaStatCounts 的純函式版）。
    * 只看已標定的上下對應格：上方號碼做九宮拖牌，命中「上桿那一列」的偏移，
    * 套到下方號碼得到的結果號碼 +1。
@@ -220,7 +294,7 @@
         if (!marked.has(cellKey(aIdx, col)) || !marked.has(cellKey(bIdx, col))) continue;
         var upperVal = aCells[col];
         var lowerVal = bCells[col];
-        if (upperVal === lowerVal) continue;
+        if (o.skipEqual && upperVal === lowerVal) continue; // 2026-09-15：差數不略過同號（列入計算）；定位略過
         var dragUpper = nineGridDrag(upperVal, o.maxBall);
         var dragLower = nineGridDrag(lowerVal, o.maxBall);
         for (var pos = 0; pos < NINE_GRID_DRAG_OFFSETS.length; pos++) {
@@ -252,7 +326,7 @@
 
   /** 單一上桿位置：標定 + 統計（App 的雙擊差數鍵 = 只算目前上桿這一個位置） */
   function runSingle(rows, upperIdx, lowerIdx, opts) {
-    var m = markCha(rows, upperIdx, lowerIdx, opts);
+    var m = markFor(rows, upperIdx, lowerIdx, opts);
     var c = countCha(rows, upperIdx, lowerIdx, m.marked, opts);
     return {
       upperIdx: upperIdx,
@@ -301,7 +375,7 @@
    */
   function aiRecords(rows, upperIdx, lowerIdx, actual, opts) {
     var o = resolveOpts(opts);
-    var m = markCha(rows, upperIdx, lowerIdx, o);
+    var m = markFor(rows, upperIdx, lowerIdx, o);
     var entries = [];
     m.pairs.forEach(function (pair) {
       for (var side = 0; side < 2; side++) {
@@ -466,7 +540,7 @@
   function upperRecords(rows, upperIdx, lowerIdx, actualLower, opts) {
     var o = resolveOpts(opts);
     if (!actualLower) return [];
-    var m = markCha(rows, upperIdx, lowerIdx, o);
+    var m = markFor(rows, upperIdx, lowerIdx, o);
     var upperRow = rowCells(rows, upperIdx, lowerIdx, o);
     if (!upperRow) return [];
     function hits(num, targetRow) {
@@ -491,6 +565,7 @@
     var out = [];
     order.forEach(function (key) {
       var c = cells[key];
+      if (o.skipEqual && c.upperNum === c.lowerNum) return; // 定位：上下桿同號不計算
       var h3 = hits(c.upperNum, upperRow), h4 = hits(c.lowerNum, actualLower);
       if (!h3.length || !h4.length) return; // 沒命中整筆不記
       h3.forEach(function (a) {
@@ -513,7 +588,7 @@
    */
   function upperLive(rows, upperIdx, lowerIdx, opts) {
     var o = resolveOpts(opts);
-    var m = markCha(rows, upperIdx, lowerIdx, o);
+    var m = markFor(rows, upperIdx, lowerIdx, o);
     var upperRow = rowCells(rows, upperIdx, lowerIdx, o);
     if (!upperRow) return [];
     var cells = {}, order = [];
@@ -527,7 +602,10 @@
         order.push(key);
       }
     });
-    return order.map(function (key) {
+    return order.filter(function (key) {
+      var c = cells[key];
+      return !(o.skipEqual && c.upperNum === c.lowerNum); // 定位：上下桿同號不計算
+    }).map(function (key) {
       var c = cells[key];
       var drag = nineGridDrag(c.upperNum, o.maxBall), r3s = [];
       for (var pos = 0; pos < NINE_GRID_DRAG_OFFSETS.length; pos++) {
@@ -1125,6 +1203,8 @@
     if (p.span) o.span = p.span;
     if (p.offsetsChecked) o.offsetsChecked = p.offsetsChecked;
     if (p.intervals) o.intervals = p.intervals;
+    if (p.marker) o.marker = p.marker; // "cha"（預設）或 "ding"（C式定位的標定邏輯）
+    if (p.skipEqual !== undefined && p.skipEqual !== null) o.skipEqual = !!p.skipEqual;
     var data = fromRecords(p.records || [], o);
     if (!data.rows.length) return { error: "沒有開獎資料" };
     var dateIdx = {};
@@ -1171,6 +1251,8 @@
     if (p.span) o.span = p.span;
     if (p.offsetsChecked) o.offsetsChecked = p.offsetsChecked;
     if (p.intervals) o.intervals = p.intervals;
+    if (p.marker) o.marker = p.marker;
+    if (p.skipEqual !== undefined && p.skipEqual !== null) o.skipEqual = !!p.skipEqual;
     var data = fromRecords(p.records || [], o);
     if (!data.rows.length) return { error: "沒有開獎資料" };
     var dateIdx = {};
@@ -1197,6 +1279,8 @@
     nineGridDrag: nineGridDrag,
     cellKey: cellKey,
     markCha: markCha,
+    markDing: markDing,
+    markFor: markFor,
     countCha: countCha,
     runSingle: runSingle,
     frameEnd: frameEnd,

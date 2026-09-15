@@ -358,6 +358,16 @@ npm run cha-backtest -- --json > out.json         # 完整 record 輸出給後�
    使用者接著回報首頁印/存的暗色系圖檔星期也不清楚（同一個 html2canvas 問題，只是徽章更小）：徽章補畫改成全域 `window.drawWdBadges()`，
    三條截圖路徑（定期/C 式、首頁印存、空白單）都用；首頁印存路徑截圖當下 `.cell-shift` 已被設成透明字，字色改取截圖前收集的 textJobs 顏色。
 
+11. C 式定位搭上差數的 Ai 統計邏輯（使用者 2026-09-15 指示）。定位自己的標定邏輯（標定號碼＋標定拖牌）不動，模組新增 `markDing`
+   （`runCModeDingSearch` + `renderCModeDingAutoDragDesignation` 的純函式版）與選項 `marker:"cha"|"ding"`、`skipEqual`
+   （null = 依 marker：差數不略過上下同號、定位略過）；`markFor` 依 marker 派發，`runSingle`/`aiRecords`/`upperRecords`/`upperLive` 都經它。
+   `countCha` 的「上下號碼相同略過」改成只在 `skipEqual` 時略過（使用者：差數同號一樣列入計算，定位不計算）；
+   `upperRecords`/`upperLive` 在 `skipEqual` 時不記、不預測同號的標定號碼。`appPredict`/`appSameOffset` 多收 `marker`、`skipEqual`。
+   App 端：定位版同差法 `computeCModeDingSameOffsetStatCounts()`（DOM 版：上下兩格都有標定、上方九宮拖牌命中上桿列的偏移套到下方、同號不算），
+   動畫掃描期間 `cModeCurrentSubModeStatCounts` 在定位改用它；掛勾開關改 `__chaModeOk()`（差數定位 或 C 式定位、不含 E 式等距）；
+   進入定位、移桿落定都自動跑同差法填空白期；單擊／長按定位＝同差法（原單期表、原 6 位置掃描封存）；長按 Ai＝定位版紀錄法（`marker:"ding"`、
+   `skipEqual:true`、九宮偏移用定位的打勾）；Ai 亮燈／清除規則與差數相同。
+
 App 目前用 `sweepAll: true`（使用者 2026-09-14 指示「上下桿差 6 到 1 都要加入統計」）：上桿差 1 到差 6 各跑一次紀錄法，
 全部累進同一張 39 格表，畫面上的 A 位置不影響結果，只有 B 決定預測期。回溯次數 `steps: 100`（使用者 2026-09-14 依序 100→19→6→42→16→100）、備用列 `spareRows: 96`（16+96 = 112 列，回溯第 100 次差 6 的上桿往上搜 6 期剛好到備用列第 1 期）；CLI 與模組預設仍是 16，用 `--steps 7` 可對照。
 
@@ -371,11 +381,12 @@ B 在空白列時用 `blanksBelow`（B 在最後一期下面第幾列）換算 `
 |---|---|
 | `calcNineGridDrag` | `nineGridDrag` |
 | `runCModeChaSearch` | `markCha` |
+| `runCModeDingSearch` + `renderCModeDingAutoDragDesignation`（C 式定位） | `markDing` |
 | `computeCModeChaStatCounts` | `countCha` |
 | `computeCModeTopRankList` | `topRankList` |
 | `runCModeChaStatSweepThenShow` | `sweep` |
 | 捲動區回溯 + 手動比對 | `backtest` |
 
 規則細節（差值直接相減不繞圈、九宮拖牌超過球數才繞回、兩桿同組號碼可標定、
-上下號碼相同的格子略過、偏移沒打勾就不標定也不計分）都照 App 現況移植，
+上下號碼相同的格子在差數一樣計算、在定位略過（`skipEqual`，2026-09-15）、偏移沒打勾就不標定也不計分）都照 App 現況移植，
 測試檔裡有手算範例逐條驗證。
