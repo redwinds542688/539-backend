@@ -1617,6 +1617,8 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      長按 Ai 後 Ai 亮著(紀錄顯示中)，按定位或搜期清除 Ai 顯示、截圖不清，跟差數相同(這幾條本來就不分子模式)。
   6. 模擬器(scratchpad pw/ding.js、dingmarks.js、dingdbg.js)：進入定位自動掃描並填空白期、移桿重掃、長按 Ai→Ai 欄有號碼且 Ai 亮、
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
+  9. 使用者截圖回報「暗色系 調整期數的期數顯示不明顯」：暗色系只改了期數字色(#eee)與按鍵色，期數框仍是白底，淺字落在白底上看不見。
+     補 body.theme-dark .blank-stepper 底色 #1c1c1c(跟紅線區同色)、期數字改亮綠 #33D17A；紅框與尺寸不變。模擬器暗色系大樂透：底 rgb(28,28,28)、字綠、按鍵列位置不變。
   8. 使用者截圖回報「六合 大樂 會破壞畫面」：7顆球(6＋特別號)在較窄手機一排放不下、特別號掉到第二排，紅線區鎖死202px於是把
      印/期數/抓那排按鍵切掉一半(原App就有，模擬器360px寬重現)。只動球：body.game-wide 時球列不換行，球徑＝min(48px,(球列寬−33px)÷7)、
      字級等比；360px寬約42px、412px仍48px；模擬器360/393/412三種寬度六合彩/大樂透按鍵列位置都與539相同、無裁切。紅線區高度規則不動。
@@ -3552,6 +3554,11 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   body.theme-dark table.road tr.highlight td.num{ background:#4a4000; color:#fff; }
   body.theme-dark .scroller, body.theme-dark .panels{ background:#121212; }
   body.theme-dark .blank-stepper .count{ color:#eee; }
+  /* 2026-09-15：使用者截圖回報暗色系「調整期數的期數顯示不明顯」——暗色系只把期數字改成 #eee、按鍵改深藍，
+     期數框本身卻還是白底(#fff)，淺色字落在白底上幾乎看不見。補上暗色系的期數框底色(跟紅線區同色 #1c1c1c)，字用亮綠 #33D17A(跟亮色系同色)，
+     在深底上清楚可見；紅框與尺寸不變(紅線區鎖高規則不受影響)。 */
+  body.theme-dark .blank-stepper{ background:#1c1c1c; }
+  body.theme-dark .blank-stepper .count{ color:#33D17A; }
   body.theme-dark #c-ding-ai-box{ background:#121212 !important; border-right-color:#555 !important; }
   body.theme-dark #fullpage-bottom-mask, body.theme-dark #bottom-frame-line-wrap, body.theme-dark #full-page-function-zone-outline{ background:#121212 !important; }/* 第101條：#img-overlay是滿版透明的按鍵層，不能塗底色 */
   body.theme-dark #c-ding-left-blank-frame{ background:#121212 !important; }
