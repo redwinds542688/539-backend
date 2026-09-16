@@ -1663,6 +1663,9 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
   【2026-09-16 合併】使用者比對兩個檔案(檔案1：內嵌 Liberation Sans/Mono 數字字型 SheetDigitsSans/Mono＋號碼字級放大＋紀錄法回溯動畫＋暗色系 Ai 格底色；
      檔案2：逐字置中)後指示「以檔案1為基底，把逐字置中補進去」——本檔＝檔案1 ＋ 下面第 10 條(perCharInkCenter/tabPad、td.num 比例數字規則)。
+  11. 使用者截圖回報「星期一特別顯示，但左右邊格線有內縮、沒有與上下列格線對齊」(2026-09-16)：週起始線原本是每格的 inset box-shadow，只畫在 padding box 裡，
+     每條直格線處都斷 1px、最左最右各縮 1px。改成把週一列上一列的底格線顏色改黑(tr:has(+ tr.month-start) td)，線就是格線本身，接合完整、寬度不變；
+     capturing-plain 還原一般格線色(畫布另畫週起始線)、capturing-save-only 透明。模擬器放大 5 倍像素量測：改前每條直格線處缺 10 個裝置像素，改後連續。
   10. 使用者截圖回報「在全頁 11 為什麼沒有置中」(放大 5 倍)：(a)td.num 的 tabular-nums 讓手機字體的 1 被放進固定寬度／換成等寬版字形，canvas 量測沒有
      tabular 設定 → 含 1 的號碼偏右(模擬器用 Fira Sans/Merriweather Sans 重現：11 偏 +6.6px)。改成號碼格一律比例數字(td.num font-variant-numeric:normal)。
      (b)小字級排版把每個字的前進寬取整，再被 transform 放大 5 倍，整串量測會偏：置中改成逐字——每個字的起點用 DOM Range 量到的實際字框，
@@ -3754,6 +3757,15 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   table.road tr.month-start td{
     box-shadow: inset 0 0.6px 0 0 #000 !important;
   }
+  /* 2026-09-16：使用者截圖回報「星期一特別顯示，但左右邊格線有內縮現象、沒有與上下列格線對齊」。原因：上面那條週起始線是每一格的 inset box-shadow，
+     inset 陰影只畫在格子的 padding box 裡，碰到直的格線就斷掉(每條直格線處缺 1px，最左最右也各縮 1px；放大 5 倍後缺口 5px，模擬器像素量測證實)。
+     改法：不用陰影，改把「週一那列上面那一列」的底格線(collapse 後就是週一列的上格線)顏色改黑，線本身就是格線，跟直格線完全接合、粗細 1px 跟其他格線相同，
+     格子寬高與邊框寬度都不變(只改顏色，格子完整稽核不受影響)。存圖路徑(capturing-*)另外在畫布上畫週起始線，這裡把顏色還原成一般格線色，避免畫兩次。 */
+  table.road tr.month-start td{ box-shadow:none !important; }
+  table.road tr:has(+ tr.month-start) td{ border-bottom-color:#000 !important; }
+  body.capturing-plain table.road tr:has(+ tr.month-start) td{ border-bottom-color:#bbb !important; }
+  body.theme-dark.capturing-plain table.road tr:has(+ tr.month-start) td{ border-bottom-color:#555 !important; }
+  body.capturing-save-only table.road tr:has(+ tr.month-start) td{ border-bottom-color:transparent !important; }
   table.road td.wd{ width:11.89px; min-width:11.89px; max-width:11.89px; padding:1px; text-align:center; background:#e2e2e2; }
   body.capturing-save-only table.road td.wd{
     border-right:1.0px solid transparent;
