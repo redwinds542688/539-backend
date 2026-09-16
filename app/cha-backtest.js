@@ -74,8 +74,8 @@
     gapVoteTop: null, // gapvote 模式每份表取前幾顆來投票；null = 表內有分數的號碼全部算
     upperIdx: null, // records 模式：真正的上桿位置（索引）；null = 用 6 期掃描的全部位置
     marker: "cha", // 標定方式："cha"（C式差數 markCha：同 k 同欄差值相等且為九宮差）或 "ding"（C式定位 markDing：同 k 同欄相等 → 標定號碼，再九宮拖牌 → 標定拖牌）
-    skipEqual: null, // 同差法／紀錄法是否略過「上下桿同號」的格子；null = 依 marker 決定（cha 不略過、ding 略過）。2026-09-15 使用者指示：
-                     // 差數的上下桿相同一樣列入計算；定位裡上下桿相同號碼就不計算
+    skipEqual: null, // 紀錄法(upperRecords/upperLive)是否略過「上下桿同號」的標定號碼；null = 依 marker（cha 照記回音、ding 略過）。
+                     // 同差法(countCha)一律略過同號（2026-09-16 使用者指示「差數同號改回略過不計算」；9/15 曾短暫改成列入）
   };
 
   function resolveOpts(opts) {
@@ -294,7 +294,7 @@
         if (!marked.has(cellKey(aIdx, col)) || !marked.has(cellKey(bIdx, col))) continue;
         var upperVal = aCells[col];
         var lowerVal = bCells[col];
-        if (o.skipEqual && upperVal === lowerVal) continue; // 2026-09-15：差數不略過同號（列入計算）；定位略過
+        if (upperVal === lowerVal) continue; // 同差法一律略過上下同號（2026-09-16 差數改回略過；skipEqual 只管紀錄法）
         var dragUpper = nineGridDrag(upperVal, o.maxBall);
         var dragLower = nineGridDrag(lowerVal, o.maxBall);
         for (var pos = 0; pos < NINE_GRID_DRAG_OFFSETS.length; pos++) {

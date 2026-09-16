@@ -78,7 +78,7 @@ test("countCha：偏移沒打勾就不計", () => {
   assert.equal(Object.values(c.counts).reduce((a, b) => a + b, 0), 0);
 });
 
-test("countCha：差數的上下同號格子一樣列入計算（2026-09-15 使用者指示）；skipEqual:true 才略過", () => {
+test("countCha：上下號碼相同的格子一律略過（2026-09-16 差數改回略過，與定位相同）", () => {
   const rows = [
     [10, 19, 25, 30, 35],
     [20, 21, 22, 23, 24],
@@ -87,12 +87,9 @@ test("countCha：差數的上下同號格子一樣列入計算（2026-09-15 使�
   ];
   const m = Cha.markCha(rows, 1, 3, HAND_OPTS);
   assert.equal(m.marked.size, 4);
-  // 上桿列 r1 = 20..24：10+10=20、10+11=21、19+1=20、19+0 沒有 → 命中偏移套回同號的下桿號碼 → 20、21、20
   const c = Cha.countCha(rows, 1, 3, m.marked, HAND_OPTS);
-  assert.equal(c.counts[20], 2);
-  assert.equal(c.counts[21], 1);
-  assert.equal(Object.values(c.counts).reduce((a, b) => a + b, 0), 3);
-  const c2 = Cha.countCha(rows, 1, 3, m.marked, { ...HAND_OPTS, skipEqual: true });
+  assert.equal(Object.values(c.counts).reduce((a, b) => a + b, 0), 0);
+  const c2 = Cha.countCha(rows, 1, 3, m.marked, { ...HAND_OPTS, skipEqual: false }); // skipEqual 只管紀錄法，同差法一律略過
   assert.equal(Object.values(c2.counts).reduce((a, b) => a + b, 0), 0);
 });
 
@@ -133,7 +130,7 @@ test("markDing：搜索範圍是所有欄位、不是只有錨點那一欄；錨
   assert.deepEqual([...m.marked].sort(), ["0:0", "0:4", "2:0", "2:4"]);
 });
 
-test("markFor / countCha：定位版本的同差法 = 標定格對應、上下同號不計算（skipEqual 預設 true）", () => {
+test("markFor / countCha：定位版本的同差法 = 標定格對應、上下同號不計算", () => {
   const m = Cha.markFor(DING_ROWS, 1, 3, DING_OPTS);
   assert.equal(m.pairs.length, 2);
   // 對應格 (19 上 / 7 下)：19 九宮拖牌 8 9 10 18 19 20 28 29 30 → 上桿列 20..24 只有 20(+1) → 7+1 = 8 → +1
