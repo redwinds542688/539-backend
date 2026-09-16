@@ -1663,6 +1663,7 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      td.num / td.num.special 規則原本掛著 :not([style*="background"]) 守衛，格子的 style 屬性字串只要含 background 整條就失效；那格又剛好沒有 pending
      (pending 會給透明底、露出暗色表底)，於是退回亮色底。行內背景本來就壓得過樣式表，守衛沒必要 → 拿掉，暗色模式下所有號碼格永遠暗底
      (模擬器：把第 7 格 pending 拿掉＋style 含 background 字樣，舊檔=rgb(232,232,232)、新檔=rgb(38,38,38)；A/B 列行內灰底照舊)。
+     大樂透同一欄同一條規則(td.num.special)：模擬器同樣狀態 舊檔=rgb(232,232,232)、新檔=rgb(38,38,38)，一併修好。
      那格為什麼會失去 pending 又帶 background 字樣，手機上的 DOM 狀態還抓不到 → 瓢蟲(單擊 Ai)快照新增「前兩列空白期」每格 text/class/style/實際背景色，下次發生看快照就知道。
   29. 使用者指示(2026-09-16)「移動上下桿會自動啟動 Ai 或差數/合匯/定位，改為只要下桿沒有移動就不用」：拖曳開始記下下桿列號＋視窗回溯量(__cDragStartB)；
      上桿拖曳只中止進行中的動畫、不歸零 Ai/空白期顯示；落定時下桿位置沒變、且這次拖曳沒有中止任何動畫(中止了就得重跑才有結果) → 只重畫標定，
