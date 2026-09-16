@@ -191,9 +191,9 @@ test("topRankList：前二個次數值對應的所有號碼", () => {
   assert.deepEqual(Cha.topRankList(counts).map((x) => x.n), [5, 7, 9]);
 });
 
-test("topRankList：只湊到 2 顆以下時放寬到第三名", () => {
-  const counts = { 5: 3, 9: 2, 11: 1, 12: 1 };
-  assert.deepEqual(Cha.topRankList(counts).map((x) => x.n), [5, 9, 11, 12]);
+test("topRankList：前二名合計 2 顆以下時也不補第三名（2026-09-16 使用者指示）", () => {
+  const counts = { 5: 3, 7: 2, 9: 1, 11: 1 };
+  assert.deepEqual(Cha.topRankList(counts).map((x) => x.n), [5, 7]);
 });
 
 test("topRankList：已達 3 顆就不放寬", () => {

@@ -696,11 +696,7 @@
     var ranks = o.topRanks;
     var topVals = distinct.slice(0, ranks);
     var filtered = list.filter(function (x) { return topVals.indexOf(x.c) >= 0; });
-    if (filtered.length <= 2 && distinct.length > ranks) {
-      ranks += 1;
-      topVals = distinct.slice(0, ranks);
-      filtered = list.filter(function (x) { return topVals.indexOf(x.c) >= 0; });
-    }
+    // 2026-09-16 使用者指示：前二名合計 2 顆以下時「不用再把第三名補進來」（原放寬到第三名的規則移除）
     return filtered.slice(0, o.maxFill);
   }
 
