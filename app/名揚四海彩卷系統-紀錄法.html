@@ -1663,6 +1663,9 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
   【2026-09-16 合併】使用者比對兩個檔案(檔案1：內嵌 Liberation Sans/Mono 數字字型 SheetDigitsSans/Mono＋號碼字級放大＋紀錄法回溯動畫＋暗色系 Ai 格底色；
      檔案2：逐字置中)後指示「以檔案1為基底，把逐字置中補進去」——本檔＝檔案1 ＋ 下面第 10 條(perCharInkCenter/tabPad、td.num 比例數字規則)。
+  12. 使用者再回報「還是一樣內縮」(2026-09-16)：把截圖放大看，內縮的是星期一那格的深灰底跟左右直格線之間各露出約 1 個裝置像素的白縫
+     (手機 Chrome 底色邊緣落在半像素被反鋸齒削掉、格線貼齊整數像素；桌面 Chrome 重現不了)。深灰格加 0.5px 同色外陰影(跟底色同層、在格線之下)填縫；
+     暗色系用 #8a8a8a；存圖路徑不加。格線位置與粗細不變。
   11. 使用者截圖回報「星期一特別顯示，但左右邊格線有內縮、沒有與上下列格線對齊」(2026-09-16)：週起始線原本是每格的 inset box-shadow，只畫在 padding box 裡，
      每條直格線處都斷 1px、最左最右各縮 1px。改成把週一列上一列的底格線顏色改黑(tr:has(+ tr.month-start) td)，線就是格線本身，接合完整、寬度不變；
      capturing-plain 還原一般格線色(畫布另畫週起始線)、capturing-save-only 透明。模擬器放大 5 倍像素量測：改前每條直格線處缺 10 個裝置像素，改後連續。
@@ -3766,6 +3769,13 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   body.capturing-plain table.road tr:has(+ tr.month-start) td{ border-bottom-color:#bbb !important; }
   body.theme-dark.capturing-plain table.road tr:has(+ tr.month-start) td{ border-bottom-color:#555 !important; }
   body.capturing-save-only table.road tr:has(+ tr.month-start) td{ border-bottom-color:transparent !important; }
+  /* 2026-09-16(二)：使用者放大截圖仍回報「星期一那格左右內縮」。把截圖放大 3 倍看：內縮的不是格線，是星期一那格的深灰底(#666)
+     跟左右兩條直格線之間各留了約 1 個裝置像素的白縫——手機 Chrome 把格子底色與格線分開描繪，欄寬是小數(11.89px)，底色邊緣落在半個像素上
+     被反鋸齒削掉，格線卻貼齊整數像素，中間就露出底下的白色；淺色格看不出來，深灰格就很明顯。模擬器(桌面 Chrome)描繪方式不同、重現不了。
+     修法：深灰格再加一圈 0.5px 同色的外陰影(box-shadow 跟底色同一層描繪、在格線之下)，把縫填成同色；格線本身照樣畫在最上層，位置粗細都不變。 */
+  table.road td.wd.mon-cell{ box-shadow:0 0 0 0.5px #666666; }
+  body.theme-dark table.road td.wd.mon-cell{ box-shadow:0 0 0 0.5px #8a8a8a; }
+  body.capturing-save-only table.road td.wd.mon-cell, body.capturing-plain table.road td.wd.mon-cell{ box-shadow:none; }
   table.road td.wd{ width:11.89px; min-width:11.89px; max-width:11.89px; padding:1px; text-align:center; background:#e2e2e2; }
   body.capturing-save-only table.road td.wd{
     border-right:1.0px solid transparent;
