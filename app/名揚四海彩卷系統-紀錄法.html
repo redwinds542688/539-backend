@@ -1659,6 +1659,8 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
   【2026-09-16 合併】使用者比對兩個檔案(檔案1：內嵌 Liberation Sans/Mono 數字字型 SheetDigitsSans/Mono＋號碼字級放大＋紀錄法回溯動畫＋暗色系 Ai 格底色；
      檔案2：逐字置中)後指示「以檔案1為基底，把逐字置中補進去」——本檔＝檔案1 ＋ 下面第 10 條(perCharInkCenter/tabPad、td.num 比例數字規則)。
+  14. 使用者指示(2026-09-16)「長按 Ai 左上角回溯顯示改在左下角 Ai 鍵上面，原有抓 539 的圖恢復」：回溯計數(#c-mode-replay-counter)原本放在
+     Ai 欄灰底線下方，但灰底線已隱藏、量到的位置是欄頂，計數就壓在抓 539 的彩球圖上。改成貼在 #bug-log-fab(Ai 鍵)正上方(同左緣同寬、底邊距鍵頂 4px)，彩球圖不再被蓋到。
   13. 使用者指示(2026-09-16)：空白期與 Ai 欄「前二名合計只有 2 顆以下時，不用再把第三名補進來」——fillCModeChaSameBlanks、Ai 欄名單、
      computeCModeTopRankList 三處的補第三名/放寬規則全部移除；規則剩：次數最高的兩個名次、並列全算、次數>1、最多 15 顆。
   12. 使用者再回報「還是一樣內縮」(2026-09-16)：把截圖放大看，內縮的是星期一那格的深灰底跟左右直格線之間各露出約 1 個裝置像素的白縫
@@ -6486,7 +6488,8 @@ window.__chaSameRunNow=function(){if(!__chaModeOk())return false;if(__chaSameSyn
 window.__chaReplay={running:false,abort:false,pendingRerun:false,STEP_MS:50,VISIBLE_STEPS:16,TOTAL_STEPS:100,FAST_MS:12};
 window.__chaReplayAbort=function(why){const R=window.__chaReplay;if(!R.running)return false;R.abort=true;R.abortWhy=why||"";if(typeof R._finish==="function"){try{R._finish(true)}catch(e){}}return true};
 function __chaReplayCounter(text){let el=document.getElementById("c-mode-replay-counter");if(text===null){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id="c-mode-replay-counter";el.setAttribute("aria-hidden","true");Object.assign(el.style,{position:"fixed",zIndex:"9900",pointerEvents:"none",color:"#c00",fontSize:"13px",fontWeight:"800",lineHeight:"1.25",textAlign:"center",whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums"});
-/* 放在左側 Ai 欄(#c-ding-ai-box)彩球圖/Ai 圖下方的空位，不壓到任何號碼格；Ai 欄的排行方塊重播中是清空的，演完才會出現。沒有 Ai 欄(版面不是 16+4)時退到底部按鍵列上方置中 */let placed=false;try{const box=document.getElementById("c-ding-ai-box");if(box){const br=box.getBoundingClientRect();const ul=box.querySelector(".ai-box-underline");const ur=ul?ul.getBoundingClientRect():null;if(br.width>=40){Object.assign(el.style,{left:Math.round(br.left)+"px",width:Math.round(br.width)+"px",top:Math.round((ur?ur.bottom:br.top)+8)+"px",whiteSpace:"normal"});placed=true}}}catch(e){}
+/* 2026-09-16：使用者指示——回溯計數改放「左下角 Ai 鍵的正上方」(原本放在 Ai 欄上方、蓋住了抓 539 的彩球圖；Ai 欄的灰底線已隱藏，量到的位置就是欄頂)。
+   位置＝#bug-log-fab 的左緣/寬度，底邊貼在 Ai 鍵上緣往上 4px；沒有 Ai 鍵時退到底部按鍵列上方置中。彩球圖不再被蓋到。 */let placed=false;try{const fab=document.getElementById("bug-log-fab");if(fab){const fr=fab.getBoundingClientRect();if(fr.width>=20&&fr.top>40){Object.assign(el.style,{left:Math.round(fr.left)+"px",width:Math.round(fr.width)+"px",bottom:Math.round(window.innerHeight-fr.top+4)+"px",whiteSpace:"normal"});placed=true}}}catch(e){}
 if(!placed)Object.assign(el.style,{bottom:"64px",left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,.72)",color:"#FFD700",padding:"6px 12px",borderRadius:"14px"});document.body.appendChild(el)}el.innerHTML=String(text).replace(" ","<br>")}
 function __chaRecordsReplayThenShow(res,showFn){const R=window.__chaReplay;const LOG=function(d){if(typeof logEvent==="function")logEvent("紀錄法動畫",d)};
 const canScroll=typeof applyCModeScrollOffset==="function"&&typeof getCModeScrollBaseWindow==="function";
