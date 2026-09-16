@@ -1659,6 +1659,7 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
   【2026-09-16 合併】使用者比對兩個檔案(檔案1：內嵌 Liberation Sans/Mono 數字字型 SheetDigitsSans/Mono＋號碼字級放大＋紀錄法回溯動畫＋暗色系 Ai 格底色；
      檔案2：逐字置中)後指示「以檔案1為基底，把逐字置中補進去」——本檔＝檔案1 ＋ 下面第 10 條(perCharInkCenter/tabPad、td.num 比例數字規則)。
+  27. 使用者指示(2026-09-16)「空白期顯示號碼閃爍取消」：td.num.c-ding-top3 .cell-shift 的 pinBlink 動畫拿掉(animation:none)，填號固定顯示不閃。
   26. 使用者指示(2026-09-16)「空白期顯示是前二名，其他大於 0 都顯示在 Ai 欄」：差數/定位(同差法)與合匯(拖牌累計表)一致——空白期＝前二名，
      Ai 欄＝前二名以外、次數>0 的號碼(次數高在前、同次數號碼小在前，最多 16 顆)；取代第 23/25 條的「次數等於 1」。
   25. 使用者指示(2026-09-16)「定位、合匯也一樣 Ai 欄最多 16 號」：定位與差數共用同一套(第 23/24 條)；合匯補上——掃描統計(finishShow)完成後，
@@ -3937,7 +3938,7 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   }
   /* 2026-09-01：長按定位掃描完成後，空白期格子顯示統計前三名(號碼+右上角次數)，樣式比照四招 */
   table.road td.num.c-ding-top3{ position:relative; color:#5E0E0E !important; font-weight:700; background:#fff !important; }
-  table.road td.num.c-ding-top3 .cell-shift{ animation:pinBlink 1.1s ease-in-out infinite; } /* 2026-09-01：前幾名號碼閃爍(試效果) */
+  table.road td.num.c-ding-top3 .cell-shift{ animation:none; } /* 2026-09-16：使用者指示——空白期顯示號碼不再閃爍(原 pinBlink 1.1s 無限循環) */ /* 2026-09-01：前幾名號碼閃爍(試效果) */
   table.road td.num.c-ding-top3 .ding-top-badge{ position:absolute; top:2px; right:2.5px; font-size:0.5em; line-height:1; font-weight:700; font-family:Arial, Helvetica, sans-serif; color:#FF3B3B !important; pointer-events:none; z-index:2; }
   table.road tr.highlight td.num{ background:#fff2b0; color:#000; }
   footer.legend{
