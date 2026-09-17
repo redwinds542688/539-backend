@@ -1659,6 +1659,9 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
   【2026-09-16 合併】使用者比對兩個檔案(檔案1：內嵌 Liberation Sans/Mono 數字字型 SheetDigitsSans/Mono＋號碼字級放大＋紀錄法回溯動畫＋暗色系 Ai 格底色；
      檔案2：逐字置中)後指示「以檔案1為基底，把逐字置中補進去」——本檔＝檔案1 ＋ 下面第 10 條(perCharInkCenter/tabPad、td.num 比例數字規則)。
+  37. 使用者截圖(2026-09-17 定位 暗色)「自動搜尋前二名顯示在下桿所在的第一空白列時，號碼顏色須與第二空白列一致(只有號碼；下桿底色、框不變)」：
+     下桿列上色(renderCModeOverlayForRow)會在 td 行內寫 color:#1F1F1F !important，行內 !important 壓過樣式表的 c-ding-top3 顏色，所以下桿列的填號變深灰。
+     填號顏色改寫在號碼 span(.cell-shift)：亮色 #5E0E0E、暗色 #FF8A80、截圖(pin-frame)模式 #5E0E0E，span 自己的樣式表顏色不受 td 行內顏色影響；下桿列灰底、綠框、次數小字照舊。
   36. 使用者截圖(2026-09-17 六合彩 差數)「定位/差數/合匯 六合彩 Ai 欄顯示號碼右邊有點被切到」：Ai 欄格子字級原本用 fs×1.15 估兩位數的寬度，
      粗體數字實際更寬，六合彩/大樂透的 Ai 欄只有約 50px、左邊又留了「已開」標記帶，號碼就被 overflow:hidden 切掉右邊。改成畫好後實際量號碼寬度，
      超過「格寬－標記帶－2px」就把字級一格一格往下縮，整欄統一用縮好的字級(記一筆「Ai 欄號碼字級縮到 Npx」)。號碼改包在 span.ai-num 裡才量得到寬度。
@@ -4128,6 +4131,11 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
      補上暗色系專用規則：底色改成跟一般號碼格相同的 #1a1a1a，字色改亮紅 #FF8A80(深紅 #5E0E0E 在深底上看不見)；右上角次數徽章維持 #FF3B3B。
      特異度用 7 個 .num 疊高，才壓得過上面圖釘框/捲動模式那條 6 個 .num 的規則；B 桿整列的拖曳色是 inline !important，仍優先，維持原本行為。 */
   body.theme-dark table.road td.num.num.num.num.num.num.num.c-ding-top3{ background:#1a1a1a !important; color:#FF8A80 !important; }
+  /* 2026-09-17：使用者截圖(定位 暗色)——下桿停在第一空白列時，該列填號的字色跟第二空白列不一樣(下桿列上色會把 td 行內寫 color:#1F1F1F !important，行內 !important 壓過樣式表)。
+     填號的顏色改寫在號碼 span(.cell-shift) 上：span 自己的樣式表顏色不受 td 行內顏色影響，下桿列的灰底與綠框照舊，只有號碼顏色跟其他空白列一致。截圖(pin-frame)模式維持原本的深紅。 */
+  table.road td.num.c-ding-top3 .cell-shift{ color:#5E0E0E !important; }
+  body.theme-dark table.road td.num.c-ding-top3 .cell-shift{ color:#FF8A80 !important; }
+  body.c-mode-pin-frame table.road td.num.c-ding-top3 .cell-shift{ color:#5E0E0E !important; }
   body.c-mode-pin-frame table.road td.num.c-ding-top3 .cell-shift, body.c-mode-pin-frame table.road tr.c-scroll-blanked td.num.c-ding-top3 .cell-shift{ visibility:visible !important; }
   body.c-mode-pin-frame table.road td.num.c-ding-top3 .ding-top-badge{ display:block !important; }
   /* 2026-09-06：捲動模式下原16與17之間的紅色分隔線也隱藏 */
