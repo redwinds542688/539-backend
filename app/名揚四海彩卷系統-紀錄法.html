@@ -1659,6 +1659,10 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
   【2026-09-16 合併】使用者比對兩個檔案(檔案1：內嵌 Liberation Sans/Mono 數字字型 SheetDigitsSans/Mono＋號碼字級放大＋紀錄法回溯動畫＋暗色系 Ai 格底色；
      檔案2：逐字置中)後指示「以檔案1為基底，把逐字置中補進去」——本檔＝檔案1 ＋ 下面第 10 條(perCharInkCenter/tabPad、td.num 比例數字規則)。
+  46. 使用者指示(2026-09-18)「檢查全部程式一下，數字的字體統一使用印底下設定的字體」：盤點所有顯示數字的元素——開獎單號碼格(原本就有)、日期欄 td.day、次數小字(.ding-top-badge/.pick-dup-badge)、
+     首頁最新一期彩球(.hero-balls .ball)、Ai 欄(.ai-box-rank)、39 格統計表與所有 *-stat-table 面板(含九宮差對照表、紀錄法表)、多搜期面板、搜期/子模式搜期/九連選單、選號盤(.num-picker-grid)、
+     空白期數(#blank-count)、回溯計數(#c-mode-replay-counter)。做法：六種選項各設 body 的 --sheet-num-font，這些元素 font-family 一律取它(!important 壓過行內)；粗細各元素維持原樣。
+     截圖(canvas)畫字都取元素 computed 字體，所以存圖跟畫面一致；逐字置中對 td.day 照舊在字體變更時重算。
   45. 使用者截圖(2026-09-18)「Ai 欄位的數字字體怎麼跟十六期字體不一樣」：Ai 欄格子是自己的 div，原本用預設無襯線＋粗體 800；改成畫 Ai 欄時抄開獎單號碼格(td.num)的 computed
      font-family 與 font-weight，所以標準/等距/宋體、粗/細六種選項 Ai 欄都跟著開獎單走。已開/次數的小字維持原樣。Ai 欄畫好之後才換字體選項，下一次自動搜索或拖桿落定會重畫成新字體。
   44. 使用者(2026-09-18)看到 LINE 截圖的宋體數字，同意「做看看」：開獎單字體新增「宋體粗體」「宋體細體」兩個選項(body.sheet-font-serif-bold/serif-light)。
@@ -4727,6 +4731,25 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
   body.sheet-font-sans-light table.road td.num{ font-family:"SheetDigitsSans",Arial,Helvetica,"Noto Sans TC",sans-serif !important; font-weight:400 !important; font-variant-numeric:tabular-nums; }
   body.sheet-font-serif-bold table.road td.num{ font-family:"SheetDigitsSerif","Noto Serif CJK TC","Noto Serif TC","Source Han Serif TC",Georgia,"Times New Roman",serif !important; font-weight:700 !important; font-variant-numeric:tabular-nums; }
   body.sheet-font-serif-light table.road td.num{ font-family:"SheetDigitsSerif","Noto Serif CJK TC","Noto Serif TC","Source Han Serif TC",Georgia,"Times New Roman",serif !important; font-weight:400 !important; font-variant-numeric:tabular-nums; }
+  /* 2026-09-18：使用者指示「檢查全部程式，數字的字體統一使用印底下設定的字體」——把六種開獎單字體選項對應的字型串放進 --sheet-num-font，
+     所有會顯示數字的地方(日期欄、次數小字、首頁彩球、Ai 欄、各統計表/九宮差對照表/紀錄法表、搜期/九連/選號等選單、空白期數、回溯計數)一律用它；粗細各元素維持原樣(開獎單號碼格照選項)。
+     內嵌字型只有 0-9，中文字會退回系統字型，跟原本一樣。 */
+  body.sheet-font-mono-bold, body.sheet-font-mono-light{ --sheet-num-font:"SheetDigitsMono","Roboto Mono","DejaVu Sans Mono","Courier New",Courier,monospace; }
+  body.sheet-font-sans-bold, body.sheet-font-sans-light{ --sheet-num-font:"SheetDigitsSans",Arial,Helvetica,"Noto Sans TC",sans-serif; }
+  body.sheet-font-serif-bold, body.sheet-font-serif-light{ --sheet-num-font:"SheetDigitsSerif","Noto Serif CJK TC","Noto Serif TC","Source Han Serif TC",Georgia,"Times New Roman",serif; }
+  body[class*="sheet-font-"] table.road td.day,
+  body[class*="sheet-font-"] table.road td.num .ding-top-badge,
+  body[class*="sheet-font-"] table.road td.num .pick-dup-badge,
+  body[class*="sheet-font-"] .hero-balls .ball,
+  body[class*="sheet-font-"] #c-ding-ai-box .ai-box-rank,
+  body[class*="sheet-font-"] .num-picker-grid button,
+  body[class*="sheet-font-"] #c-mode-search-span-picker button,
+  body[class*="sheet-font-"] #c-submode-span-picker button,
+  body[class*="sheet-font-"] #e-mode-nine-line-picker button,
+  body[class*="sheet-font-"] [id$="-stat-table"],
+  body[class*="sheet-font-"] #c-mode-multispan-panel,
+  body[class*="sheet-font-"] #c-mode-replay-counter,
+  body[class*="sheet-font-"] #blank-count{ font-family:var(--sheet-num-font) !important; }
   /* 2026-09-15：使用者回報全頁(放大)裡「11」沒有置中。原因：上面四種字體都對 td.num 設了 tabular-nums(等寬數字)，手機字體(Roboto 等)的 1 比其他數字窄，
      等寬時字形被放進固定寬度、字形本身也可能換成另一個版本；置中用的 canvas 量測沒有 tabular 設定，量到的是比例字距的字形，兩邊對不上就偏掉。
      置中已經是每一格各自對墨跡置中，不需要等寬對齊，所以號碼格一律用一般(比例)數字：畫面與存圖(canvas 本來就是比例字)一致，任何字體都能準確置中。
