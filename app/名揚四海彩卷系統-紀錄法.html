@@ -1661,6 +1661,7 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      檔案2：逐字置中)後指示「以檔案1為基底，把逐字置中補進去」——本檔＝檔案1 ＋ 下面第 10 條(perCharInkCenter/tabPad、td.num 比例數字規則)。
   47. 使用者截圖(2026-09-18 亮/暗兩張)「當下桿在空白期，只留下框，底色需搭配明/暗色系空白期的底色」：renderCModeOverlayForRow 遇到 tr.future(空白期列)只畫綠色框線(box-shadow)，
      不塗桿子灰底、不改字色，格子維持該色系空白期本來的底色(亮色白、暗色 #1a1a1a)，填號顏色照第 37 條在 span 上不受影響；桿子在有開獎的列照舊灰底。截圖存檔取 computed 底色，跟畫面一致。
+     另外桿子列的號碼本來有白色光暈(td.num.num-marked 的 text-shadow)，在暗色空白期底上會糊，空白期列一併拿掉光暈。
   46. 使用者指示(2026-09-18)「檢查全部程式一下，數字的字體統一使用印底下設定的字體」：盤點所有顯示數字的元素——開獎單號碼格(原本就有)、日期欄 td.day、次數小字(.ding-top-badge/.pick-dup-badge)、
      首頁最新一期彩球(.hero-balls .ball)、Ai 欄(.ai-box-rank)、39 格統計表與所有 *-stat-table 面板(含九宮差對照表、紀錄法表)、多搜期面板、搜期/子模式搜期/九連選單、選號盤(.num-picker-grid)、
      空白期數(#blank-count)、回溯計數(#c-mode-replay-counter)。做法：六種選項各設 body 的 --sheet-num-font，這些元素 font-family 一律取它(!important 壓過行內)；粗細各元素維持原樣。
@@ -3709,6 +3710,7 @@ IndexedDB也有一份備份(loadLotteryLocalDBIntoEmbedded等函式)
   body.theme-dark{ background:#121212; --ink:#e6e6e6; --ink-dim:#9a9a9a; --mark-text-color:#062B18; }/* 第103條：暗色系標定/錨定/指定號碼字色改最深綠(#062B18)，在淺紅圈底上才看得清 */
   /* 第104條：亮色系也一併加強——標記格字重900+白色微光暈，四招選號/前幾名深紅粗字；字色本身亮色仍用調色盤(綠7)，暗色用#062B18 */
   table.road td.num.num-marked, table.road td.num.c-mode-auto-match-cell{ font-weight:900 !important; text-shadow:0 0 2px rgba(255,255,255,.9), 0 0 1px rgba(255,255,255,.9); }
+  table.road tr.future td.num.num-marked{ text-shadow:none; } /* 2026-09-18：桿子停在空白期只留框，白色光暈在暗色底會糊成一團，空白期列不加光暈 */
   table.road td.num.num-picked, table.road td.num.c-ding-top3{ color:#3a0000 !important; font-weight:900 !important; }
   body.theme-dark #home-fixed-top, body.theme-dark #header-top-bg-wrap{ background:#121212; }
   body.theme-dark .hero{ background:#1c1c1c; border-color:#c62828; }
