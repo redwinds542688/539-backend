@@ -1659,6 +1659,24 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
      單擊搜期清掉、單擊/長按定位重掃、截圖有 blob、無錯誤；掃描每一步的統計確認走新函式(same≠old)；各上桿位置的標定數量與改前完全相同。
   【2026-09-16 合併】使用者比對兩個檔案(檔案1：內嵌 Liberation Sans/Mono 數字字型 SheetDigitsSans/Mono＋號碼字級放大＋紀錄法回溯動畫＋暗色系 Ai 格底色；
      檔案2：逐字置中)後指示「以檔案1為基底，把逐字置中補進去」——本檔＝檔案1 ＋ 下面第 10 條(perCharInkCenter/tabPad、td.num 比例數字規則)。
+  95. 使用者指示(2026-09-20)「所有的文字、數字、表格都必須照解析度比例來顯示，以免顯示出錯」：
+     先量現況(320/360/393/412/480/540 六種螢幕寬)——
+       開獎單「裡面」本來就照比例：字級 ÷ 倍率 全部是定值(號碼 15.80、日期 6.47、星期 7.35、區標題 13.00)，
+       因為格寬與字級都是固定 CSS px 寫在 .panels 裡再整體套一個倍率，不可能跑版。
+       開獎單「外面」沒有照比例：彩球 30px、玩法鍵 26px、期數 34px 在每種螢幕寬都一樣。
+     再量實際災情(逐元素檢查 scrollWidth>clientWidth)：360~540 沒有任何隨寬度而異的溢出；
+       320 寬則真的擠壞——#home-exit-btn 溢 2px、工具列截圖/定位/搜期各溢 3px。
+     修法：加一個 --ui-scale 變數，基準訂在 412 寬(本程式的設計基準)，係數＝clamp(0.72, 螢幕寬/412, 1)。
+       只縮不放：實測放大到 1.30 會把分頁鍵(固定高 31px)與彩球區撐出新的溢出，所以 412 以上一律維持原樣，
+       412 寬時係數正好是 1，原本正常的手機一個像素都不會變。
+       CSS 用「附加覆寫」的寫法放在樣式表最後，不動任何既有規則；套用對象：.hero-date、.hero .ball、
+       .blank-stepper .count / button、.game-tabs button、.catch-card-btn、#manual-entry-btn、.pin-btn，
+       以及漂浮鍵的文字子元素 .fullpage-mode-label(原規則用 ID 選擇器，必須用同樣的 ID 寫法才蓋得過去——
+       320 寬按鈕 56px、文字 57px 的溢出就是漏掉這一層造成的)。
+       JS 端 applyUiScale() 在開機與每次 scheduleSheetRelayout() 都重算。
+     驗證：320 寬的溢出全部消失(只剩 h2.sr-only 這個螢幕閱讀器專用隱藏標題，各寬度都一樣)；
+       540 寬沒有新增任何溢出；外部 UI 在 320/360/393/412 量到 23.30/26.21/28.62/30(彩球)、
+       20.19/22.72/24.80/26(玩法鍵)、26.41/29.71/32.43/34(期數)，比值與 螢幕寬/412 完全吻合。
   94. 【版面一致性 第二步・鎖定解析度】使用者指示(2026-09-20)「那就開始做第二步」。
      第一步(第 87 條)把「可用寬度」改成量視窗寬、並讓演算法收斂，但倍率仍是「目前倍率 × 可用寬/目前量到的寬」，
      還是以前一次的狀態為基準。第二步改成完全不依賴前一次：
@@ -5284,6 +5302,29 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
   table.road td.num > i.c-mode-he-b-ring.ring-right{ border-right:1.5px solid var(--mark-predict-color, #FFCC1A); }
 /* 2026-09-13：使用者指示——彩卷版(主程式)「一般首頁」左下角漂浮的抓牌/AI鍵(#bug-log-fab)拿掉；其他畫面(抓牌首頁magnifier-mode、定期十六/C式recent-only-mode、全頁pinch-fullscreen-mode、catch-card-fit-mode等)一律不動、照常顯示。只有body沒有任何模式class時才隱藏；抓牌版不套用 */
 body:not(.recent-only-mode):not(.c-mode-active):not(.pinch-fullscreen-mode):not(.c-ding-entering) #bug-log-fab{ display:none !important; }/* 2026-09-13再修：抓牌首頁(magnifier-mode/catch-card-fit-mode，還沒進任何功能)也一併隱藏；定期十六/C式/E式(recent-only-mode、c-mode-active)與全頁(pinch-fullscreen-mode)照常顯示 */
+  /* ===== 2026-09-20 第 95 條：開獎單外部 UI 照解析度比例 =====================================
+     開獎單「裡面」的文字/數字/表格本來就照比例——格寬與字級都是固定 CSS px 寫在 .panels 裡再整體套倍率，
+     模擬器量測 320~540 六種寬度的「字級 ÷ 倍率」全是定值(號碼 15.80、日期 6.47、星期 7.35、區標題 13.00)。
+     但開獎單「外面」那些元件(彩球、期數、加減鍵、玩法鍵、印/抓、漂浮工具列)是寫死 px，不隨螢幕變，
+     實測 320 寬時 #home-exit-btn 溢出 2px、工具列截圖/定位/搜期各溢出 3px(按鈕寬度隨螢幕縮、字級沒縮)。
+     修法：統一用 --ui-scale 變數，基準訂在 412 寬(本程式的設計基準：設計寬 681.56 × 0.59 ≈ 400，正好是 412 扣掉邊距)，
+     倍率 = clamp(0.72, 螢幕寬/412, 1.30)。412 寬時倍率正好 1，原本正常的手機一個像素都不會變。
+     下面用「附加覆寫」的寫法，不動任何既有規則；模式專用的規則(例如 body.pinch-fullscreen-mode .pin-btn)
+     specificity 較高，仍然贏過這裡，全頁模式維持原樣。 */
+  :root{ --ui-scale:1; }
+  .hero-date{ font-size:calc(18px * var(--ui-scale)); }
+  .hero .ball{ width:calc(48px * var(--ui-scale)); height:calc(48px * var(--ui-scale)); font-size:calc(30px * var(--ui-scale)); }
+  .blank-stepper .count{ min-width:calc(38px * var(--ui-scale)); font-size:calc(34px * var(--ui-scale)); }
+  .blank-stepper button{ width:calc(38px * var(--ui-scale)); height:calc(38px * var(--ui-scale)); font-size:calc(26px * var(--ui-scale)); }
+  .game-tabs button{ font-size:calc(26px * var(--ui-scale)); }
+  .catch-card-btn{ font-size:calc(34px * var(--ui-scale)); }
+  #manual-entry-btn{ font-size:calc(10px * var(--ui-scale)); height:calc(32px * var(--ui-scale)); }
+  .pin-btn{ font-size:calc(13.3333px * var(--ui-scale)); }
+  /* 漂浮鍵的文字其實在子元素 .fullpage-mode-label 裡(30px)，而且原規則用 ID 選擇器，優先權比 .pin-btn 高，
+     所以要用同樣的 ID 寫法才蓋得過去。320 寬實測按鈕 56px、文字 57px 溢出，就是這個沒縮造成的。 */
+  #float-save-btn .fullpage-mode-label, #float-back-btn .fullpage-mode-label,
+  #fullpage-btn .fullpage-mode-label, #period-btn .fullpage-mode-label,
+  #home-exit-btn .fullpage-mode-label{ font-size:calc(30px * var(--ui-scale)); }
 </style>
 </head>
 <body>
@@ -5916,7 +5957,15 @@ function finalizeMergedArrays(){mergeDirtyArrays.forEach(function(arr){arr.sort(
    只在「版面視窗寬 documentElement.clientWidth 真的改變」時才重算——捏合只會改 visualViewport，不會改 clientWidth，
    所以捏合過程不會被打斷；轉向、分割畫面、折疊機展開、瀏覽器字級/縮放設定改變才會觸發。 */
 let __sheetRelayoutTimer=null,__sheetLastLayoutW=0;
+/* 2026-09-20 第 95 條：開獎單外部 UI 的比例係數。基準 412 寬(設計基準)，夾在 0.72~1.30 之間避免極端值。 */
+function applyUiScale(){try{
+  const vw=document.documentElement.clientWidth||window.innerWidth||412;
+  const s=Math.max(0.72,Math.min(1,vw/412));/* 只縮不放：實測放大到 1.30 會把分頁鍵(固定高 31px)與彩球區撐出新的溢出，412 以上維持原樣 */
+  document.documentElement.style.setProperty("--ui-scale",String(Math.round(s*10000)/10000));
+}catch(e){}}
+applyUiScale();
 function scheduleSheetRelayout(force){
+  applyUiScale();
   const w=document.documentElement.clientWidth;
   if(!force&&w===__sheetLastLayoutW)return;
   __sheetLastLayoutW=w;
