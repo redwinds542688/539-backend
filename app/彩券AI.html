@@ -1660,9 +1660,10 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;var m="[
   【2026-09-16 合併】使用者比對兩個檔案(檔案1：內嵌 Liberation Sans/Mono 數字字型 SheetDigitsSans/Mono＋號碼字級放大＋紀錄法回溯動畫＋暗色系 Ai 格底色；
      檔案2：逐字置中)後指示「以檔案1為基底，把逐字置中補進去」——本檔＝檔案1 ＋ 下面第 10 條(perCharInkCenter/tabPad、td.num 比例數字規則)。
   82. 使用者指示(2026-09-20)「針對天天樂跟 539，只要星期一底色深一些就好」：在第 81 條的基礎上(mon-cell/.badge.mon 仍然關著)，
-     另外只給星期一的星期格一個 mon-bg class，單純把底色調深一階——淺色系 td.wd 與徽章 #e2e2e2→#c8c8c8、暗色系格子 #2e2e2e→#161616(徽章在暗色系本來就是 #e2e2e2，同樣→#c8c8c8)。
+     另外只給星期一的星期格一個 mon-bg class，單純把底色調深——淺色系 td.wd 與徽章 #e2e2e2→#b8b8b8、暗色系格子 #2e2e2e→#0d0d0d(徽章在暗色系本來就是 #e2e2e2，同樣→#b8b8b8)。
+     2026-09-20 使用者看過 #c8c8c8 後說「再深一點」，才改成現在這組值。
      字色(#000/暗色系一樣)、字的位置(translate(-5%,0%)、放大鏡 scale(1.3))、徽章尺寸全部跟星期二～六完全相同，只有底色不同。
-     不補 2026-09-16 那圈 0.5px 同色外陰影(星期一那列必定同時是 tr.month-start，其 box-shadow:none 帶 !important，加了不生效；#c8c8c8 與白縫反差小、看不出來)。
+     不補 2026-09-16 那圈 0.5px 同色外陰影(星期一那列必定同時是 tr.month-start，其 box-shadow:none 帶 !important，加了不生效；#b8b8b8 與白縫反差小、看不出來)。
      一樣只作用在 539/天天樂(isWideGame() 為真的大樂透/六合彩拿不到 mon-bg)；tr.month-start 週起始線不動。
   81. 使用者詢問(2026-09-20)「539 天天樂 星期一的顯示為何與其他不同、與星期二三四…不同」後指示「星期一跟其他天一樣」，並確認範圍＝只改星期格、週起始線保留：
      buildPanels() 原本 const isMon=wdNum===1&&!isWideGame()，只有 539/天天樂 的星期一會拿到 td.wd.mon-cell 與 .badge.mon 兩個 class，
@@ -4022,12 +4023,12 @@ body.theme-dark #c-ding-ai-box .ai-box-rank.ai-opened{ border-color:#FF3D00 !imp
   }
   table.road td.wd.mon-cell{ background:#666666; }
   table.road td.wd.mon-cell .badge.mon{ background:#666666; color:#fff; box-sizing:border-box; transform:translate(-5%, 10%); }
-  /* 2026-09-20 第 82 條：539/天天樂 的星期一只把底色調深一階(淺色系 #e2e2e2→#c8c8c8、暗色系格子 #2e2e2e→#161616、徽章 #e2e2e2→#c8c8c8)，
+  /* 2026-09-20 第 82 條：539/天天樂 的星期一只把底色調深(淺色系 #e2e2e2→#b8b8b8、暗色系格子 #2e2e2e→#0d0d0d、徽章 #e2e2e2→#b8b8b8)，
      字色、字的位置、徽章尺寸都跟星期二～六完全相同(不套 mon-cell/.badge.mon 那一套)。
      不補 2026-09-16 那圈 0.5px 同色外陰影：星期一那列一定同時是 tr.month-start，而 tr.month-start td 的 box-shadow:none 是 !important，
-     加了也不會生效；#c8c8c8 與白縫的反差本來就很小，看不出來。 */
-  table.road td.wd.mon-bg, table.road td.wd.mon-bg .badge{ background:#c8c8c8; }
-  body.theme-dark table.road td.wd.mon-bg{ background:#161616; }
+     加了也不會生效；#b8b8b8 與白縫的反差還是小，實際看不出來。 */
+  table.road td.wd.mon-bg, table.road td.wd.mon-bg .badge{ background:#b8b8b8; }
+  body.theme-dark table.road td.wd.mon-bg{ background:#0d0d0d; }
   table.road tr.future td.wd .badge{ opacity:0.4; }
   .cell-shift{ display:inline-block; transform:translate(-10%, -10%); }
   table.road td.num .cell-shift{ transform:translate(0%, 10%); }
