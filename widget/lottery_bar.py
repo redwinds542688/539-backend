@@ -41,7 +41,7 @@ import re
 import threading
 import time
 import tkinter as tk
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 import requests
 # ---------------------------------------------------------------------------
 # 設定：這幾個值可以依你自己的螢幕/喜好調整
@@ -56,10 +56,24 @@ WORKER_URL = "https://lottery-data-gate.redwinds542688.workers.dev/"
 WORKER_KEY_ENV = "LOTTERY_WORKER_KEY"
 WORKER_KEY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "worker_key.txt")
 APP_ID = "widget"
-APP_VERSION = "v1.2"
-REFRESH_INTERVAL_MS = 5 * 60 * 1000  # 自動重新整理間隔（毫秒），預設 5 分鐘
+APP_VERSION = "v1.3"
+# 讀取時機（2026-09-24 修正：跟雲端爬蟲同一套時間）
+#   - 某彩券到了爬蟲的「開始搜尋時間」、今天還沒確認到新一期 → 每 5 分鐘讀一次雲端
+#   - 所有該開獎的彩券今天都讀到了 → 停止讀取，等到下一個彩券的開始時間再讀
+#   - 讀取失敗 → 30 秒後重試
+PENDING_INTERVAL_MS = 5 * 60 * 1000  # 等待新一期開獎資料時，讀取雲端的間隔（毫秒），預設 5 分鐘
 RETRY_INTERVAL_MS = 30 * 1000        # 讀取失敗時，隔多久再試一次（毫秒），預設 30 秒
+SCHEDULE_CHECK_MS = 30 * 1000        # 多久檢查一次「是不是該讀取了」（不會連網路），預設 30 秒
 POLL_INTERVAL_MS = 200               # 檢查背景讀取結果的間隔（毫秒）
+# 每個彩券的爬蟲開始搜尋時間（台灣時間）與開獎星期（0=週一 … 6=週日；None=每天都可能開獎）
+# 跟雲端爬蟲 re-enable-*.yml / scrape-*.yml 的排程一致，爬蟲改時間時這裡也要跟著改
+GAME_SCHEDULE = {
+    "今彩539":   {"start": (21, 0),  "weekdays": None},
+    "大樂透":     {"start": (21, 30), "weekdays": {1, 4}},   # 週二、週五
+    "香港六合彩": {"start": (21, 45), "weekdays": None},     # 週二、週四＋週六或週日，日期不固定
+    "加州天天樂": {"start": (11, 15), "weekdays": None},
+}
+TAIWAN_TZ = timezone(timedelta(hours=8))
 BAR_HEIGHT = 34            # 資訊列高度（像素）
 TASKBAR_HEIGHT = 40        # 工作列高度估計值，如果資訊列跟工作列對不齊，調整這個數字
 FONT = ("Microsoft JhengHei", 11, "bold")
@@ -172,6 +186,50 @@ def build_game_view(records):
         "numbers": numbers_str,
         "special": format_special(entry.get("special_number")),
     }
+def latest_checked_date(records):
+    """取出最新一筆的 checked_at 日期（'YYYY-MM-DD'，台灣時間）；沒有就回傳空字串。"""
+    if not isinstance(records, list) or not records or not isinstance(records[0], dict):
+        return ""
+    return str(records[0].get("checked_at") or "")[:10]
+# ---------------------------------------------------------------------------
+# 讀取時機（跟雲端爬蟲同一套時間）
+# ---------------------------------------------------------------------------
+def taiwan_now():
+    """台灣時間（不帶時區資訊），跟爬蟲的 taiwan_today() 一致，不受電腦時區設定影響。"""
+    return datetime.now(TAIWAN_TZ).replace(tzinfo=None)
+def _draws_on(game_key, day):
+    weekdays = GAME_SCHEDULE[game_key]["weekdays"]
+    return weekdays is None or day.weekday() in weekdays
+def _start_at(game_key, day):
+    hour, minute = GAME_SCHEDULE[game_key]["start"]
+    return datetime(day.year, day.month, day.day, hour, minute)
+def pending_games(now, checked_dates):
+    """今天已經到了開始時間、可能開獎、但還沒讀到今天確認資料的彩券。"""
+    today = now.date()
+    today_str = today.isoformat()
+    return [
+        game_key for game_key in GAME_SCHEDULE
+        if _draws_on(game_key, today)
+        and now >= _start_at(game_key, today)
+        and checked_dates.get(game_key, "") != today_str
+    ]
+def next_start_time(now):
+    """下一個彩券的爬蟲開始時間（一定在 now 之後）。"""
+    candidates = []
+    for offset in range(8):
+        day = now.date() + timedelta(days=offset)
+        for game_key in GAME_SCHEDULE:
+            start = _start_at(game_key, day)
+            if start > now and _draws_on(game_key, day):
+                candidates.append(start)
+        if candidates:
+            return min(candidates)
+    return now + timedelta(days=1)
+def next_fetch_time(now, checked_dates):
+    """讀取成功後，決定下一次什麼時候再讀雲端。"""
+    if pending_games(now, checked_dates):
+        return now + timedelta(milliseconds=PENDING_INTERVAL_MS)
+    return next_start_time(now)
 # ---------------------------------------------------------------------------
 # 讀取雲端資料
 # ---------------------------------------------------------------------------
@@ -258,8 +316,11 @@ class LotteryBar:
             frame.grid(row=0, column=col, sticky="nsew")
             self.column_frames.append(frame)
         # 固定顯示在螢幕下方，不提供拖曳移動功能
-        # 右鍵選單：結束程式
+        # 右鍵選單：顯示下次更新時間、立即更新、結束程式
         self.menu = tk.Menu(self.root, tearoff=0)
+        self.menu.add_command(label="下次更新：--", state=tk.DISABLED)
+        self.menu.add_command(label="立即更新", command=self._refresh_now)
+        self.menu.add_separator()
         self.menu.add_command(label="結束", command=self.root.destroy)
         self.root.bind("<Button-3>", self._show_menu)
         # 網路讀取放在背景執行緒，結果透過 queue 交回主執行緒畫畫面，
@@ -267,11 +328,24 @@ class LotteryBar:
         self._results = queue.Queue()
         self._has_data = False
         self._message = None
+        self._fetching = False
+        self._next_fetch_at = taiwan_now()   # 啟動時馬上讀一次
         # 啟動時先顯示提示，避免透明背景下什麼都看不到、以為程式沒開
         self._show_message("開獎資訊讀取中…")
-        self.refresh()
+        self._schedule_tick()
     def _show_menu(self, event):
+        self.menu.entryconfigure(0, label=f"下次更新：{self._next_fetch_at:%m-%d %H:%M}")
         self.menu.tk_popup(event.x_root, event.y_root)
+    def _refresh_now(self):
+        self._next_fetch_at = taiwan_now()
+        self._schedule_tick(reschedule=False)
+    def _schedule_tick(self, reschedule=True):
+        # 用「每 30 秒看一下時間到了沒」取代一次排很久的計時器，
+        # 電腦睡眠/休眠醒來後也能在正確的時間讀取。
+        if not self._fetching and taiwan_now() >= self._next_fetch_at:
+            self.refresh()
+        if reschedule:
+            self.root.after(SCHEDULE_CHECK_MS, self._schedule_tick)
     def _clear_columns(self):
         if self._message is not None:
             self._message.destroy()
@@ -320,35 +394,41 @@ class LotteryBar:
         try:
             data = fetch_data()
             views = []
+            checked_dates = {}
             for game_key, _ in GAME_DISPLAY:
                 try:
                     views.append(build_game_view(data.get(game_key)))
+                    checked_dates[game_key] = latest_checked_date(data.get(game_key))
                 except Exception:
                     views.append(None)  # 單一彩券資料壞掉，只影響那一欄
-            self._results.put(views)
+            self._results.put((views, checked_dates))
         except Exception as e:
             self._results.put(str(e) or "讀取失敗")
     def refresh(self):
+        self._fetching = True
         threading.Thread(target=self._fetch_worker, daemon=True).start()
         self.root.after(POLL_INTERVAL_MS, self._poll_result)
     def _poll_result(self):
         try:
-            views = self._results.get_nowait()
+            result = self._results.get_nowait()
         except queue.Empty:
             self.root.after(POLL_INTERVAL_MS, self._poll_result)
             return
-        if isinstance(views, str):
+        self._fetching = False
+        if isinstance(result, str):
             # 讀取失敗：已經有號碼就維持原本畫面；還沒有號碼就把原因顯示出來。短時間後再試
             if not self._has_data:
-                self._show_message(views + "（30 秒後自動重試，右鍵可結束）")
-            self.root.after(RETRY_INTERVAL_MS, self.refresh)
+                self._show_message(result + "（30 秒後自動重試，右鍵可結束）")
+            self._next_fetch_at = taiwan_now() + timedelta(milliseconds=RETRY_INTERVAL_MS)
             return
+        views, checked_dates = result
         # 資料都整理好了才清掉舊畫面，避免清到一半出錯變成空白
         self._clear_columns()
         self._has_data = True
         for frame, (_, label), view in zip(self.column_frames, GAME_DISPLAY, views):
             self._render_game(frame, label, view)
-        self.root.after(REFRESH_INTERVAL_MS, self.refresh)
+        # 還有彩券在等今天的開獎資料 → 5 分鐘後再讀；全部讀到了 → 等下一個彩券的開始時間
+        self._next_fetch_at = next_fetch_time(taiwan_now(), checked_dates)
     def run(self):
         self.root.mainloop()
 if __name__ == "__main__":
