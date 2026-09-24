@@ -180,11 +180,16 @@ def load_worker_key():
     key = os.environ.get(WORKER_KEY_ENV, "").strip()
     if key:
         return key
-    try:
-        with open(WORKER_KEY_FILE, "r", encoding="utf-8-sig") as f:
-            return f.read().strip()
-    except OSError:
-        return ""
+    # Windows 記事本在「隱藏副檔名」時，常常會存成 worker_key.txt.txt，這裡一併接受
+    for path in (WORKER_KEY_FILE, WORKER_KEY_FILE + ".txt"):
+        try:
+            with open(path, "r", encoding="utf-8-sig") as f:
+                key = f.read().strip()
+            if key:
+                return key
+        except OSError:
+            continue
+    return ""
 def fetch_data():
     """讀取雲端 data.json。
     1. 先走 Cloudflare Worker（repo 已是 Private，這是現在的主要來源；需要 Worker 金鑰）。
@@ -216,7 +221,9 @@ def fetch_data():
         pass
     token = os.environ.get("GITHUB_TOKEN")
     if not token:
-        raise RuntimeError("讀取失敗：Worker 與公開網址都讀不到，且未設定 GITHUB_TOKEN")
+        if not worker_key:
+            raise RuntimeError("讀取失敗：找不到 Worker 金鑰，請在程式同一個資料夾放 worker_key.txt")
+        raise RuntimeError("讀取失敗：連不到 Worker（請檢查網路，或金鑰是否正確）")
     headers = {"Authorization": f"token {token}"}
     resp = requests.get(API_URL, headers=headers, params={"ref": GITHUB_BRANCH}, timeout=15)
     resp.raise_for_status()
@@ -258,13 +265,28 @@ class LotteryBar:
         # 網路讀取放在背景執行緒，結果透過 queue 交回主執行緒畫畫面，
         # 這樣網路慢的時候資訊列跟右鍵選單也不會卡住。
         self._results = queue.Queue()
+        self._has_data = False
+        self._message = None
+        # 啟動時先顯示提示，避免透明背景下什麼都看不到、以為程式沒開
+        self._show_message("開獎資訊讀取中…")
         self.refresh()
     def _show_menu(self, event):
         self.menu.tk_popup(event.x_root, event.y_root)
     def _clear_columns(self):
+        if self._message is not None:
+            self._message.destroy()
+            self._message = None
         for frame in self.column_frames:
             for widget in frame.winfo_children():
                 widget.destroy()
+    def _show_message(self, text):
+        """整條資訊列只顯示一行提示文字（啟動中、讀取失敗時用）。"""
+        self._clear_columns()
+        # 提示文字跨四欄顯示，文字較長也不會被切掉
+        self._message = tk.Label(
+            self.root, text=text, font=FONT, bg=TRANSPARENT_COLOR, fg=SPECIAL_COLOR,
+        )
+        self._message.grid(row=0, column=0, columnspan=len(GAME_DISPLAY))
     def _render_game(self, frame, label, view):
         # 用一個內層 Frame 承裝這個彩券的所有文字區塊，讓 pack() 的預設
         # 置中行為把整組內容在欄位裡水平置中。
@@ -304,8 +326,8 @@ class LotteryBar:
                 except Exception:
                     views.append(None)  # 單一彩券資料壞掉，只影響那一欄
             self._results.put(views)
-        except Exception:
-            self._results.put(None)
+        except Exception as e:
+            self._results.put(str(e) or "讀取失敗")
     def refresh(self):
         threading.Thread(target=self._fetch_worker, daemon=True).start()
         self.root.after(POLL_INTERVAL_MS, self._poll_result)
@@ -315,12 +337,15 @@ class LotteryBar:
         except queue.Empty:
             self.root.after(POLL_INTERVAL_MS, self._poll_result)
             return
-        if views is None:
-            # 讀取失敗就先維持畫面上原本的內容，短時間後再試
+        if isinstance(views, str):
+            # 讀取失敗：已經有號碼就維持原本畫面；還沒有號碼就把原因顯示出來。短時間後再試
+            if not self._has_data:
+                self._show_message(views + "（30 秒後自動重試，右鍵可結束）")
             self.root.after(RETRY_INTERVAL_MS, self.refresh)
             return
         # 資料都整理好了才清掉舊畫面，避免清到一半出錯變成空白
         self._clear_columns()
+        self._has_data = True
         for frame, (_, label), view in zip(self.column_frames, GAME_DISPLAY, views):
             self._render_game(frame, label, view)
         self.root.after(REFRESH_INTERVAL_MS, self.refresh)
