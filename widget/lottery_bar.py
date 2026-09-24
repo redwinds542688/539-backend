@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 最新開獎資訊列（桌面常駐橫幅，顯示在工作列正上方）
-- 底色固定透明（Windows 色鍵去背）
+- 底色：實心深色（2026-09-24 起，比透明背景清楚；可改回透明，見 TRANSPARENT_BACKGROUND）
 - 四種彩券平均分布在整個螢幕寬度
-- 統一配色：彩券名稱淺藍色、日期淺灰色、號碼淺白色、特別號淺紅色（不顯示
+- 統一配色：彩券名稱亮藍色、日期亮灰白色、號碼純白色、特別號亮紅色（不顯示
   「特別號」三個字，只顯示數字本身，靠顏色跟間距區分）
 - 固定顯示在螢幕下方，不可拖曳移動（2026-08-28 修正：原本可以用滑鼠左鍵
   按住拖曳整條資訊列，使用者要求改成固定位置，避免不小心手滑點到就被
@@ -56,7 +56,7 @@ WORKER_URL = "https://lottery-data-gate.redwinds542688.workers.dev/"
 WORKER_KEY_ENV = "LOTTERY_WORKER_KEY"
 WORKER_KEY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "worker_key.txt")
 APP_ID = "widget"
-APP_VERSION = "v1.3"
+APP_VERSION = "v1.4"
 # 讀取時機（2026-09-24 修正：跟雲端爬蟲同一套時間）
 #   - 某彩券到了爬蟲的「開始搜尋時間」、今天還沒確認到新一期 → 每 5 分鐘讀一次雲端
 #   - 所有該開獎的彩券今天都讀到了 → 停止讀取，等到下一個彩券的開始時間再讀
@@ -74,22 +74,27 @@ GAME_SCHEDULE = {
     "加州天天樂": {"start": (11, 15), "weekdays": None},
 }
 TAIWAN_TZ = timezone(timedelta(hours=8))
-BAR_HEIGHT = 34            # 資訊列高度（像素）
+BAR_HEIGHT = 36            # 資訊列高度（像素）
 TASKBAR_HEIGHT = 40        # 工作列高度估計值，如果資訊列跟工作列對不齊，調整這個數字
-FONT = ("Microsoft JhengHei", 11, "bold")
-# 透明色鍵：這個顏色會被視窗判定成「透明」而完全看不見，所以底色、
-# 所有 Frame/Label 的 bg 都要用同一個顏色。選深黑色是因為：
-#   1. 底下四種文字顏色（淺藍、淺灰、淺白、淺紅）都不會用到接近黑色，
-#      不會誤觸文字也跟著隱形。
-#   2. 抗鋸齒邊緣萬一沒完全被判定成透明，殘留的深色鑲邊會比亮色（例如
-#      桃紅色）鑲邊不明顯很多，肉眼比較不容易注意到。
+FONT = ("Microsoft JhengHei", 12, "bold")
+# 背景（2026-09-24 修正）：透明背景疊在淺色桌布上時，淺色文字幾乎看不清楚，
+# 改成「實心深色底」，不管桌布是什麼顏色都看得清楚。
+# 想改回透明背景，把 TRANSPARENT_BACKGROUND 改成 True 即可。
+TRANSPARENT_BACKGROUND = False
+SOLID_BG_COLOR = "#141414"    # 實心底色：接近黑色的深灰
+# 透明色鍵（只有 TRANSPARENT_BACKGROUND = True 時才會用到）：這個顏色會被
+# 視窗判定成「透明」而完全看不見，所以底色、所有 Frame/Label 的 bg 都要用
+# 同一個顏色。選深黑色是因為文字顏色都不會用到接近黑色，抗鋸齒殘留的
+# 深色鑲邊也比較不明顯。
 TRANSPARENT_COLOR = "#010101"
-# 統一配色（不分彩券，所有彩券共用同一套顏色）
-GAME_NAME_COLOR = "#8ec9f2"   # 彩券名稱：淺藍色
-DATE_COLOR = "#c9c9c9"        # 日期：淺灰色
-WEEKDAY_COLOR = "#f2e28a"     # 週幾：淺黃色
-NUMBER_COLOR = "#f2f2f2"      # 號碼：淺白色
-SPECIAL_COLOR = "#f28b8b"     # 特別號：淺紅色（不顯示「特別號」文字，只顯示數字）
+BG_COLOR = TRANSPARENT_COLOR if TRANSPARENT_BACKGROUND else SOLID_BG_COLOR
+# 統一配色（不分彩券，所有彩券共用同一套顏色）；深色底上用高對比的亮色
+GAME_NAME_COLOR = "#4fc3f7"   # 彩券名稱：亮藍色
+DATE_COLOR = "#e6e6e6"        # 日期：亮灰白色
+WEEKDAY_COLOR = "#ffd54f"     # 週幾：亮黃色
+NUMBER_COLOR = "#ffffff"      # 號碼：純白色
+SPECIAL_COLOR = "#ff6b6b"     # 特別號：亮紅色（不顯示「特別號」文字，只顯示數字）
+DIVIDER_COLOR = "#555555"     # 彩券之間的分隔線：中灰色
 # JSON 裡的完整彩券名稱 -> 資訊列上要顯示的簡稱
 GAME_DISPLAY = [
     ("今彩539",     "539"),
@@ -307,22 +312,28 @@ class LotteryBar:
         self.root = tk.Tk()
         self.root.overrideredirect(True)              # 不顯示標題列/邊框
         self.root.attributes("-topmost", True)         # 永遠置頂
-        self.root.configure(bg=TRANSPARENT_COLOR)
-        # Windows 專屬：把 TRANSPARENT_COLOR 這個顏色判定成完全透明
-        self.root.attributes("-transparentcolor", TRANSPARENT_COLOR)
+        self.root.configure(bg=BG_COLOR)
+        if TRANSPARENT_BACKGROUND:
+            # Windows 專屬：把 TRANSPARENT_COLOR 這個顏色判定成完全透明
+            self.root.attributes("-transparentcolor", TRANSPARENT_COLOR)
         screen_w = self.root.winfo_screenwidth()
         screen_h = self.root.winfo_screenheight()
         y = screen_h - TASKBAR_HEIGHT - BAR_HEIGHT
         self.root.geometry(f"{screen_w}x{BAR_HEIGHT}+0+{y}")
-        # 用 grid 把螢幕寬度平均切成 4 欄，每種彩券各佔一欄，欄內置中
+        # 用 grid 把螢幕分成 4 欄，每種彩券各佔一欄，欄內置中。
+        # 不強制四欄一樣寬：每欄至少跟內容一樣寬（號碼不會被切掉），剩下的空間再平均分配。
         for col in range(len(GAME_DISPLAY)):
-            self.root.columnconfigure(col, weight=1, uniform="game_col")
+            self.root.columnconfigure(col, weight=1)
         self.root.rowconfigure(0, weight=1)
         self.column_frames = []
         for col in range(len(GAME_DISPLAY)):
-            frame = tk.Frame(self.root, bg=TRANSPARENT_COLOR)
+            frame = tk.Frame(self.root, bg=BG_COLOR)
             frame.grid(row=0, column=col, sticky="nsew")
             self.column_frames.append(frame)
+            if col > 0 and not TRANSPARENT_BACKGROUND:
+                # 彩券之間的細分隔線（放在欄位左邊緣，不佔版面寬度）
+                tk.Frame(self.root, width=2, bg=DIVIDER_COLOR).place(
+                    in_=frame, relx=0, rely=0.2, relheight=0.6)
         # 固定顯示在螢幕下方，不提供拖曳移動功能
         # 右鍵選單：顯示下次更新時間、立即更新、結束程式
         self.menu = tk.Menu(self.root, tearoff=0)
@@ -366,36 +377,36 @@ class LotteryBar:
         self._clear_columns()
         # 提示文字跨四欄顯示，文字較長也不會被切掉
         self._message = tk.Label(
-            self.root, text=text, font=FONT, bg=TRANSPARENT_COLOR, fg=SPECIAL_COLOR,
+            self.root, text=text, font=FONT, bg=BG_COLOR, fg=SPECIAL_COLOR,
         )
         self._message.grid(row=0, column=0, columnspan=len(GAME_DISPLAY))
     def _render_game(self, frame, label, view):
         # 用一個內層 Frame 承裝這個彩券的所有文字區塊，讓 pack() 的預設
         # 置中行為把整組內容在欄位裡水平置中。
-        inner = tk.Frame(frame, bg=TRANSPARENT_COLOR)
+        inner = tk.Frame(frame, bg=BG_COLOR)
         inner.pack(expand=True)
         if view is None:
             tk.Label(
-                inner, text=f"{label} 無資料", font=FONT, bg=TRANSPARENT_COLOR, fg=GAME_NAME_COLOR,
+                inner, text=f"{label} 無資料", font=FONT, bg=BG_COLOR, fg=GAME_NAME_COLOR,
             ).pack(side=tk.LEFT)
             return
         tk.Label(
-            inner, text=label, font=FONT, bg=TRANSPARENT_COLOR, fg=GAME_NAME_COLOR,
+            inner, text=label, font=FONT, bg=BG_COLOR, fg=GAME_NAME_COLOR,
         ).pack(side=tk.LEFT)
         tk.Label(
-            inner, text=f"  {view['date']}", font=FONT, bg=TRANSPARENT_COLOR, fg=DATE_COLOR,
+            inner, text=f"  {view['date']}", font=FONT, bg=BG_COLOR, fg=DATE_COLOR,
         ).pack(side=tk.LEFT)
         if view["weekday"]:
             tk.Label(
-                inner, text=view["weekday"], font=FONT, bg=TRANSPARENT_COLOR, fg=WEEKDAY_COLOR,
+                inner, text=view["weekday"], font=FONT, bg=BG_COLOR, fg=WEEKDAY_COLOR,
             ).pack(side=tk.LEFT)
         tk.Label(
-            inner, text=f"  {view['numbers']}", font=FONT, bg=TRANSPARENT_COLOR, fg=NUMBER_COLOR,
+            inner, text=f"  {view['numbers']}", font=FONT, bg=BG_COLOR, fg=NUMBER_COLOR,
         ).pack(side=tk.LEFT)
         if view["special"]:
             tk.Label(
                 inner, text=f"   {view['special']}",
-                font=FONT, bg=TRANSPARENT_COLOR, fg=SPECIAL_COLOR,
+                font=FONT, bg=BG_COLOR, fg=SPECIAL_COLOR,
             ).pack(side=tk.LEFT)
     def _fetch_worker(self):
         """背景執行緒：讀資料並先整理好，再丟回 queue；這裡不能碰任何 tk 元件。"""
