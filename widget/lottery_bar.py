@@ -253,9 +253,11 @@ def fetch_data():
     1. 先走 Cloudflare Worker（repo 已是 Private，這是現在的主要來源；需要 Worker 金鑰）。
     2. Worker 失敗時，再試舊的公開網址（repo 萬一改回 Public 還能用）。
     3. 最後才試 GitHub API + 環境變數 GITHUB_TOKEN（有設定才會用）。
-    全部失敗就丟出例外，由 refresh() 略過、保留畫面上的舊資料。"""
+    全部失敗就丟出例外，錯誤訊息以「Worker 為什麼失敗」為主，因為它才是主要來源。"""
     worker_key = load_worker_key()
-    if worker_key:
+    if not worker_key:
+        worker_error = "找不到 Worker 金鑰，請在 lottery_bar.py 同一個資料夾放 worker_key.txt"
+    else:
         try:
             resp = requests.get(
                 WORKER_URL,
@@ -267,8 +269,15 @@ def fetch_data():
                 data = resp.json()
                 if isinstance(data, dict) and any(k in data for k, _ in GAME_DISPLAY):
                     return data
-        except (requests.RequestException, ValueError):
-            pass
+                worker_error = "Worker 回傳的資料格式不對"
+            elif resp.status_code in (401, 403):
+                worker_error = f"Worker 拒絕存取（HTTP {resp.status_code}），worker_key.txt 的金鑰可能不對或已更換"
+            else:
+                worker_error = f"Worker 回應錯誤（HTTP {resp.status_code}）"
+        except requests.RequestException:
+            worker_error = "連不到 Worker，請檢查網路"
+        except ValueError:
+            worker_error = "Worker 回傳的不是正確的資料"
     try:
         resp = requests.get(RAW_URL, timeout=15)
         if resp.status_code == 200:
@@ -278,19 +287,18 @@ def fetch_data():
     except (requests.RequestException, ValueError):
         pass
     token = os.environ.get("GITHUB_TOKEN")
-    if not token:
-        if not worker_key:
-            raise RuntimeError("讀取失敗：找不到 Worker 金鑰，請在程式同一個資料夾放 worker_key.txt")
-        raise RuntimeError("讀取失敗：連不到 Worker（請檢查網路，或金鑰是否正確）")
-    headers = {"Authorization": f"token {token}"}
-    resp = requests.get(API_URL, headers=headers, params={"ref": GITHUB_BRANCH}, timeout=15)
-    resp.raise_for_status()
-    payload = resp.json()
-    raw = base64.b64decode(payload["content"])
-    data = json.loads(raw.decode("utf-8"))
-    if not isinstance(data, dict):
-        raise RuntimeError("讀取失敗：data.json 格式不正確")
-    return data
+    if token:
+        try:
+            headers = {"Authorization": f"token {token}"}
+            resp = requests.get(API_URL, headers=headers, params={"ref": GITHUB_BRANCH}, timeout=15)
+            resp.raise_for_status()
+            payload = resp.json()
+            data = json.loads(base64.b64decode(payload["content"]).decode("utf-8"))
+            if isinstance(data, dict):
+                return data
+        except (requests.RequestException, ValueError, KeyError):
+            pass  # 備援也失敗，下面回報 Worker 的原因
+    raise RuntimeError("讀取失敗：" + worker_error)
 # ---------------------------------------------------------------------------
 # GUI
 # ---------------------------------------------------------------------------
