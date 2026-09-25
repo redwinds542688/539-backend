@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:03";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:09";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-25 23:09  單桿尋號加速：18 期的號碼進入時讀一次存起來(原本每檢查一個九宮差就重掃整張開獎單)；長按後畫面本來就在最底時馬上找號，有往回捲時等 0.25 秒(原本固定等 0.9 秒)。
    2026-09-25 23:03  單桿尋號標定改成一次全部顯示(原本逐號每 0.3 秒一顆)；按九宮鍵、放開單桿後立即出現結果。
    2026-09-25 22:58  單桿尋號結果顯示：成立的九宮差得到的號碼，扣掉單桿下面 3 期(第 16/17/18 期)有開出的，其餘由小到大填進空白期第一列(樣式同空白期填號)；換九宮差、拖桿、離開單桿時清掉。
    2026-09-25 22:52  單桿尋號加成立條件：桿位號碼加九宮差得到的 5(6) 個號碼，單桿下面 3 期(第 16、17、18 期)每期至少中一號才成立並標定；不成立自動換下一個九宮差(按九宮鍵也跳過不成立的)；9 個都不成立＝不標定、欄位顯示「無」。拖曳單桿換到新桿位時從第一個九宮差(-11)重新找。
@@ -4423,14 +4424,19 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
    ★2026-09-25 22:52 成立條件：5(6) 個號碼在單桿下面 3 期(第 16、17、18 期)每期至少中一號才成立；不成立自動換下一個九宮差(按九宮鍵換時也一樣跳過不成立的)；9 個都不成立顯示「無」。
    window.__zpSingleBarPeriod() 取得單桿在第幾期；window.__zpSingleBarOffset() 取得目前的九宮差。 */
 (function(){
-  const SB={none:false,tagFit:"",oi:0,hits:[],runTimer:0,runToken:0,tapAt:0,tag:null,on:false,allow:false,period:15,stash:null,handle:null,painted:[],raf:0,drag:null,guardUntil:0,lastKey:""};
+  const SB={rowsCache:null,rowsDirty:true,grid:null,gridRows:null,none:false,tagFit:"",oi:0,hits:[],runTimer:0,runToken:0,tapAt:0,tag:null,on:false,allow:false,period:15,stash:null,handle:null,painted:[],raf:0,drag:null,guardUntil:0,lastKey:""};
   /* 2026-09-25 21:24 使用者指示「啟動單桿尋號後定顯/全顯按鍵改名為九宮」：單桿開著時第三顆顯示「九宮」(功能待定義，目前按了不動作、不再切換定顯/全顯)；離開單桿還原成定顯/全顯 */
   function setLabel(){const btn=document.getElementById("float-save-btn");if(!btn)return;const l=btn.querySelector(".fullpage-mode-label");if(l&&l.textContent!=="九宮")l.textContent="九宮";btn.setAttribute("aria-label","九宮")}
   /* 回到最下面 18+2：捲回 0；0.2/0.45/0.8 秒後再確認一次(還在滑動慣性或平滑捲動的尾巴時，再拉回一次) */
-  function toBottom(){try{if(typeof window.__zpScrollTo!=="function")return;SB.allow=true;if(cModeScrollOffset!==0||!SB.on)window.__zpScrollTo(0)}catch(e){}finally{SB.allow=false}}
+  function toBottom(){let moved=false;try{if(typeof window.__zpScrollTo!=="function")return false;SB.allow=true;if(cModeScrollOffset!==0){window.__zpScrollTo(0);moved=true}}catch(e){}finally{SB.allow=false}if(moved)SB.rowsDirty=true;return moved}
   function bc(){return document.body.classList}
   /* 畫面上第 1～18 期(已開獎、看得到的最後 18 列) */
-  function dataRows(){const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"})||panels;
+  /* 2026-09-25 23:09 使用者回報「搜尋標定號碼的速度太慢」(手機上長按後約 3 秒才出現)：原本每檢查一個九宮差就重掃整張開獎單上千列＋量每列位置。
+     單桿開著時畫面不能捲動，18 期的列不會變：改成進入時(與回到最底確認時)掃一次，把 18 期的格子與號碼存起來(SB.grid)，之後檢查/標定都用這份 */
+  function dataRows(){const c=SB.rowsCache;if(c&&c.length&&!SB.rowsDirty&&c[0].isConnected&&c[c.length-1].isConnected)return c;SB.rowsCache=scanRows();SB.rowsDirty=false;SB.grid=null;return SB.rowsCache}
+  function grid(){const rows=dataRows();if(!SB.grid||SB.gridRows!==rows){SB.grid=rows.map(function(tr){return cellsOf(tr).map(function(td){return{td:td,v:td.classList.contains("pending")?null:numOf(td)}})});SB.gridRows=rows}return SB.grid}
+  function barIdx(){const n=dataRows().length;return Math.max(0,Math.min(n-1,n-18+SB.period-1))}
+  function scanRows(){const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"})||panels;
     const rows=Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(tr){return tr.querySelector("td.num")&&!tr.classList.contains("future")&&tr.style.display!=="none"&&!tr.classList.contains("c-scroll-peek")&&tr.getBoundingClientRect().height>0});
     return rows.slice(-18)}
   function rowOf(p){const rows=dataRows();if(!rows.length)return null;const i=rows.length-18+p-1;return rows[Math.max(0,Math.min(rows.length-1,i))]||null}
@@ -4477,22 +4483,23 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   /* 2026-09-25 22:52 使用者指示「一次出來會有 5 個號碼(大樂/香港 6 個)，對照 16 最少中一號、17 也最少中一號、18 也最少中一號，整個式子才算成立；如果沒有，就自動九宮差換下一個」：
      成立條件＝桿位各號加上九宮差得到的 5(6) 個號碼，在單桿下面的 3 期(單桿在第 15 期時＝第 16、17、18 期)每一期都至少開出其中一個。
      不成立的九宮差直接跳過(不跑動畫)，往下找到第一個成立的才逐號標定；9 個都不成立＝不標定，欄位顯示「無」。 */
-  function targetsFor(oi){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const bar=rowOf(SB.period);if(!bar)return null;return cellsOf(bar).map(numOf).filter(function(v){return v!==null}).map(function(n){return wrapNum(n,SB_OFFS[oi],max)})}
-  function isValid(oi){const tg=targetsFor(oi);if(!tg||!tg.length)return false;const rows=dataRows();const bar=rowOf(SB.period);const bi=rows.indexOf(bar);if(bi<0)return false;
-    for(let k=1;k<=3;k++){const tr=rows[bi+k];if(!tr)return false;const hit=cellsOf(tr).some(function(td){return !td.classList.contains("pending")&&tg.indexOf(numOf(td))>=0});if(!hit)return false}return true}
+  function barNumsNow(){const g=grid();const r=g[barIdx()];return r?r.map(function(c){return c.v}).filter(function(v){return v!==null}):[]}
+  function targetsFor(oi){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;return barNumsNow().map(function(n){return wrapNum(n,SB_OFFS[oi],max)})}
+  function isValid(oi){const tg=targetsFor(oi);if(!tg.length)return false;const g=grid();const bi=barIdx();
+    for(let k=1;k<=3;k++){const row=g[bi+k];if(!row)return false;if(!row.some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0}))return false}return true}
   function findValid(from){for(let k=0;k<SB_OFFS.length;k++){const i=(from+k)%SB_OFFS.length;if(isValid(i))return i}return -1}
   function runSearch(from){if(!SB.on)return;cancelRun();clearHits();const pick=findValid(typeof from==="number"?from:SB.oi);
     if(pick<0){SB.none=true;placeTagText();if(typeof logEvent==="function")try{logEvent("單桿尋號","第 "+SB.period+" 期：9 個九宮差都不成立")}catch(e){}return}
     if(pick!==SB.oi&&typeof logEvent==="function")try{logEvent("單桿尋號","九宮差 "+offLabel(SB_OFFS[SB.oi])+" 起不成立的跳過 → "+offLabel(SB_OFFS[pick]))}catch(e){}
     SB.oi=pick;SB.none=false;const token=SB.runToken;const off=SB_OFFS[SB.oi];const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;
-    const bar=rowOf(SB.period);if(!bar)return;const barNums=cellsOf(bar).map(numOf).filter(function(v){return v!==null});
-    const rows=dataRows();const got=[];let i=0;placeTagText();
+    const g=grid();const bi=barIdx();const barNums=barNumsNow();if(!barNums.length)return;
+    const got=[];let i=0;placeTagText();
     function step(){if(token!==SB.runToken||!SB.on)return;if(i>=barNums.length){SB.runTimer=0;
-      {const bi=rows.indexOf(bar);const below=[];for(let k=1;k<=3;k++){const tr=rows[bi+k];if(tr)cellsOf(tr).forEach(function(td){const v=numOf(td);if(v!==null)below.push(v)})}
+      {const below=[];for(let k=1;k<=3;k++){const row=g[bi+k];if(row)row.forEach(function(c){if(c.v!==null)below.push(c.v)})}
        const uniq=[];barNums.forEach(function(n){const t=wrapNum(n,off,max);if(uniq.indexOf(t)<0)uniq.push(t)});const show=uniq.filter(function(t){return below.indexOf(t)<0}).sort(function(a,b){return a-b});fillBlank(show);
        if(typeof logEvent==="function")try{logEvent("單桿尋號","空白第一期顯示："+(show.map(function(v){return String(v).padStart(2,"0")}).join(" ")||"(全部在下面3期開過)"))}catch(e){}}if(typeof logEvent==="function")try{logEvent("單桿尋號","第 "+SB.period+" 期 九宮差 "+offLabel(off)+"："+got.join("、"))}catch(e){}return}
       const n=barNums[i];const target=wrapNum(n,off,max);let c=0;
-      rows.forEach(function(tr){cellsOf(tr).forEach(function(td){if(td.classList.contains("pending"))return;if(numOf(td)===target){markHit(td);c++}})});
+      g.forEach(function(row){row.forEach(function(cl){if(cl.v===target){markHit(cl.td);c++}})});
       got.push(String(n).padStart(2,"0")+offLabel(off)+"="+String(target).padStart(2,"0")+"×"+c);i++;if(SB_STEP_MS>0)SB.runTimer=setTimeout(step,SB_STEP_MS);else step()}
     step()}
   function nextOffset(){runSearch((SB.oi+1)%SB_OFFS.length)}
@@ -4515,11 +4522,12 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     SB.stash={pickedPaths:pickedPaths,connections:connections,broadened:broadened,historyStack:historyStack};
     pickedPaths=[];connections=[];broadened=false;historyStack=[];
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function")renderConnections()}catch(e){}
-    toBottom();
-    SB.on=true;SB.period=15;SB.oi=0;SB.none=false;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(SB.on){toBottom();update(true)}},ms)});
+    const __moved=toBottom();SB.rowsDirty=true;
+    SB.on=true;SB.period=15;SB.oi=0;SB.none=false;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(!SB.on)return;if(toBottom()){update(true);if(!SB.drag)runSearch(0)}else update(false)},ms)});
     if(typeof logEvent==="function")try{logEvent("單桿","進入(長按定顯/全顯)，標記暫存 "+SB.stash.pickedPaths.length+" 筆、連線 "+SB.stash.connections.length+" 條")}catch(e){}
     update(true);setTimeout(function(){update(true)},200);setTimeout(function(){update(true)},450);if(!SB.raf)SB.raf=requestAnimationFrame(loop);
-    setTimeout(function(){if(SB.on&&!SB.drag)runSearch()},900);/* 等回到最底(0.8 秒最後一次確認)之後再開始跑第一個九宮差 */return true}
+    /* 原本等 0.9 秒才開始找號；改成：畫面本來就在最底＝馬上找，有往回捲＝等 0.25 秒捲回動畫結束再找(之後 0.2/0.45/0.8 秒若又被拉回，會自動重找) */
+    if(!__moved){if(!SB.drag)runSearch(0)}else setTimeout(function(){if(SB.on&&!SB.drag){SB.rowsDirty=true;update(true);runSearch(0)}},250);return true}
   function exit(){if(!SB.on)return false;cancelRun();clearHits();SB.on=false;SB.drag=null;if(SB.tag)SB.tag.style.display="none";if(SB.raf){cancelAnimationFrame(SB.raf);SB.raf=0}unpaint();if(SB.handle)SB.handle.style.display="none";bc().remove("zp-single-bar");try{updateFloatSaveBtnForFullPage()}catch(e){}
     const st=SB.stash;SB.stash=null;if(st){pickedPaths=st.pickedPaths;connections=st.connections;broadened=st.broadened;historyStack=st.historyStack}
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function"){renderConnections();requestAnimationFrame(renderConnections)}}catch(e){}
