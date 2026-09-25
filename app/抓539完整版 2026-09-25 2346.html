@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:41";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:46";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-25 23:46  單桿往回捲時第 19 列蓋上尋號結果後，每格右上角用小字標出這一格原本開出的真實號碼(樣式同第四招累加數)。
    2026-09-25 23:41  進入單桿尋號不再捲回最後 18+2，以目前畫面上的 18+2 為準(第 1～18 列＝第 1～18 期、第 19 列＝空白第一期位置)；往回捲時第 19 列是已開獎期數，尋號結果暫時蓋在上面，換九宮差/拖桿/離開時還原。單桿中捲動仍失效。
    2026-09-25 23:31  單桿尋號更正：成立條件改成畫面上固定的第 16、17、18 期每期至少中一號(原本是單桿的下三期，會跟著單桿移動)；空白期扣除的也改成第 16/17/18 期開過的號碼。
    2026-09-25 23:09  單桿尋號加速：18 期的號碼進入時讀一次存起來(原本每檢查一個九宮差就重掃整張開獎單)；長按後畫面本來就在最底時馬上找號，有往回捲時等 0.25 秒(原本固定等 0.9 秒)。
@@ -4482,7 +4483,8 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   function fillBlank(nums){clearBlank();if(!nums.length)return;const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"})||panels;
     dataRows();const fr=(SB.screen||[])[18];if(!fr)return;void vp;
     if(!fr.classList.contains("future")){/* 往回捲：第 19 列是已開獎的期數→把號碼暫時蓋掉，填上尋號結果 */const cs=Array.prototype.slice.call(fr.querySelectorAll("td.num")).slice(0,cModeColCount());
-      cs.forEach(function(td,i){td.dataset.zpSbOrig=td.innerHTML;td.dataset.zpSbPending=td.classList.contains("pending")?"1":"0";td.innerHTML=i<nums.length?'<span class="cell-shift">'+String(nums[i]).padStart(2,"0")+"</span>":'<span class="cell-shift">&nbsp;</span>';td.classList.remove("pending");td.classList.add("c-ding-top3","zp-sb-blank","zp-sb-cover")});return}
+      /* 2026-09-25 23:46 使用者指示「第十九在格子右上角標示出真實號碼，像是第四招的累加數那樣」：蓋上去的格子右上角用小字(同第四招累加數的樣式)標出這一格原本開出的號碼 */
+      cs.forEach(function(td,i){const real=numOf(td);td.dataset.zpSbOrig=td.innerHTML;td.dataset.zpSbPending=td.classList.contains("pending")?"1":"0";td.innerHTML=(i<nums.length?'<span class="cell-shift">'+String(nums[i]).padStart(2,"0")+"</span>":'<span class="cell-shift">&nbsp;</span>')+(real!==null?'<span class="ding-top-badge zp-sb-real">'+String(real).padStart(2,"0")+"</span>":"");td.classList.remove("pending");td.classList.add("c-ding-top3","zp-sb-blank","zp-sb-cover")});return}
     const cells=Array.prototype.slice.call(fr.querySelectorAll("td.num")).filter(function(td){return td.classList.contains("pending")&&!td.classList.contains("num-picked")&&(td.textContent||"").trim()===""});
     nums.forEach(function(n,i){const td=cells[i];if(!td)return;td.innerHTML='<span class="cell-shift">'+String(n).padStart(2,"0")+"</span>";td.classList.remove("pending");td.classList.add("c-ding-top3","zp-sb-blank")})}
   function clearHits(){clearBlank();SB.hits.forEach(function(td){try{td.classList.remove("zp-sb-hit","num-marked","num-marked-click")}catch(e){}});SB.hits=[]}
