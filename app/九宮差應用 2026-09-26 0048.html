@@ -4,12 +4,14 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 00:15";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 00:48";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 00:48  單桿第 19 列預測號碼定位校正：用逐像素比對校準——數字包一層內層用 transform 位移(left/bottom 會被對齊整數像素、外層位移會被號碼置中功能改寫)；下緣離黑線(下框線)1px(實測 1.00px)；左緣以格線理論位置放 1px(格線實際被瀏覽器對齊像素，實測 0～1.6px)。
+   2026-09-26 00:22  單桿第 19 列預測號碼精準定位：量數字實際筆畫，筆畫左緣離左格線 1px、筆畫下緣離下格線 1px(下緣被底部遮片蓋住時以遮片上緣為準)。
    2026-09-26 00:15  單桿第 19 列：預測號碼貼齊格子左下角、真實號碼在右上角，兩者不重疊。第 19 列被底部按鍵區擋掉一點，格子放不下原大小的兩組號碼，預測號碼略縮(約原本的 8 成)。
    2026-09-26 00:10  單桿第 19 列右上角的真實號碼放大(0.5em → 0.66em)、加粗；預測號碼往左移，讓出右上角不重疊。
    2026-09-26 00:06  單桿尋號：畫面第 19 列不管是否已開獎，一進入就整列顯示成空白期(不論有沒有結果、顯示「無」時也一樣)，右上角小字標真實號碼；離開單桿才放回原本號碼。
@@ -8041,19 +8043,32 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 2026-09-25 22:58 使用者指示「尋找出的號碼顯示在空白第一期；在 16/17/18 期內有中的號碼則不顯示在空白期」：成立的九宮差逐號標定跑完後，5(6) 個號碼扣掉單桿下面 3 期有開出的，其餘由小到大填進空白期第一列(樣式同空白期填號 c-ding-top3)；換九宮差/拖桿/離開時清掉 */
   /* 2026-09-26 00:06 使用者指示「第十九期不管是不是已開期，五個號碼欄位皆像空白期那樣顯示」：一進入單桿就把畫面第 19 列蓋成空白期的樣子(不論有沒有找到結果、顯示「無」時也一樣)，
      右上角照樣用小字標出真實號碼；尋號結果寫在蓋好的格子上。只有離開單桿(或畫面重排)才把原本的號碼放回去 */
-  (function(){try{const st=document.createElement("style");st.textContent="table.road td.num.zp-sb-cover{position:relative}table.road td.num.zp-sb-cover .cell-shift{position:absolute !important;left:2px !important;bottom:1px !important;top:auto !important;right:auto !important;transform:none !important;line-height:1 !important;font-size:1.1em !important}table.road td.num.zp-sb-cover .zp-sb-real{position:absolute !important;top:0 !important;right:1px !important;font-size:0.66em !important;line-height:1 !important;font-weight:800 !important;font-family:Arial, Helvetica, sans-serif !important;color:#FF3B3B !important;pointer-events:none;z-index:2}";document.head.appendChild(st)}catch(e){}})();
+  (function(){try{const st=document.createElement("style");st.textContent="table.road td.num.zp-sb-cover{position:relative}table.road td.num.zp-sb-cover .zp-sb-pred{display:inline-block}table.road td.num.zp-sb-cover .cell-shift{position:absolute !important;left:2px !important;bottom:1px !important;top:auto !important;right:auto !important;transform:none !important;line-height:1 !important;font-size:1.1em !important}table.road td.num.zp-sb-cover .zp-sb-real{position:absolute !important;top:0 !important;right:1px !important;font-size:0.66em !important;line-height:1 !important;font-weight:800 !important;font-family:Arial, Helvetica, sans-serif !important;color:#FF3B3B !important;pointer-events:none;z-index:2}";document.head.appendChild(st)}catch(e){}})();
   /* 2026-09-26 00:10 使用者回報「十九期右上角標的真實號碼太小看不清楚」：字級 0.5em → 0.66em、加粗；預測號碼往左移讓位(不縮小、不影響置中) */
   /* 2026-09-26 00:15 使用者指示「真實號碼放在右上角(大小可以)，預測號碼放在左下角(大小可以)，往左下角移動不重疊」：預測號碼再往左下移 */
   function row19(){dataRows();return(SB.screen||[])[18]||null}
-  function setCov(td,n){td.innerHTML=(n!==null&&n!==undefined?'<span class="cell-shift">'+String(n).padStart(2,"0")+"</span>":'<span class="cell-shift">&nbsp;</span>')+(td.dataset.zpSbReal?'<span class="ding-top-badge zp-sb-real">'+td.dataset.zpSbReal+"</span>":"");
+  function setCov(td,n){td.innerHTML=(n!==null&&n!==undefined?'<span class="cell-shift"><span class="zp-sb-pred">'+String(n).padStart(2,"0")+"</span></span>":'<span class="cell-shift">&nbsp;</span>')+(td.dataset.zpSbReal?'<span class="ding-top-badge zp-sb-real">'+td.dataset.zpSbReal+"</span>":"");
     if(n!==null&&n!==undefined){td.classList.remove("pending");td.classList.add("c-ding-top3")}else{td.classList.remove("c-ding-top3");td.classList.add("pending")}}
   function coverRow19(){const fr=row19();if(!fr||fr.classList.contains("future"))return;Array.prototype.slice.call(fr.querySelectorAll("td.num")).slice(0,cModeColCount()).forEach(function(td){if(td.classList.contains("zp-sb-cover"))return;
       const real=numOf(td);td.dataset.zpSbOrig=td.innerHTML;td.dataset.zpSbPending=td.classList.contains("pending")?"1":"0";td.dataset.zpSbReal=real!==null?String(real).padStart(2,"0"):"";td.classList.add("zp-sb-blank","zp-sb-cover");setCov(td,null)})}
+  /* 2026-09-26 00:22 使用者指示「預測號往下移離下格線 1px、往左移也離左格線 1px」：量數字實際筆畫(canvas measureText 的 actualBoundingBox＋基線位置)，
+     把筆畫左緣放在左格線內 1px、筆畫下緣放在下格線上方 1px。第 19 列下緣若被底部遮片蓋住，以遮片上緣(看得到的下緣)為準。 */
+  function inkPlace(td){try{const sp=td.querySelector(".cell-shift");if(!sp)return;const txt=(sp.textContent||"").trim();if(!txt||txt==="\u00a0")return;
+    const inner=sp.querySelector(".zp-sb-pred")||sp;/* 位移放在裡層：外層 .cell-shift 的 transform 會被「號碼置中」功能定時改寫 */
+    sp.style.setProperty("left","0px","important");sp.style.setProperty("bottom","0px","important");inner.style.setProperty("transform","none","important");
+    const cs=getComputedStyle(sp);const cv=inkPlace.cv||(inkPlace.cv=document.createElement("canvas").getContext("2d"));const fsz=parseFloat(cs.fontSize)||14;cv.font=cs.fontStyle+" "+cs.fontWeight+" 100px "+cs.fontFamily;const m0=cv.measureText(txt);/* 小字時 measureText 會取整數(誤差 1～2px)：改用 100px 量再按比例換算 */const m={actualBoundingBoxLeft:m0.actualBoundingBoxLeft*fsz/100,actualBoundingBoxDescent:m0.actualBoundingBoxDescent*fsz/100};
+    const mk=document.createElement("i");mk.style.cssText="display:inline-block;width:0;height:0;vertical-align:baseline;padding:0;margin:0;border:0";sp.appendChild(mk);const br=mk.getBoundingClientRect();const sr=sp.getBoundingClientRect();sp.removeChild(mk);
+    const k=sp.offsetWidth?sr.width/sp.offsetWidth:1;if(!(k>0))return;
+    const inkL=sr.left-m.actualBoundingBoxLeft*k,inkB=br.top+(-0.022)*fsz*k;/* 實測校準(逐像素比對)：以外層基線為準，數字下緣在基線上方 0.022em */
+    const tr=td.getBoundingClientRect(),tcs=getComputedStyle(td);const pv=td.previousElementSibling;const bwL=Math.max(parseFloat(tcs.borderLeftWidth)||0,pv?(parseFloat(getComputedStyle(pv).borderRightWidth)||0):0);/* 格線合併(border-collapse)實測：號碼格之間的格線一半在左格、一半在右格；第一個號碼格(左邊是星期欄)的左格線整條畫在這一格裡 */const innerL=tr.left+bwL*k*((pv&&pv.classList.contains("num"))?0.5:1);let innerB=tr.bottom-(parseFloat(tcs.borderBottomWidth)||0)*k;/* 下框線(黑線)整條在格子裡；格子超出的部分會被裁掉，裁切邊＝黑線上緣 */
+    const mask=document.getElementById("zp-bottom-mask");if(mask&&mask.style.display!=="none"){const mr=mask.getBoundingClientRect();if(mr.height>0&&mr.top<innerB&&mr.top>tr.top)innerB=mr.top}
+    const dx=(innerL+1)-inkL,dy=inkB-(innerB-1);/* 用 transform 位移(left/bottom 會被瀏覽器對齊整數像素，這個表格有縮放，一格跳約 3.6px，停不到剛好 1px) */inner.style.setProperty("transform","translate("+(dx/k).toFixed(3)+"px,"+(-dy/k).toFixed(3)+"px)","important")}catch(e){}}
+  function refitCov(){panels.querySelectorAll("td.num.zp-sb-cover").forEach(function(td){inkPlace(td);inkPlace(td)})}/* 量兩次(第二次在第一次位置確定後再校正) */
   function uncover(){panels.querySelectorAll("td.num.zp-sb-cover").forEach(function(td){td.classList.remove("zp-sb-blank","c-ding-top3","zp-sb-cover");td.innerHTML=td.dataset.zpSbOrig||"&nbsp;";td.classList.toggle("pending",td.dataset.zpSbPending==="1");delete td.dataset.zpSbOrig;delete td.dataset.zpSbPending;delete td.dataset.zpSbReal})}
   /* 清掉尋號結果：蓋住的第 19 列維持空白期樣子(只清號碼)；真正的空白期格子恢復成空白 */
   function clearBlank(){panels.querySelectorAll("td.num.zp-sb-blank").forEach(function(td){if(td.classList.contains("zp-sb-cover")){setCov(td,null);return}td.classList.remove("zp-sb-blank","c-ding-top3");td.innerHTML="&nbsp;";td.classList.add("pending")})}
   function fillBlank(nums){clearBlank();if(!SB.on)return;coverRow19();if(!nums.length)return;const fr=row19();if(!fr)return;
-    if(fr.querySelector("td.num.zp-sb-cover")){const cs=Array.prototype.slice.call(fr.querySelectorAll("td.num.zp-sb-cover"));cs.forEach(function(td,i){setCov(td,i<nums.length?nums[i]:null)});return}
+    if(fr.querySelector("td.num.zp-sb-cover")){const cs=Array.prototype.slice.call(fr.querySelectorAll("td.num.zp-sb-cover"));cs.forEach(function(td,i){setCov(td,i<nums.length?nums[i]:null)});refitCov();requestAnimationFrame(refitCov);[150,500,1200].forEach(function(ms){setTimeout(function(){if(SB.on)refitCov()},ms)})/* 排版/字型穩定後再校正 */;return}
     const cells=Array.prototype.slice.call(fr.querySelectorAll("td.num")).filter(function(td){return td.classList.contains("pending")&&!td.classList.contains("num-picked")&&(td.textContent||"").trim()===""});
     nums.forEach(function(n,i){const td=cells[i];if(!td)return;td.innerHTML='<span class="cell-shift">'+String(n).padStart(2,"0")+"</span>";td.classList.remove("pending");td.classList.add("c-ding-top3","zp-sb-blank")})}
   function clearHits(){clearBlank();SB.hits.forEach(function(td){try{td.classList.remove("zp-sb-hit","num-marked","num-marked-click")}catch(e){}});SB.hits=[]}
@@ -8105,7 +8120,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function")renderConnections()}catch(e){}
     /* 2026-09-25 23:41 不再捲回最後面：停在目前畫面(往回捲幾期都照樣)；單桿中捲動仍失效。0.2/0.45/0.8 秒再量一次畫面，若剛好還在滑動慣性、列換了，就重找一次 */
     const __moved=false;SB.rowsDirty=true;SB.on=true;coverRow19();SB.on=false;/* 一進入就把第 19 列蓋成空白期 */
-    SB.on=true;SB.period=15;SB.oi=0;SB.none=false;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(!SB.on)return;const before=(SB.rowsCache||[])[0];SB.rowsDirty=true;const now=dataRows()[0];if(now!==before){uncover();coverRow19();update(true);if(!SB.drag)runSearch(0)}else update(false)},ms)});
+    SB.on=true;SB.period=15;SB.oi=0;SB.none=false;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(!SB.on)return;const before=(SB.rowsCache||[])[0];SB.rowsDirty=true;const now=dataRows()[0];if(now!==before){uncover();coverRow19();update(true);if(!SB.drag)runSearch(0)}else{update(false);refitCov()}},ms)});
     if(typeof logEvent==="function")try{logEvent("單桿","進入(長按定顯/全顯)，標記暫存 "+SB.stash.pickedPaths.length+" 筆、連線 "+SB.stash.connections.length+" 條")}catch(e){}
     update(true);setTimeout(function(){update(true)},200);setTimeout(function(){update(true)},450);if(!SB.raf)SB.raf=requestAnimationFrame(loop);
     /* 原本等 0.9 秒才開始找號；改成：畫面本來就在最底＝馬上找，有往回捲＝等 0.25 秒捲回動畫結束再找(之後 0.2/0.45/0.8 秒若又被拉回，會自動重找) */
