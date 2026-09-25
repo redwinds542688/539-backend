@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 22:49";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 22:52";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-25 22:52  單桿尋號加成立條件：桿位號碼加九宮差得到的 5(6) 個號碼，單桿下面 3 期(第 16、17、18 期)每期至少中一號才成立並標定；不成立自動換下一個九宮差(按九宮鍵也跳過不成立的)；9 個都不成立＝不標定、欄位顯示「無」。拖曳單桿換到新桿位時從第一個九宮差(-11)重新找。
    2026-09-25 22:49  單桿九宮差顯示欄位改到單桿下一列的日期＋星期欄位(左到日期左邊格線、右到星期右邊格線)，藍底紅字，九宮差字級在欄位裡最大化(原本是拖曳鍵上方的小紅標籤)。
    2026-09-25 22:43  單桿尋號邏輯：單桿範圍改第 1～15 期、初始第 15 期；桿位第 1～5 號(六合/大樂到第 6 號)依序加上目前的九宮差(從 -11 開始)，18 期內同號全部標定(第一招滿格，逐號 0.3 秒)；單擊/雙擊「九宮」換下一個九宮差(-11→…→+11→回 -11 循環)；拖曳單桿放開後用目前九宮差重跑；拖曳鍵上方小標籤顯示目前九宮差。被動號碼保護在單桿中不動作。
    2026-09-25 21:56  單桿拖曳鍵配色：紅底(#e02020)、藍色箭頭(#1E63D0)，白框不變(原本藍底黃箭頭)。
@@ -4416,9 +4417,10 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
      ・單擊或雙擊「九宮」鍵＝換下一個九宮差(雙擊只算一次)，清掉上一輪的標定，一樣從第 1 號跑到最後一號；跑到最後一個(+11)再按＝回到第一個(-11)，循環。
      ・拖曳單桿放開後，用目前的九宮差對新的桿位重跑一次(拖曳中先清掉標定)。
      ・目前的九宮差顯示在拖曳鍵上方的小標籤。(2026-09-25 22:49 改成：顯示在單桿下一列的日期＋星期欄位，藍底紅字、字級最大化)
+   ★2026-09-25 22:52 成立條件：5(6) 個號碼在單桿下面 3 期(第 16、17、18 期)每期至少中一號才成立；不成立自動換下一個九宮差(按九宮鍵換時也一樣跳過不成立的)；9 個都不成立顯示「無」。
    window.__zpSingleBarPeriod() 取得單桿在第幾期；window.__zpSingleBarOffset() 取得目前的九宮差。 */
 (function(){
-  const SB={tagFit:"",oi:0,hits:[],runTimer:0,runToken:0,tapAt:0,tag:null,on:false,allow:false,period:15,stash:null,handle:null,painted:[],raf:0,drag:null,guardUntil:0,lastKey:""};
+  const SB={none:false,tagFit:"",oi:0,hits:[],runTimer:0,runToken:0,tapAt:0,tag:null,on:false,allow:false,period:15,stash:null,handle:null,painted:[],raf:0,drag:null,guardUntil:0,lastKey:""};
   /* 2026-09-25 21:24 使用者指示「啟動單桿尋號後定顯/全顯按鍵改名為九宮」：單桿開著時第三顆顯示「九宮」(功能待定義，目前按了不動作、不再切換定顯/全顯)；離開單桿還原成定顯/全顯 */
   function setLabel(){const btn=document.getElementById("float-save-btn");if(!btn)return;const l=btn.querySelector(".fullpage-mode-label");if(l&&l.textContent!=="九宮")l.textContent="九宮";btn.setAttribute("aria-label","九宮")}
   /* 回到最下面 18+2：捲回 0；0.2/0.45/0.8 秒後再確認一次(還在滑動慣性或平滑捲動的尾巴時，再拉回一次) */
@@ -4442,7 +4444,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     h.addEventListener("pointermove",function(e){if(!SB.drag||e.pointerId!==SB.drag.id)return;e.preventDefault();e.stopPropagation();
       const rows=dataRows();if(!rows.length)return;let best=null,bd=Infinity;rows.forEach(function(tr,i){const r=tr.getBoundingClientRect();const d=Math.abs(e.clientY-(r.top+r.height/2));if(d<bd){bd=d;best=i}});
       const p=Math.max(1,Math.min(15,best+1+(18-rows.length)));if(p!==SB.period){SB.period=p;update(true)}},{passive:false});
-    ["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){h.addEventListener(ev,function(e){if(!SB.drag||e.pointerId!==SB.drag.id)return;SB.drag=null;if(typeof logEvent==="function")try{logEvent("單桿","停在第 "+SB.period+" 期")}catch(_){}runSearch()})});
+    ["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){h.addEventListener(ev,function(e){if(!SB.drag||e.pointerId!==SB.drag.id)return;const __p0=SB.drag.p0;SB.drag=null;if(typeof logEvent==="function")try{logEvent("單桿","停在第 "+SB.period+" 期")}catch(_){}runSearch(SB.period!==__p0?0:SB.oi)/* 換了桿位＝從第一個九宮差(-11)重新找；放回原位＝從目前的九宮差 */})});
     h.addEventListener("contextmenu",function(e){e.preventDefault()});
     document.body.appendChild(h);SB.handle=h;return h}
   function placeHandle(tr){const h=buildHandle();if(!tr){h.style.display="none";if(SB.tag)SB.tag.style.display="none";return}
@@ -4463,7 +4465,17 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   function clearHits(){SB.hits.forEach(function(td){try{td.classList.remove("zp-sb-hit","num-marked","num-marked-click")}catch(e){}});SB.hits=[]}
   function reapplyHits(){SB.hits.forEach(function(td){if(td.isConnected)td.classList.add("num-marked","num-marked-click","zp-sb-hit")})}
   function cancelRun(){SB.runToken++;if(SB.runTimer){clearTimeout(SB.runTimer);SB.runTimer=0}}
-  function runSearch(){if(!SB.on)return;cancelRun();clearHits();const token=SB.runToken;const off=SB_OFFS[SB.oi];const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;
+  /* 2026-09-25 22:52 使用者指示「一次出來會有 5 個號碼(大樂/香港 6 個)，對照 16 最少中一號、17 也最少中一號、18 也最少中一號，整個式子才算成立；如果沒有，就自動九宮差換下一個」：
+     成立條件＝桿位各號加上九宮差得到的 5(6) 個號碼，在單桿下面的 3 期(單桿在第 15 期時＝第 16、17、18 期)每一期都至少開出其中一個。
+     不成立的九宮差直接跳過(不跑動畫)，往下找到第一個成立的才逐號標定；9 個都不成立＝不標定，欄位顯示「無」。 */
+  function targetsFor(oi){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const bar=rowOf(SB.period);if(!bar)return null;return cellsOf(bar).map(numOf).filter(function(v){return v!==null}).map(function(n){return wrapNum(n,SB_OFFS[oi],max)})}
+  function isValid(oi){const tg=targetsFor(oi);if(!tg||!tg.length)return false;const rows=dataRows();const bar=rowOf(SB.period);const bi=rows.indexOf(bar);if(bi<0)return false;
+    for(let k=1;k<=3;k++){const tr=rows[bi+k];if(!tr)return false;const hit=cellsOf(tr).some(function(td){return !td.classList.contains("pending")&&tg.indexOf(numOf(td))>=0});if(!hit)return false}return true}
+  function findValid(from){for(let k=0;k<SB_OFFS.length;k++){const i=(from+k)%SB_OFFS.length;if(isValid(i))return i}return -1}
+  function runSearch(from){if(!SB.on)return;cancelRun();clearHits();const pick=findValid(typeof from==="number"?from:SB.oi);
+    if(pick<0){SB.none=true;placeTagText();if(typeof logEvent==="function")try{logEvent("單桿尋號","第 "+SB.period+" 期：9 個九宮差都不成立")}catch(e){}return}
+    if(pick!==SB.oi&&typeof logEvent==="function")try{logEvent("單桿尋號","九宮差 "+offLabel(SB_OFFS[SB.oi])+" 起不成立的跳過 → "+offLabel(SB_OFFS[pick]))}catch(e){}
+    SB.oi=pick;SB.none=false;const token=SB.runToken;const off=SB_OFFS[SB.oi];const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;
     const bar=rowOf(SB.period);if(!bar)return;const barNums=cellsOf(bar).map(numOf).filter(function(v){return v!==null});
     const rows=dataRows();const got=[];let i=0;placeTagText();
     function step(){if(token!==SB.runToken||!SB.on)return;if(i>=barNums.length){SB.runTimer=0;if(typeof logEvent==="function")try{logEvent("單桿尋號","第 "+SB.period+" 期 九宮差 "+offLabel(off)+"："+got.join("、"))}catch(e){}return}
@@ -4471,11 +4483,11 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
       rows.forEach(function(tr){cellsOf(tr).forEach(function(td){if(td.classList.contains("pending"))return;if(numOf(td)===target){markHit(td);c++}})});
       got.push(String(n).padStart(2,"0")+offLabel(off)+"="+String(target).padStart(2,"0")+"×"+c);i++;SB.runTimer=setTimeout(step,SB_STEP_MS)}
     step()}
-  function nextOffset(){SB.oi=(SB.oi+1)%SB_OFFS.length;runSearch()}
+  function nextOffset(){runSearch((SB.oi+1)%SB_OFFS.length)}
   /* 拖曳鍵上方的小標籤：顯示目前的九宮差 */
   /* 2026-09-25 22:49 使用者指示「九宮差顯示欄位是拖曳桿下面的日期星期欄位，藍底紅字，九宮差在欄位裡顯示最大化」：標籤蓋在單桿下一列的日期＋星期兩格(左到日期左邊格線、右到星期右邊格線)，藍底(#1E63D0)紅字(#e02020)，字級依格子大小最大化 */
   function buildTag(){if(SB.tag)return SB.tag;const g=document.createElement("div");g.id="zp-sb-offset-tag";Object.assign(g.style,{position:"fixed",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9601",background:"#1E63D0",color:"#e02020",border:"2px solid #fff",boxSizing:"border-box",boxShadow:"0 0 4px rgba(0,0,0,0.7)",pointerEvents:"none",overflow:"hidden",whiteSpace:"nowrap"});const sp=document.createElement("span");sp.className="zp-sb-offset-txt";Object.assign(sp.style,{font:"900 20px/1 Arial, Helvetica, sans-serif",color:"#e02020",display:"inline-block"});g.appendChild(sp);document.body.appendChild(g);SB.tag=g;return g}
-  function placeTagText(){const g=buildTag();const sp=g.firstChild;const t=offLabel(SB_OFFS[SB.oi]);if(sp.textContent!==t){sp.textContent=t;SB.tagFit=""}}
+  function placeTagText(){const g=buildTag();const sp=g.firstChild;const t=SB.none?"無":offLabel(SB_OFFS[SB.oi]);if(sp.textContent!==t){sp.textContent=t;SB.tagFit=""}}
   function placeTag(tr){const g=buildTag();placeTagText();if(!tr){g.style.display="none";return}
     const side=Array.prototype.slice.call(tr.children).filter(function(td){return td.classList.contains("day")||td.classList.contains("wd")});
     let L=Infinity,T=Infinity,R=-Infinity,B=-Infinity;side.forEach(function(td){const r=td.getBoundingClientRect();if(r.width<=0)return;L=Math.min(L,r.left);T=Math.min(T,r.top);R=Math.max(R,r.right);B=Math.max(B,r.bottom)});
@@ -4492,7 +4504,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     pickedPaths=[];connections=[];broadened=false;historyStack=[];
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function")renderConnections()}catch(e){}
     toBottom();
-    SB.on=true;SB.period=15;SB.oi=0;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(SB.on){toBottom();update(true)}},ms)});
+    SB.on=true;SB.period=15;SB.oi=0;SB.none=false;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(SB.on){toBottom();update(true)}},ms)});
     if(typeof logEvent==="function")try{logEvent("單桿","進入(長按定顯/全顯)，標記暫存 "+SB.stash.pickedPaths.length+" 筆、連線 "+SB.stash.connections.length+" 條")}catch(e){}
     update(true);setTimeout(function(){update(true)},200);setTimeout(function(){update(true)},450);if(!SB.raf)SB.raf=requestAnimationFrame(loop);
     setTimeout(function(){if(SB.on&&!SB.drag)runSearch()},900);/* 等回到最底(0.8 秒最後一次確認)之後再開始跑第一個九宮差 */return true}
@@ -4500,7 +4512,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     const st=SB.stash;SB.stash=null;if(st){pickedPaths=st.pickedPaths;connections=st.connections;broadened=st.broadened;historyStack=st.historyStack}
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function"){renderConnections();requestAnimationFrame(renderConnections)}}catch(e){}
     if(typeof logEvent==="function")try{logEvent("單桿","離開，標記放回")}catch(e){}return true}
-  window.__zpSingleBarStart=start;window.__zpSingleBarExit=exit;window.__zpSingleBarOn=function(){return SB.on};window.__zpSingleBarPeriod=function(){return SB.on?SB.period:null};window.__zpSingleBarOffset=function(){return SB.on?SB_OFFS[SB.oi]:null};window.__zpSingleBarNext=function(){if(SB.on)nextOffset()};
+  window.__zpSingleBarStart=start;window.__zpSingleBarExit=exit;window.__zpSingleBarOn=function(){return SB.on};window.__zpSingleBarPeriod=function(){return SB.on?SB.period:null};window.__zpSingleBarOffset=function(){return SB.on?(SB.none?null:SB_OFFS[SB.oi]):null};window.__zpSingleBarNext=function(){if(SB.on)nextOffset()};
   /* 單桿開著：一二三招失效、抓牌單指捲動(視窗重排)停用 */
   if(typeof marksAllowed==="function"){const __oma=marksAllowed;marksAllowed=function(){if(SB.on)return false;return __oma.apply(this,arguments)};window.marksAllowed=marksAllowed}
   /* 標記重算(applyMarksToClone)會把所有 num-marked 拿掉：單桿中重算完把尋號的標定補回去 */
