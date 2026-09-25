@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:31";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:41";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-25 23:41  進入單桿尋號不再捲回最後 18+2，以目前畫面上的 18+2 為準(第 1～18 列＝第 1～18 期、第 19 列＝空白第一期位置)；往回捲時第 19 列是已開獎期數，尋號結果暫時蓋在上面，換九宮差/拖桿/離開時還原。單桿中捲動仍失效。
    2026-09-25 23:31  單桿尋號更正：成立條件改成畫面上固定的第 16、17、18 期每期至少中一號(原本是單桿的下三期，會跟著單桿移動)；空白期扣除的也改成第 16/17/18 期開過的號碼。
    2026-09-25 23:09  單桿尋號加速：18 期的號碼進入時讀一次存起來(原本每檢查一個九宮差就重掃整張開獎單)；長按後畫面本來就在最底時馬上找號，有往回捲時等 0.25 秒(原本固定等 0.9 秒)。
    2026-09-25 23:03  單桿尋號標定改成一次全部顯示(原本逐號每 0.3 秒一顆)；按九宮鍵、放開單桿後立即出現結果。
@@ -4409,7 +4410,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
 /* ===== 「單桿尋號系統」(使用者設計 2026-09-25 21:14) =====
    進入：抓牌畫面(非三層)長按「定顯/全顯」鍵 0.55 秒。(單擊/雙擊＝切換定顯/全顯)
    進入時：①畫面上所有標定號碼、一二三招(標記、滿格、連線、定顯/全顯帶出的被動號碼)先全部隱藏——整份暫存起來，離開時原封不動放回；第四招(空白期選號)不動；
-           ②不管畫面捲到哪裡，都回到最下面的 18+2(最新 18 期＋2 列空白)；
+           ②不管畫面捲到哪裡，都回到最下面的 18+2(最新 18 期＋2 列空白)；(2026-09-25 23:41 取消：不再捲回，以目前畫面上的 18+2 為準)
            ③單桿出現在第 18 期(最新一期；2026-09-25 22:43 起改成第 15 期)：整列號碼比照 C式下桿的顯示(整列底色＋外框線，同 renderCModeOverlayForRow 的配色)；
            ④這一列的「日期／星期」欄位上出現一顆上下拖曳鍵，拖曳範圍第 1～18 期(畫面上由上往下第 1 期～第 18 期；2026-09-25 22:43 起改成第 1～15 期)。
    單桿開著時：一二三招失效、畫面捲動失效(抓牌單指捲動停用)、三層鍵與清除鍵不作用、第三顆改名「九宮」(單擊/雙擊＝換下一個九宮差)；返回鍵單擊/雙擊＝只離開單桿(回到抓牌，標記放回)，不會直接退出抓牌。
@@ -4426,7 +4427,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
    ★2026-09-25 22:52 成立條件：5(6) 個號碼在單桿下面 3 期(第 16、17、18 期)每期至少中一號才成立；不成立自動換下一個九宮差(按九宮鍵換時也一樣跳過不成立的)；9 個都不成立顯示「無」。
    window.__zpSingleBarPeriod() 取得單桿在第幾期；window.__zpSingleBarOffset() 取得目前的九宮差。 */
 (function(){
-  const SB={rowsCache:null,rowsDirty:true,grid:null,gridRows:null,none:false,tagFit:"",oi:0,hits:[],runTimer:0,runToken:0,tapAt:0,tag:null,on:false,allow:false,period:15,stash:null,handle:null,painted:[],raf:0,drag:null,guardUntil:0,lastKey:""};
+  const SB={screen:[],rowsCache:null,rowsDirty:true,grid:null,gridRows:null,none:false,tagFit:"",oi:0,hits:[],runTimer:0,runToken:0,tapAt:0,tag:null,on:false,allow:false,period:15,stash:null,handle:null,painted:[],raf:0,drag:null,guardUntil:0,lastKey:""};
   /* 2026-09-25 21:24 使用者指示「啟動單桿尋號後定顯/全顯按鍵改名為九宮」：單桿開著時第三顆顯示「九宮」(功能待定義，目前按了不動作、不再切換定顯/全顯)；離開單桿還原成定顯/全顯 */
   function setLabel(){const btn=document.getElementById("float-save-btn");if(!btn)return;const l=btn.querySelector(".fullpage-mode-label");if(l&&l.textContent!=="九宮")l.textContent="九宮";btn.setAttribute("aria-label","九宮")}
   /* 回到最下面 18+2：捲回 0；0.2/0.45/0.8 秒後再確認一次(還在滑動慣性或平滑捲動的尾巴時，再拉回一次) */
@@ -4439,8 +4440,11 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   function grid(){const rows=dataRows();if(!SB.grid||SB.gridRows!==rows){SB.grid=rows.map(function(tr){return cellsOf(tr).map(function(td){return{td:td,v:td.classList.contains("pending")?null:numOf(td)}})});SB.gridRows=rows}return SB.grid}
   function barIdx(){const n=dataRows().length;return Math.max(0,Math.min(n-1,n-18+SB.period-1))}
   function scanRows(){const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"})||panels;
-    const rows=Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(tr){return tr.querySelector("td.num")&&!tr.classList.contains("future")&&tr.style.display!=="none"&&!tr.classList.contains("c-scroll-peek")&&tr.getBoundingClientRect().height>0});
-    return rows.slice(-18)}
+    /* 2026-09-25 23:41 使用者指示「進入單桿尋號不用再把期數捲回最後面」：改成以「畫面上看得到的 18+2」為準——由上往下第 1～18 列＝第 1～18 期，第 19 列＝空白第一期的位置。
+       往回捲時第 19、20 列是已開獎的期數(不是空白期)，尋號結果會暫時蓋在第 19 列上(離開/換九宮差/拖桿時還原) */
+    const all=Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(tr){return tr.querySelector("td.num")&&tr.style.display!=="none"&&!tr.classList.contains("c-scroll-peek")});
+    let i0=-1;for(let i=0;i<all.length;i++){const r=all[i].getBoundingClientRect();if(r.height>0&&r.top>=-2){i0=i;break}}
+    const screen=i0<0?[]:all.slice(i0,i0+20);SB.screen=screen;return screen.slice(0,18).filter(function(tr){return !tr.classList.contains("future")})}
   function rowOf(p){const rows=dataRows();if(!rows.length)return null;const i=rows.length-18+p-1;return rows[Math.max(0,Math.min(rows.length-1,i))]||null}
   function unpaint(){SB.painted.forEach(function(td){try{["background","color","box-shadow"].forEach(function(k){td.style.removeProperty(k)});td.classList.remove("zp-sb-cell")}catch(e){}});SB.painted=[]}
   function paint(tr){unpaint();if(!tr)return;const cs=getComputedStyle(document.documentElement);const rowBg=cs.getPropertyValue("--mark-predict-color").trim()||"#FFCC1A";const rowBorder=cs.getPropertyValue("--mark-line-color").trim()||"#3B82F6";
@@ -4474,9 +4478,11 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   function numOf(td){const v=parseInt(normalizedNum(td),10);return isNaN(v)?null:v}
   function markHit(td){if(SB.hits.indexOf(td)<0)SB.hits.push(td);td.classList.add("num-marked","num-marked-click","zp-sb-hit")}
   /* 2026-09-25 22:58 使用者指示「尋找出的號碼顯示在空白第一期；在 16/17/18 期內有中的號碼則不顯示在空白期」：成立的九宮差逐號標定跑完後，5(6) 個號碼扣掉單桿下面 3 期有開出的，其餘由小到大填進空白期第一列(樣式同空白期填號 c-ding-top3)；換九宮差/拖桿/離開時清掉 */
-  function clearBlank(){panels.querySelectorAll("td.num.zp-sb-blank").forEach(function(td){td.classList.remove("zp-sb-blank","c-ding-top3");td.innerHTML="&nbsp;";td.classList.add("pending")})}
+  function clearBlank(){panels.querySelectorAll("td.num.zp-sb-blank").forEach(function(td){if(td.classList.contains("zp-sb-cover")){td.classList.remove("zp-sb-blank","c-ding-top3","zp-sb-cover");td.innerHTML=td.dataset.zpSbOrig||"&nbsp;";if(td.dataset.zpSbPending==="1")td.classList.add("pending");delete td.dataset.zpSbOrig;delete td.dataset.zpSbPending;return}td.classList.remove("zp-sb-blank","c-ding-top3");td.innerHTML="&nbsp;";td.classList.add("pending")})}
   function fillBlank(nums){clearBlank();if(!nums.length)return;const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"})||panels;
-    const fr=Array.prototype.slice.call(vp.querySelectorAll("table.road tr.future")).find(function(tr){return tr.style.display!=="none"&&tr.querySelector("td.num")});if(!fr)return;
+    dataRows();const fr=(SB.screen||[])[18];if(!fr)return;void vp;
+    if(!fr.classList.contains("future")){/* 往回捲：第 19 列是已開獎的期數→把號碼暫時蓋掉，填上尋號結果 */const cs=Array.prototype.slice.call(fr.querySelectorAll("td.num")).slice(0,cModeColCount());
+      cs.forEach(function(td,i){td.dataset.zpSbOrig=td.innerHTML;td.dataset.zpSbPending=td.classList.contains("pending")?"1":"0";td.innerHTML=i<nums.length?'<span class="cell-shift">'+String(nums[i]).padStart(2,"0")+"</span>":'<span class="cell-shift">&nbsp;</span>';td.classList.remove("pending");td.classList.add("c-ding-top3","zp-sb-blank","zp-sb-cover")});return}
     const cells=Array.prototype.slice.call(fr.querySelectorAll("td.num")).filter(function(td){return td.classList.contains("pending")&&!td.classList.contains("num-picked")&&(td.textContent||"").trim()===""});
     nums.forEach(function(n,i){const td=cells[i];if(!td)return;td.innerHTML='<span class="cell-shift">'+String(n).padStart(2,"0")+"</span>";td.classList.remove("pending");td.classList.add("c-ding-top3","zp-sb-blank")})}
   function clearHits(){clearBlank();SB.hits.forEach(function(td){try{td.classList.remove("zp-sb-hit","num-marked","num-marked-click")}catch(e){}});SB.hits=[]}
@@ -4526,8 +4532,9 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     SB.stash={pickedPaths:pickedPaths,connections:connections,broadened:broadened,historyStack:historyStack};
     pickedPaths=[];connections=[];broadened=false;historyStack=[];
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function")renderConnections()}catch(e){}
-    const __moved=toBottom();SB.rowsDirty=true;
-    SB.on=true;SB.period=15;SB.oi=0;SB.none=false;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(!SB.on)return;if(toBottom()){update(true);if(!SB.drag)runSearch(0)}else update(false)},ms)});
+    /* 2026-09-25 23:41 不再捲回最後面：停在目前畫面(往回捲幾期都照樣)；單桿中捲動仍失效。0.2/0.45/0.8 秒再量一次畫面，若剛好還在滑動慣性、列換了，就重找一次 */
+    const __moved=false;SB.rowsDirty=true;
+    SB.on=true;SB.period=15;SB.oi=0;SB.none=false;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(!SB.on)return;const before=(SB.rowsCache||[])[0];SB.rowsDirty=true;const now=dataRows()[0];if(now!==before){update(true);if(!SB.drag)runSearch(0)}else update(false)},ms)});
     if(typeof logEvent==="function")try{logEvent("單桿","進入(長按定顯/全顯)，標記暫存 "+SB.stash.pickedPaths.length+" 筆、連線 "+SB.stash.connections.length+" 條")}catch(e){}
     update(true);setTimeout(function(){update(true)},200);setTimeout(function(){update(true)},450);if(!SB.raf)SB.raf=requestAnimationFrame(loop);
     /* 原本等 0.9 秒才開始找號；改成：畫面本來就在最底＝馬上找，有往回捲＝等 0.25 秒捲回動畫結束再找(之後 0.2/0.45/0.8 秒若又被拉回，會自動重找) */
