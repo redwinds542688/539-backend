@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 02:41";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 02:43";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 02:43  單桿尋號成立條件加一條：扣掉第 16/17/18 期開過的號碼後，預測號碼必須至少 1 個，否則視為不成立、直接跳到下一個九宮差。
    2026-09-26 02:41  單桿移動範圍由第 1～15 期改成第 1～18 期(初始仍在第 15 期)；單桿在第 18 期時九宮差欄位顯示在第 19 列的日期/星期欄。
    2026-09-26 01:19  修正：抓牌手指拖著捲動(還沒放手)時第 19 列仍看得到號碼。改成手指一開始在開獎單上滑動，就在畫面第 19 格的固定位置蓋一片空白期樣子的遮罩(同底色、同直格線)，放手定位 0.5 秒後收起。
    2026-09-26 01:12  抓牌往回捲時，畫面第 19 列固定不顯示號碼、標記也不顯示，欄位跟空白期一樣(計算仍讀原號碼)；三層開啟前、單桿尋號開啟前先還原(單桿維持空白期＋右上角真實號碼)。
@@ -8145,7 +8146,10 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 2026-09-25 23:31 使用者更正「不是單桿的下三期，是畫面裡的 16/17/18 期皆有中號碼才算」：對照期固定＝畫面上第 16、17、18 期(最後 3 期)，不隨單桿移動 */
   function checkRows(){const g=grid();return[g.length-3,g.length-2,g.length-1].map(function(i){return i>=0?g[i]:null})}
   function isValid(oi){const tg=targetsFor(oi);if(!tg.length)return false;const rs=checkRows();
-    for(let k=0;k<3;k++){const row=rs[k];if(!row)return false;if(!row.some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0}))return false}return true}
+    for(let k=0;k<3;k++){const row=rs[k];if(!row)return false;if(!row.some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0}))return false}
+    /* 2026-09-26 02:43 使用者指示「預測號碼必須大於 0 號，否則依舊視為無效，直接跳過」：扣掉第 16/17/18 期開過的號碼後，至少要剩 1 個預測號碼才成立 */
+    const below={};rs.forEach(function(row){row.forEach(function(c){if(c.v!==null)below[c.v]=true})});if(!tg.some(function(t){return !below[t]}))return false;
+    return true}
   function findValid(from){for(let k=0;k<SB_OFFS.length;k++){const i=(from+k)%SB_OFFS.length;if(isValid(i))return i}return -1}
   function runSearch(from){if(!SB.on)return;cancelRun();clearHits();const pick=findValid(typeof from==="number"?from:SB.oi);
     if(pick<0){SB.none=true;placeTagText();if(typeof logEvent==="function")try{logEvent("單桿尋號","第 "+SB.period+" 期：9 個九宮差都不成立")}catch(e){}return}
