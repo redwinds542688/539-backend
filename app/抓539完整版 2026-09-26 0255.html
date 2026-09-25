@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 02:43";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 02:55";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-26 02:55  抓牌捲動時第 19 列改成「號碼淡出」：拿掉固定白色遮罩(看起來假、數字被切半截像殘影)；拖動時各列號碼依進入第 19 格的比例變透明，格線/底色/日期照常移動；拖動中暫停第 19 列清空/還原，放手定位後再清空。
    2026-09-26 02:43  單桿尋號成立條件加一條：扣掉第 16/17/18 期開過的號碼後，預測號碼必須至少 1 個，否則視為不成立、直接跳到下一個九宮差。
    2026-09-26 02:41  單桿移動範圍由第 1～15 期改成第 1～18 期(初始仍在第 15 期)；單桿在第 18 期時九宮差欄位顯示在第 19 列的日期/星期欄。
    2026-09-26 01:19  修正：抓牌手指拖著捲動(還沒放手)時第 19 列仍看得到號碼。改成手指一開始在開獎單上滑動，就在畫面第 19 格的固定位置蓋一片空白期樣子的遮罩(同底色、同直格線)，放手定位 0.5 秒後收起。
@@ -4442,7 +4443,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
       if(td.dataset.zpR19Had7==="0")delete td.dataset.streak7Num;delete td.dataset.zpR19Orig;delete td.dataset.zpR19Had7});R.row=null;
     if(any){try{__r19Busy=true;applyMarksToClone()}catch(e){}finally{__r19Busy=false}}}
   let __r19Busy=false;
-  function sync(){if(__r19Busy)return;try{if(!active()){if(R.row||panels.querySelector("td.num.zp-r19"))uncover();return}
+  function sync(){if(__r19Busy)return;if(typeof V!=="undefined"&&(V.settle||(V.dragging&&V.moved)))return;/* 拖動中/放手定位中不清空也不還原(改由號碼淡出處理) */try{if(!active()){if(R.row||panels.querySelector("td.num.zp-r19"))uncover();return}
       const tr=screenRow19();const want=(tr&&!tr.classList.contains("future"))?tr:null;
       if(want!==R.row){uncover();if(want)cover(want)}else if(want)strip(want)}catch(e){}}
   /* 2026-09-26 01:19 使用者回報「下滑、手沒放開，十九期還是看得到」：手指拖著捲動時表格是整片平滑移動，第 19 格位置上的列一直在換，
@@ -4457,15 +4458,27 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
       const ref=Array.prototype.slice.call(all[i0+17].querySelectorAll("td.num")).find(function(td){return !td.classList.contains("num-marked")})||nums[0];const cs=getComputedStyle(ref);
       let bg=cs.backgroundColor;if(!bg||bg==="rgba(0, 0, 0, 0)"||bg==="transparent")bg=document.body.classList.contains("theme-dark")?"#1a1a1a":"#ffffff";
       V.geo={top:rr.top,bottom:bottom,left:nums[0].getBoundingClientRect().left,right:nums[nums.length-1].getBoundingClientRect().right,xs:nums.map(function(td){return td.getBoundingClientRect().right}),bg:bg,line:cs.borderRightColor||"#bbb",lw:Math.max(1,(parseFloat(cs.borderRightWidth)||1))}}catch(e){}}
-  function showVeil(){if(!V.geo)measureGeo();const g=V.geo;if(!g)return;let el=V.el;if(!el){el=document.createElement("div");el.id="zp-r19-veil";el.style.cssText="position:fixed;pointer-events:none;z-index:0;overflow:hidden;box-sizing:border-box";
-      const mask=document.getElementById("zp-bottom-mask");if(mask&&mask.parentNode)mask.parentNode.insertBefore(el,mask.nextSibling);else document.body.appendChild(el);V.el=el}
-    el.style.left=g.left.toFixed(2)+"px";el.style.top=g.top.toFixed(2)+"px";el.style.width=(g.right-g.left).toFixed(2)+"px";el.style.height=Math.max(0,g.bottom-g.top).toFixed(2)+"px";el.style.background=g.bg;
-    const lines=g.xs.slice(0,-1).map(function(x){return'<i style="position:absolute;top:0;bottom:0;left:'+(x-g.left-g.lw/2).toFixed(2)+'px;width:'+g.lw.toFixed(2)+'px;background:'+g.line+'"></i>'}).join("");if(el.__l!==lines){el.innerHTML=lines;el.__l=lines}el.style.display="block"}
+  /* 2026-09-26 02:55 使用者回報「捲動下拉有殘影、不夠自然，第十九期五個空白欄位看起來很假」：拿掉固定不動的白色遮罩(表格在底下滑、遮罩不動，一看就是蓋上去的；
+     列滑過遮罩上緣時數字被切成半截＝殘影)。改成「號碼淡出」：手指拖著捲動時，每一列的號碼依照進入第 19 格的比例變透明(完全進入＝看不到)，
+     往上滑出第 19 格則漸漸出現；格線、底色、日期、星期都跟著表格正常移動。拖動中暫停第 19 列的清空/還原(避免中途換內容造成閃動)，放手定位後再清空、恢復透明度。 */
+  V.faded=new Set();V.loop=0;V.settle=false;
+  function dataRowsForFade(){const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"})||panels;
+    return Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(tr){return tr.style.display!=="none"&&!tr.classList.contains("c-scroll-peek")&&!tr.classList.contains("future")&&tr.querySelector("td.num")})}
+  function fadeFrame(){V.loop=0;if(!(V.dragging||V.settle)||!active()){clearFade();return}const g=V.geo;if(!g){V.loop=requestAnimationFrame(fadeFrame);return}const Y=g.top;
+    const rows=dataRowsForFade();const seen=new Set();
+    for(let i=rows.length-1;i>=0;i--){const rr=rows[i].getBoundingClientRect();if(rr.height<=0)continue;if(rr.bottom<Y-1)break;
+      const f=Math.max(0,Math.min(1,(rr.bottom-Y)/rr.height));
+      Array.prototype.forEach.call(rows[i].querySelectorAll("td.num"),function(td){const sp=td.querySelector(".cell-shift")||td;if(f<=0){return}sp.style.setProperty("opacity",(1-f).toFixed(3),"important");V.faded.add(sp);seen.add(sp)})}
+    V.faded.forEach(function(sp){if(!seen.has(sp)){sp.style.removeProperty("opacity");V.faded.delete(sp)}});
+    V.loop=requestAnimationFrame(fadeFrame)}
+  function clearFade(){V.faded.forEach(function(sp){try{sp.style.removeProperty("opacity")}catch(e){}});V.faded.clear();if(V.loop){cancelAnimationFrame(V.loop);V.loop=0}}
+  function startFade(){if(R.row)uncover();/* 拖動開始：先還原第 19 列(內容換回號碼)，改由淡出處理 */if(!V.loop)V.loop=requestAnimationFrame(fadeFrame)}
   function hideVeil(){if(V.el)V.el.style.display="none"}
-  document.addEventListener("pointerdown",function(e){if(!active())return;const t=e.target;if(!t||!t.closest||!t.closest("#panels"))return;clearTimeout(V.hideT);V.dragging=true;V.moved=false;V.x0=e.clientX;V.y0=e.clientY;measureGeo()},true);
-  document.addEventListener("pointermove",function(e){if(!V.dragging||V.moved)return;if(Math.abs(e.clientY-V.y0)>6||Math.abs(e.clientX-V.x0)>6){V.moved=true;if(active())showVeil()}},true);
-  ["pointerup","pointercancel"].forEach(function(n){document.addEventListener(n,function(){if(!V.dragging)return;V.dragging=false;if(!V.moved)return;clearTimeout(V.hideT);V.hideT=setTimeout(function(){sync();requestAnimationFrame(function(){if(!V.dragging)hideVeil()})},500)},true)});
-  new MutationObserver(function(){if(!active())hideVeil()}).observe(document.body,{attributes:true,attributeFilter:["class"]});
+  document.addEventListener("pointerdown",function(e){if(!active())return;const t=e.target;if(!t||!t.closest||!t.closest("#panels"))return;clearTimeout(V.hideT);V.dragging=true;V.moved=false;V.x0=e.clientX;V.y0=e.clientY;if(!V.settle)measureGeo()},true);
+  document.addEventListener("pointermove",function(e){if(!V.dragging||V.moved)return;if(Math.abs(e.clientY-V.y0)>6||Math.abs(e.clientX-V.x0)>6){V.moved=true;if(active())startFade()}},true);
+  ["pointerup","pointercancel"].forEach(function(n){document.addEventListener(n,function(){if(!V.dragging)return;V.dragging=false;if(!V.moved)return;V.settle=true;clearTimeout(V.hideT);
+    V.hideT=setTimeout(function(){V.settle=false;sync();requestAnimationFrame(function(){if(!V.dragging){clearFade()}})},450)},true)});
+  new MutationObserver(function(){if(!active()){clearFade();hideVeil()}}).observe(document.body,{attributes:true,attributeFilter:["class"]});
   window.addEventListener("resize",function(){V.geo=null});
   window.__zpR19Sync=sync;window.__zpR19Uncover=uncover;
   /* 捲動落定、標記重算之後同步；另每 0.3 秒檢查一次(平滑捲動、被動號碼保護等其他路徑) */
