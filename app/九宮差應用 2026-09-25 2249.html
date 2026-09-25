@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-25 22:43";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-25 22:49";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-25 22:49  單桿九宮差顯示欄位改到單桿下一列的日期＋星期欄位(左到日期左邊格線、右到星期右邊格線)，藍底紅字，九宮差字級在欄位裡最大化(原本是拖曳鍵上方的小紅標籤)。
    2026-09-25 22:43  單桿尋號邏輯：單桿範圍改第 1～15 期、初始第 15 期；桿位第 1～5 號(六合/大樂到第 6 號)依序加上目前的九宮差(從 -11 開始)，18 期內同號全部標定(第一招滿格，逐號 0.3 秒)；單擊/雙擊「九宮」換下一個九宮差(-11→…→+11→回 -11 循環)；拖曳單桿放開後用目前九宮差重跑；拖曳鍵上方小標籤顯示目前九宮差。被動號碼保護在單桿中不動作。
    2026-09-25 21:56  單桿拖曳鍵配色：紅底(#e02020)、藍色箭頭(#1E63D0)，白框不變(原本藍底黃箭頭)。
    2026-09-25 21:52  單桿拖曳鍵尺寸：左到日期格左邊格線、右到星期格右邊格線，高＝該列格高(圓角長方形，原本是 34px 圓形)。
@@ -7970,10 +7971,10 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
        加減超出範圍照九宮拖牌的繞回規則(大於 39 減 39、小於等於 0 加 39；49 球同理)。標定的樣子＝第一招滿格；逐號每 0.3 秒跑一顆，看得到過程。
      ・單擊或雙擊「九宮」鍵＝換下一個九宮差(雙擊只算一次)，清掉上一輪的標定，一樣從第 1 號跑到最後一號；跑到最後一個(+11)再按＝回到第一個(-11)，循環。
      ・拖曳單桿放開後，用目前的九宮差對新的桿位重跑一次(拖曳中先清掉標定)。
-     ・目前的九宮差顯示在拖曳鍵上方的小標籤。
+     ・目前的九宮差顯示在拖曳鍵上方的小標籤。(2026-09-25 22:49 改成：顯示在單桿下一列的日期＋星期欄位，藍底紅字、字級最大化)
    window.__zpSingleBarPeriod() 取得單桿在第幾期；window.__zpSingleBarOffset() 取得目前的九宮差。 */
 (function(){
-  const SB={oi:0,hits:[],runTimer:0,runToken:0,tapAt:0,tag:null,on:false,allow:false,period:15,stash:null,handle:null,painted:[],raf:0,drag:null,guardUntil:0,lastKey:""};
+  const SB={tagFit:"",oi:0,hits:[],runTimer:0,runToken:0,tapAt:0,tag:null,on:false,allow:false,period:15,stash:null,handle:null,painted:[],raf:0,drag:null,guardUntil:0,lastKey:""};
   /* 2026-09-25 21:24 使用者指示「啟動單桿尋號後定顯/全顯按鍵改名為九宮」：單桿開著時第三顆顯示「九宮」(功能待定義，目前按了不動作、不再切換定顯/全顯)；離開單桿還原成定顯/全顯 */
   function setLabel(){const btn=document.getElementById("float-save-btn");if(!btn)return;const l=btn.querySelector(".fullpage-mode-label");if(l&&l.textContent!=="九宮")l.textContent="九宮";btn.setAttribute("aria-label","九宮")}
   /* 回到最下面 18+2：捲回 0；0.2/0.45/0.8 秒後再確認一次(還在滑動慣性或平滑捲動的尾巴時，再拉回一次) */
@@ -8007,7 +8008,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     /* 2026-09-25 21:52 使用者指示「拖曳鍵尺寸：左到日期左邊格線、右到星期右邊格線」：寬＝日期格左緣～星期格右緣；高＝這一列的格高(上下格線之間)，改成圓角長方形 */
     const w=R-L,hh=B-T;h.style.width=w.toFixed(2)+"px";h.style.height=hh.toFixed(2)+"px";h.style.left=L.toFixed(2)+"px";h.style.top=T.toFixed(2)+"px";h.style.borderRadius=Math.max(3,Math.min(8,hh*0.18)).toFixed(1)+"px";
     {const svg=h.querySelector("svg");if(svg){const a=Math.max(14,Math.min(28,hh*0.72));svg.setAttribute("width",a.toFixed(1));svg.setAttribute("height",a.toFixed(1))}}
-    h.style.display="flex";placeTag(L,T,R)}
+    h.style.display="flex";{const rows=dataRows();const i=rows.indexOf(tr);placeTag(i>=0&&i+1<rows.length?rows[i+1]:null)}}
   /* ---- 尋號：桿位號碼逐號 + 九宮差 → 18 期內同號全部標定 ---- */
   const SB_OFFS=[-11,-10,-9,-1,0,1,9,10,11];const SB_STEP_MS=300;
   function offLabel(o){return(o>0?"+":"")+o}
@@ -8028,9 +8029,16 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     step()}
   function nextOffset(){SB.oi=(SB.oi+1)%SB_OFFS.length;runSearch()}
   /* 拖曳鍵上方的小標籤：顯示目前的九宮差 */
-  function buildTag(){if(SB.tag)return SB.tag;const g=document.createElement("div");g.id="zp-sb-offset-tag";Object.assign(g.style,{position:"fixed",display:"none",zIndex:"9601",background:"#e02020",color:"#fff",border:"1.5px solid #fff",borderRadius:"5px",font:"700 13px/1 Arial, Helvetica, sans-serif",padding:"3px 4px",boxShadow:"0 0 3px rgba(0,0,0,0.6)",pointerEvents:"none",textAlign:"center",whiteSpace:"nowrap"});document.body.appendChild(g);SB.tag=g;return g}
-  function placeTagText(){const g=buildTag();const t=offLabel(SB_OFFS[SB.oi]);if(g.textContent!==t)g.textContent=t}
-  function placeTag(L,T,R){const g=buildTag();placeTagText();g.style.display="block";const gw=g.offsetWidth||28,gh=g.offsetHeight||18;g.style.left=((L+R)/2-gw/2).toFixed(1)+"px";g.style.top=Math.max(0,T-gh-2).toFixed(1)+"px"}
+  /* 2026-09-25 22:49 使用者指示「九宮差顯示欄位是拖曳桿下面的日期星期欄位，藍底紅字，九宮差在欄位裡顯示最大化」：標籤蓋在單桿下一列的日期＋星期兩格(左到日期左邊格線、右到星期右邊格線)，藍底(#1E63D0)紅字(#e02020)，字級依格子大小最大化 */
+  function buildTag(){if(SB.tag)return SB.tag;const g=document.createElement("div");g.id="zp-sb-offset-tag";Object.assign(g.style,{position:"fixed",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9601",background:"#1E63D0",color:"#e02020",border:"2px solid #fff",boxSizing:"border-box",boxShadow:"0 0 4px rgba(0,0,0,0.7)",pointerEvents:"none",overflow:"hidden",whiteSpace:"nowrap"});const sp=document.createElement("span");sp.className="zp-sb-offset-txt";Object.assign(sp.style,{font:"900 20px/1 Arial, Helvetica, sans-serif",color:"#e02020",display:"inline-block"});g.appendChild(sp);document.body.appendChild(g);SB.tag=g;return g}
+  function placeTagText(){const g=buildTag();const sp=g.firstChild;const t=offLabel(SB_OFFS[SB.oi]);if(sp.textContent!==t){sp.textContent=t;SB.tagFit=""}}
+  function placeTag(tr){const g=buildTag();placeTagText();if(!tr){g.style.display="none";return}
+    const side=Array.prototype.slice.call(tr.children).filter(function(td){return td.classList.contains("day")||td.classList.contains("wd")});
+    let L=Infinity,T=Infinity,R=-Infinity,B=-Infinity;side.forEach(function(td){const r=td.getBoundingClientRect();if(r.width<=0)return;L=Math.min(L,r.left);T=Math.min(T,r.top);R=Math.max(R,r.right);B=Math.max(B,r.bottom)});
+    if(!(R>L)){g.style.display="none";return}
+    const w=R-L,hh=B-T;g.style.width=w.toFixed(2)+"px";g.style.height=hh.toFixed(2)+"px";g.style.left=L.toFixed(2)+"px";g.style.top=T.toFixed(2)+"px";g.style.borderRadius=Math.max(3,Math.min(8,hh*0.18)).toFixed(1)+"px";g.style.display="flex";
+    /* 字級最大化：先用 100px 量字寬/字高，再依格子內框(扣白框 2px×2 與 2px 留白)等比例換算 */
+    const fitKey=w.toFixed(1)+"|"+hh.toFixed(1)+"|"+g.firstChild.textContent;if(SB.tagFit!==fitKey){const sp=g.firstChild;sp.style.fontSize="100px";const mw=sp.offsetWidth||1,mh=sp.offsetHeight||1;const iw=Math.max(4,w-8),ih=Math.max(4,hh-8);sp.style.fontSize=Math.max(8,Math.floor(100*Math.min(iw/mw,ih/mh))).toString()+"px";SB.tagFit=fitKey}}
   function update(force){if(!SB.on)return;const tr=rowOf(SB.period);const key=tr?(tr.dataset.date||"")+"|"+SB.period:"";
     if(force||key!==SB.lastKey||!SB.painted.length||!SB.painted[0].isConnected||!SB.painted[0].classList.contains("zp-sb-cell")){paint(tr);SB.lastKey=key}
     placeHandle(tr)}
