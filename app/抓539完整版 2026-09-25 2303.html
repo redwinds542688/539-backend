@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 22:58";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:03";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-25 23:03  單桿尋號標定改成一次全部顯示(原本逐號每 0.3 秒一顆)；按九宮鍵、放開單桿後立即出現結果。
    2026-09-25 22:58  單桿尋號結果顯示：成立的九宮差得到的號碼，扣掉單桿下面 3 期(第 16/17/18 期)有開出的，其餘由小到大填進空白期第一列(樣式同空白期填號)；換九宮差、拖桿、離開單桿時清掉。
    2026-09-25 22:52  單桿尋號加成立條件：桿位號碼加九宮差得到的 5(6) 個號碼，單桿下面 3 期(第 16、17、18 期)每期至少中一號才成立並標定；不成立自動換下一個九宮差(按九宮鍵也跳過不成立的)；9 個都不成立＝不標定、欄位顯示「無」。拖曳單桿換到新桿位時從第一個九宮差(-11)重新找。
    2026-09-25 22:49  單桿九宮差顯示欄位改到單桿下一列的日期＋星期欄位(左到日期左邊格線、右到星期右邊格線)，藍底紅字，九宮差字級在欄位裡最大化(原本是拖曳鍵上方的小紅標籤)。
@@ -4414,7 +4415,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
      ・單桿移動範圍改成第 1～15 期，初始在第 15 期(畫面仍是最後 18+2；第 16～18 期是單桿下面的 3 期)。
      ・桿位的號碼從第 1 號到第 5 號(六合彩/大樂透到第 6 號)依序搭配九宮差，從第一個九宮差開始(順序 -11,-10,-9,-1,0,+1,+9,+10,+11)：
        例：第 1 號 12、九宮差 -11 → 12+(-11)=01，畫面上 18 期內所有的 01 都標定起來；第 2 號 15 → 15+(-11)=04，18 期內所有 04 也標定……一直跑到單桿最後一號，結束。
-       加減超出範圍照九宮拖牌的繞回規則(大於 39 減 39、小於等於 0 加 39；49 球同理)。標定的樣子＝第一招滿格；逐號每 0.3 秒跑一顆，看得到過程。
+       加減超出範圍照九宮拖牌的繞回規則(大於 39 減 39、小於等於 0 加 39；49 球同理)。標定的樣子＝第一招滿格；逐號每 0.3 秒跑一顆，看得到過程(2026-09-25 23:03 改成一次全部標定)。
      ・單擊或雙擊「九宮」鍵＝換下一個九宮差(雙擊只算一次)，清掉上一輪的標定，一樣從第 1 號跑到最後一號；跑到最後一個(+11)再按＝回到第一個(-11)，循環。
      ・拖曳單桿放開後，用目前的九宮差對新的桿位重跑一次(拖曳中先清掉標定)。
      ・目前的九宮差顯示在拖曳鍵上方的小標籤。(2026-09-25 22:49 改成：顯示在單桿下一列的日期＋星期欄位，藍底紅字、字級最大化)
@@ -4458,7 +4459,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     {const svg=h.querySelector("svg");if(svg){const a=Math.max(14,Math.min(28,hh*0.72));svg.setAttribute("width",a.toFixed(1));svg.setAttribute("height",a.toFixed(1))}}
     h.style.display="flex";{const rows=dataRows();const i=rows.indexOf(tr);placeTag(i>=0&&i+1<rows.length?rows[i+1]:null)}}
   /* ---- 尋號：桿位號碼逐號 + 九宮差 → 18 期內同號全部標定 ---- */
-  const SB_OFFS=[-11,-10,-9,-1,0,1,9,10,11];const SB_STEP_MS=300;
+  const SB_OFFS=[-11,-10,-9,-1,0,1,9,10,11];const SB_STEP_MS=0;/* 2026-09-25 23:03 使用者指示「搜尋標定號碼顯示太慢，感覺一顆一顆顯示」：原本每號 0.3 秒，改成 0＝一次全部標定 */
   function offLabel(o){return(o>0?"+":"")+o}
   function wrapNum(n,off,max){let z=n+off;if(off<0){if(z<=0)z=max+z}else if(off>0){if(z>max)z=z-max}return z}
   function cellsOf(tr){return Array.prototype.slice.call(tr.querySelectorAll("td.num")).slice(0,cModeColCount())}
@@ -4492,7 +4493,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
        if(typeof logEvent==="function")try{logEvent("單桿尋號","空白第一期顯示："+(show.map(function(v){return String(v).padStart(2,"0")}).join(" ")||"(全部在下面3期開過)"))}catch(e){}}if(typeof logEvent==="function")try{logEvent("單桿尋號","第 "+SB.period+" 期 九宮差 "+offLabel(off)+"："+got.join("、"))}catch(e){}return}
       const n=barNums[i];const target=wrapNum(n,off,max);let c=0;
       rows.forEach(function(tr){cellsOf(tr).forEach(function(td){if(td.classList.contains("pending"))return;if(numOf(td)===target){markHit(td);c++}})});
-      got.push(String(n).padStart(2,"0")+offLabel(off)+"="+String(target).padStart(2,"0")+"×"+c);i++;SB.runTimer=setTimeout(step,SB_STEP_MS)}
+      got.push(String(n).padStart(2,"0")+offLabel(off)+"="+String(target).padStart(2,"0")+"×"+c);i++;if(SB_STEP_MS>0)SB.runTimer=setTimeout(step,SB_STEP_MS);else step()}
     step()}
   function nextOffset(){runSearch((SB.oi+1)%SB_OFFS.length)}
   /* 拖曳鍵上方的小標籤：顯示目前的九宮差 */
