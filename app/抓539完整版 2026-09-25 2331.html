@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:09";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:31";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-25 23:31  單桿尋號更正：成立條件改成畫面上固定的第 16、17、18 期每期至少中一號(原本是單桿的下三期，會跟著單桿移動)；空白期扣除的也改成第 16/17/18 期開過的號碼。
    2026-09-25 23:09  單桿尋號加速：18 期的號碼進入時讀一次存起來(原本每檢查一個九宮差就重掃整張開獎單)；長按後畫面本來就在最底時馬上找號，有往回捲時等 0.25 秒(原本固定等 0.9 秒)。
    2026-09-25 23:03  單桿尋號標定改成一次全部顯示(原本逐號每 0.3 秒一顆)；按九宮鍵、放開單桿後立即出現結果。
    2026-09-25 22:58  單桿尋號結果顯示：成立的九宮差得到的號碼，扣掉單桿下面 3 期(第 16/17/18 期)有開出的，其餘由小到大填進空白期第一列(樣式同空白期填號)；換九宮差、拖桿、離開單桿時清掉。
@@ -4421,6 +4422,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
      ・拖曳單桿放開後，用目前的九宮差對新的桿位重跑一次(拖曳中先清掉標定)。
      ・目前的九宮差顯示在拖曳鍵上方的小標籤。(2026-09-25 22:49 改成：顯示在單桿下一列的日期＋星期欄位，藍底紅字、字級最大化)
    ★2026-09-25 22:58 結果：成立的九宮差得到的號碼，扣掉單桿下面 3 期有開出的，其餘由小到大顯示在空白期第一列。
+   ★2026-09-25 23:31 更正：成立條件與空白期扣除，對照的都是畫面上固定的第 16、17、18 期(不是單桿的下三期)。
    ★2026-09-25 22:52 成立條件：5(6) 個號碼在單桿下面 3 期(第 16、17、18 期)每期至少中一號才成立；不成立自動換下一個九宮差(按九宮鍵換時也一樣跳過不成立的)；9 個都不成立顯示「無」。
    window.__zpSingleBarPeriod() 取得單桿在第幾期；window.__zpSingleBarOffset() 取得目前的九宮差。 */
 (function(){
@@ -4485,8 +4487,10 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
      不成立的九宮差直接跳過(不跑動畫)，往下找到第一個成立的才逐號標定；9 個都不成立＝不標定，欄位顯示「無」。 */
   function barNumsNow(){const g=grid();const r=g[barIdx()];return r?r.map(function(c){return c.v}).filter(function(v){return v!==null}):[]}
   function targetsFor(oi){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;return barNumsNow().map(function(n){return wrapNum(n,SB_OFFS[oi],max)})}
-  function isValid(oi){const tg=targetsFor(oi);if(!tg.length)return false;const g=grid();const bi=barIdx();
-    for(let k=1;k<=3;k++){const row=g[bi+k];if(!row)return false;if(!row.some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0}))return false}return true}
+  /* 2026-09-25 23:31 使用者更正「不是單桿的下三期，是畫面裡的 16/17/18 期皆有中號碼才算」：對照期固定＝畫面上第 16、17、18 期(最後 3 期)，不隨單桿移動 */
+  function checkRows(){const g=grid();return[g.length-3,g.length-2,g.length-1].map(function(i){return i>=0?g[i]:null})}
+  function isValid(oi){const tg=targetsFor(oi);if(!tg.length)return false;const rs=checkRows();
+    for(let k=0;k<3;k++){const row=rs[k];if(!row)return false;if(!row.some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0}))return false}return true}
   function findValid(from){for(let k=0;k<SB_OFFS.length;k++){const i=(from+k)%SB_OFFS.length;if(isValid(i))return i}return -1}
   function runSearch(from){if(!SB.on)return;cancelRun();clearHits();const pick=findValid(typeof from==="number"?from:SB.oi);
     if(pick<0){SB.none=true;placeTagText();if(typeof logEvent==="function")try{logEvent("單桿尋號","第 "+SB.period+" 期：9 個九宮差都不成立")}catch(e){}return}
@@ -4495,7 +4499,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     const g=grid();const bi=barIdx();const barNums=barNumsNow();if(!barNums.length)return;
     const got=[];let i=0;placeTagText();
     function step(){if(token!==SB.runToken||!SB.on)return;if(i>=barNums.length){SB.runTimer=0;
-      {const below=[];for(let k=1;k<=3;k++){const row=g[bi+k];if(row)row.forEach(function(c){if(c.v!==null)below.push(c.v)})}
+      {const below=[];checkRows().forEach(function(row){if(row)row.forEach(function(c){if(c.v!==null)below.push(c.v)})})/* 第 16/17/18 期開過的號碼不顯示在空白期 */
        const uniq=[];barNums.forEach(function(n){const t=wrapNum(n,off,max);if(uniq.indexOf(t)<0)uniq.push(t)});const show=uniq.filter(function(t){return below.indexOf(t)<0}).sort(function(a,b){return a-b});fillBlank(show);
        if(typeof logEvent==="function")try{logEvent("單桿尋號","空白第一期顯示："+(show.map(function(v){return String(v).padStart(2,"0")}).join(" ")||"(全部在下面3期開過)"))}catch(e){}}if(typeof logEvent==="function")try{logEvent("單桿尋號","第 "+SB.period+" 期 九宮差 "+offLabel(off)+"："+got.join("、"))}catch(e){}return}
       const n=barNums[i];const target=wrapNum(n,off,max);let c=0;
