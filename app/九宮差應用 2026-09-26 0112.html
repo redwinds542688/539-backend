@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 00:50";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 01:12";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 01:12  抓牌往回捲時，畫面第 19 列固定不顯示號碼、標記也不顯示，欄位跟空白期一樣(計算仍讀原號碼)；三層開啟前、單桿尋號開啟前先還原(單桿維持空白期＋右上角真實號碼)。
    2026-09-26 00:50  單桿第 19 列(六合彩/大樂透)：特別號欄也蓋成空白期、右上角標真實特別號(原本會露出真實特別號)。
    2026-09-26 00:48  單桿第 19 列預測號碼定位校正：用逐像素比對校準——數字包一層內層用 transform 位移(left/bottom 會被對齊整數像素、外層位移會被號碼置中功能改寫)；下緣離黑線(下框線)1px(實測 1.00px)；左緣以格線理論位置放 1px(格線實際被瀏覽器對齊像素，實測 0～1.6px)。
    2026-09-26 00:22  單桿第 19 列預測號碼精準定位：量數字實際筆畫，筆畫左緣離左格線 1px、筆畫下緣離下格線 1px(下緣被底部遮片蓋住時以遮片上緣為準)。
@@ -7971,6 +7972,43 @@ function __zpBottomMask(){
 window.__zpBottomMask=__zpBottomMask;
 new MutationObserver(function(){requestAnimationFrame(__zpBottomMask);setTimeout(__zpBottomMask,400);setTimeout(__zpBottomMask,1200)}).observe(document.body,{attributes:true,attributeFilter:["class"]});
 window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
+/* ===== 抓牌第 19 列一律顯示成空白期(使用者指示 2026-09-26 01:12「在抓牌裡一捲動，固定第十九期不顯示號碼，欄位顯示如空白期；單桿尋號也一樣」) =====
+   抓牌畫面(非三層、非單桿)往回捲時，畫面由上往下第 19 列是已開獎的期數：把這一列的號碼清掉、標記不顯示，看起來跟空白期一樣。
+   原本的號碼存進 dataset.streak7Num(沿用連七表的機制)，normalizedNum 照樣回傳原號碼，所以定顯/全顯、搜尋等計算都不受影響；
+   只拿掉畫面上的標記樣式(num-marked 保留，第三招連線資料才不會被當成取消而刪掉)。捲回最下面時第 19 列本來就是空白期，不用處理。
+   三層開啟前、單桿尋號開啟前先還原(單桿有自己的第 19 列處理：空白期＋右上角真實號碼)；標記重算後自動再拿掉樣式。 */
+(function(){
+  const R={row:null};
+  const STRIP=["num-marked-click","num-marked-drag","fullpage-mode-derived","zp-sb-hit","c-ding-top3"];
+  function bc(){return document.body.classList}
+  function active(){const b=bc();return b.contains("zhuapai-mode")&&!b.contains("zp-sanceng")&&!b.contains("zp-single-bar")&&!(typeof window.__zpSingleBarOn==="function"&&window.__zpSingleBarOn())}
+  /* 畫面上第 19 列：第一個頂端在畫面內的列往下數第 19 列(列依序由上往下，用二分搜尋少量取位置) */
+  function screenRow19(){const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"})||panels;
+    const all=Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(tr){return tr.style.display!=="none"&&!tr.classList.contains("c-scroll-peek")&&tr.querySelector("td.num")});
+    let lo=0,hi=all.length-1,i0=-1;while(lo<=hi){const mid=(lo+hi)>>1;const r=all[mid].getBoundingClientRect();if(r.height>0&&r.top>=-2){i0=mid;hi=mid-1}else lo=mid+1}
+    if(i0<0)return null;return all[i0+18]||null}
+  function strip(tr){Array.prototype.forEach.call(tr.querySelectorAll("td.num.zp-r19"),function(td){STRIP.forEach(function(c){td.classList.remove(c)})})}
+  function cover(tr){Array.prototype.forEach.call(tr.querySelectorAll("td.num"),function(td){if(td.classList.contains("zp-r19")||td.classList.contains("zp-sb-cover"))return;
+      const real=normalizedNum(td);td.dataset.zpR19Orig=td.innerHTML;td.dataset.zpR19Had7=td.dataset.streak7Num!==undefined?"1":"0";if(td.dataset.streak7Num===undefined)td.dataset.streak7Num=real;
+      td.innerHTML='<span class="cell-shift">&nbsp;</span>';td.classList.add("zp-r19")});strip(tr);R.row=tr}
+  function uncover(){let any=false;Array.prototype.forEach.call(panels.querySelectorAll("td.num.zp-r19"),function(td){any=true;td.classList.remove("zp-r19");if(td.dataset.zpR19Orig!==undefined)td.innerHTML=td.dataset.zpR19Orig;
+      if(td.dataset.zpR19Had7==="0")delete td.dataset.streak7Num;delete td.dataset.zpR19Orig;delete td.dataset.zpR19Had7});R.row=null;
+    if(any){try{__r19Busy=true;applyMarksToClone()}catch(e){}finally{__r19Busy=false}}}
+  let __r19Busy=false;
+  function sync(){if(__r19Busy)return;try{if(!active()){if(R.row||panels.querySelector("td.num.zp-r19"))uncover();return}
+      const tr=screenRow19();const want=(tr&&!tr.classList.contains("future"))?tr:null;
+      if(want!==R.row){uncover();if(want)cover(want)}else if(want)strip(want)}catch(e){}}
+  window.__zpR19Sync=sync;window.__zpR19Uncover=uncover;
+  /* 捲動落定、標記重算之後同步；另每 0.3 秒檢查一次(平滑捲動、被動號碼保護等其他路徑) */
+  if(typeof applyCModeScrollOffset==="function"){const __o=applyCModeScrollOffset;applyCModeScrollOffset=function(){const r=__o.apply(this,arguments);try{requestAnimationFrame(sync)}catch(e){}return r}}
+  if(typeof applyMarksToClone==="function"){const __oam=applyMarksToClone;applyMarksToClone=function(){const r=__oam.apply(this,arguments);if(!__r19Busy&&R.row)strip(R.row);return r}}
+  setInterval(function(){if(bc().contains("zhuapai-mode")||R.row)sync()},300);
+  new MutationObserver(function(){if(!active()&&R.row)uncover()}).observe(document.body,{attributes:true,attributeFilter:["class"]});
+  /* 三層開啟前先還原(三層要讀畫面上的號碼與標記)；第 19 列上不接受第一招雙擊(看不到號碼) */
+  (function wrapSC(){if(typeof window.__zpSanCengToggle==="function"&&!window.__zpSanCengToggle.__r19){const __ot=window.__zpSanCengToggle;const w=function(){uncover();return __ot.apply(this,arguments)};w.__r19=true;window.__zpSanCengToggle=w}else setTimeout(wrapSC,500)})();
+  window.addEventListener("dblclick",function(e){const td=e.target&&e.target.closest?e.target.closest("td.num.zp-r19"):null;if(td){e.stopImmediatePropagation();e.preventDefault()}},true);
+  if(typeof buildPanels==="function"){const __obp=buildPanels;buildPanels=function(){uncover();return __obp.apply(this,arguments)}}
+})();
 /* ===== 「單桿尋號系統」(使用者設計 2026-09-25 21:14) =====
    進入：抓牌畫面(非三層)長按「定顯/全顯」鍵 0.55 秒。(單擊/雙擊＝切換定顯/全顯)
    進入時：①畫面上所有標定號碼、一二三招(標記、滿格、連線、定顯/全顯帶出的被動號碼)先全部隱藏——整份暫存起來，離開時原封不動放回；第四招(空白期選號)不動；
@@ -8116,6 +8154,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     placeHandle(tr)}
   function loop(){SB.raf=0;if(!SB.on)return;try{update(false)}catch(e){}SB.raf=requestAnimationFrame(loop)}
   function start(){if(SB.on)return false;const b=bc();if(!b.contains("zhuapai-mode")||b.contains("zp-sanceng"))return false;
+    try{if(typeof window.__zpR19Uncover==="function")window.__zpR19Uncover()}catch(e){}/* 先還原一般抓牌的第 19 列(單桿有自己的處理) */
     SB.stash={pickedPaths:pickedPaths,connections:connections,broadened:broadened,historyStack:historyStack};
     pickedPaths=[];connections=[];broadened=false;historyStack=[];
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function")renderConnections()}catch(e){}
