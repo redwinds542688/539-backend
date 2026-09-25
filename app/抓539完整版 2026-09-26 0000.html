@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-25 23:46";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 00:00";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-26 00:00  修正：進入單桿尋號、按返回退出後畫面無法捲動(單桿攔按鍵時把手指放開的事件也攔了，捲動程式以為手指還按著、當成多指操作)；改成手指放開事件不攔。
    2026-09-25 23:46  單桿往回捲時第 19 列蓋上尋號結果後，每格右上角用小字標出這一格原本開出的真實號碼(樣式同第四招累加數)。
    2026-09-25 23:41  進入單桿尋號不再捲回最後 18+2，以目前畫面上的 18+2 為準(第 1～18 列＝第 1～18 期、第 19 列＝空白第一期位置)；往回捲時第 19 列是已開獎期數，尋號結果暫時蓋在上面，換九宮差/拖桿/離開時還原。單桿中捲動仍失效。
    2026-09-25 23:31  單桿尋號更正：成立條件改成畫面上固定的第 16、17、18 期每期至少中一號(原本是單桿的下三期，會跟著單桿移動)；空白期扣除的也改成第 16/17/18 期開過的號碼。
@@ -4554,6 +4555,9 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   if(typeof updateFloatSaveBtnForFullPage==="function"){const __ou=updateFloatSaveBtnForFullPage;updateFloatSaveBtnForFullPage=function(){const r=__ou.apply(this,arguments);if(SB.on)setLabel();return r};window.updateFloatSaveBtnForFullPage=updateFloatSaveBtnForFullPage}
   /* 按鍵：在 window 捕獲階段最先攔——三層鍵、清除鍵不作用；返回鍵＝只離開單桿(700ms 內的第二下吃掉) */
   ["click","dblclick","pointerdown","pointerup","touchstart","touchend","mousedown","mouseup","contextmenu"].forEach(function(ev){window.addEventListener(ev,function(e){
+    /* 2026-09-26 00:00 修正「進入單桿再按返回退出後畫面無法捲動」：pointerup(手指放開)不能攔——抓牌捲動用 __sActive 記「目前按著的手指」，放開時才扣掉；
+       原本連 pointerup 一起攔掉，按過九宮/返回的那幾根手指一直留在清單裡，退出後被當成「多指」而不捲動(手機每次觸控編號不同才會發生，滑鼠測不出來) */
+    if(ev==="pointerup")return;
     const t=e.target&&e.target.closest?e.target:null;if(!t)return;const now=Date.now();
     const back=t.closest("#period-btn");
     if(!SB.on){if(back&&now<SB.guardUntil){e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault()}return}
