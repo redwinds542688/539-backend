@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 18:10";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 18:49";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-26 18:49  三星瀏覽器安裝說明：用三星瀏覽器開網頁(還沒安裝)時，上方顯示「三星瀏覽器可能會擋掉安裝」＋「用 Chrome 開啟」鍵(直接切到 Chrome 開同一網址，沒裝 Chrome 帶到 Play 商店)＋三星瀏覽器自己的「≡→新增頁面至→主畫面」；按 ✕ 不再出現；三星瀏覽器裡不再顯示一般 Android 安裝框。
    2026-09-26 18:10  所有標定顯示拿掉光暈：暗色系原本給所有標定號碼(num-marked、C式自動比對格)加白色光暈，全部取消，字維持粗體。按鍵、開獎球等不是標定的陰影不動。
    2026-09-26 18:08  三層第一、二區第 6 期的共同號碼與十字差命中號碼(字色底色對調的滿格)拿掉白色光暈，暗色系下字不再糊成一團。
    2026-09-26 15:36  長按九宮統計改回單桿跑第 1～18 期(撤回 15:28 只跑 17、18 期)。
@@ -5332,6 +5333,35 @@ boot().catch(function(e){console.error("boot失敗",e)});
     d.appendChild(x);document.body.appendChild(d)};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){setTimeout(show,800)});else setTimeout(show,800);
 }catch(e){}})();</script>
+<script>/* 2026-09-26 18:49 使用者回報「三星瀏覽器會擋掉安裝」：用三星瀏覽器(Samsung Internet)開網頁、還沒安裝時，於畫面上方顯示說明：
+   ①「用 Chrome 開啟」＝直接切到 Chrome 開同一個網址(Android intent；手機沒裝 Chrome 就帶到 Play 商店的 Chrome)，在 Chrome 裡安裝；
+   ② 或用三星瀏覽器自己的方式：下方選單「≡」→「新增頁面至」→「主畫面」。
+   按 ✕ 關掉後不再出現。三星瀏覽器裡不顯示一般的 Android 安裝說明框(避免兩個疊在一起)。已從主畫面圖示開啟、直接開檔案時都不顯示。 */
+(function(){try{
+  if(!/SamsungBrowser/i.test(navigator.userAgent||""))return;
+  window.__isSamsungBrowser=true;
+  var standalone=window.navigator.standalone===true||(window.matchMedia&&(window.matchMedia("(display-mode: standalone)").matches||window.matchMedia("(display-mode: minimal-ui)").matches));
+  if(standalone)return;
+  if(location.protocol!=="https:"&&location.protocol!=="http:")return;
+  try{if(localStorage.getItem("samsung_install_hint_closed")==="1")return}catch(e){}
+  var show=function(){if(document.getElementById("samsung-install-hint"))return;
+    var ah=document.getElementById("android-install-hint");if(ah)ah.remove();
+    var d=document.createElement("div");d.id="samsung-install-hint";
+    d.style.cssText="position:fixed;left:8px;right:8px;top:8px;z-index:100000;background:#1c1c1e;color:#fff;border:2px solid #FFD700;border-radius:12px;padding:12px 44px 12px 14px;font:600 16px/1.5 sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.4)";
+    var t=document.createElement("div");t.innerHTML='三星瀏覽器可能會擋掉安裝，建議改用 <b>Chrome</b> 安裝「抓539」：';d.appendChild(t);
+    var url=location.host+location.pathname+location.search;
+    var fb="https://play.google.com/store/apps/details?id=com.android.chrome";
+    var a=document.createElement("a");a.href="intent://"+url+"#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url="+encodeURIComponent(fb)+";end";a.textContent="用 Chrome 開啟";
+    a.style.cssText="display:block;text-align:center;margin:10px 0 8px;border-radius:8px;background:#FFD700;color:#000;font:800 18px sans-serif;padding:10px 0;text-decoration:none";
+    d.appendChild(a);
+    var t2=document.createElement("div");t2.style.cssText="font-size:14px;color:#ccc";t2.textContent="或用三星瀏覽器：按下方選單「≡」→「新增頁面至」→「主畫面」。";d.appendChild(t2);
+    var x=document.createElement("button");x.type="button";x.textContent="✕";x.setAttribute("aria-label","關閉");
+    x.style.cssText="position:absolute;top:6px;right:6px;width:30px;height:30px;border:0;border-radius:15px;background:#555;color:#fff;font-size:16px;line-height:30px;padding:0";
+    x.addEventListener("click",function(e){e.stopPropagation();d.remove();try{localStorage.setItem("samsung_install_hint_closed","1")}catch(err){}});
+    d.appendChild(x);document.body.appendChild(d)};
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){setTimeout(show,800)});else setTimeout(show,800);
+}catch(e){}})();</script>
+
 <script>/* 2026-09-24 17:10 安裝包(iPhone、Android 共用同一個程式、同一個圖示)：
    ① 在 https 網址下註冊離線背景程式 sw.js(Android Chrome「可安裝」的條件之一；沒網路也能開)。本機檔案開啟(content://、file://)不註冊，不受影響。
    ② Android：Chrome 判定可安裝時(beforeinstallprompt)，畫面上方顯示「安裝抓539」說明框，按「安裝」就跳出系統安裝視窗；按 ✕ 後不再出現。
@@ -5345,6 +5375,7 @@ boot().catch(function(e){console.error("boot失敗",e)});
     window.addEventListener("beforeinstallprompt",function(ev){
       ev.preventDefault();deferred=ev;
       try{if(localStorage.getItem("android_install_hint_closed")==="1")return}catch(e){}
+      if(window.__isSamsungBrowser)return;/* 18:49 三星瀏覽器改顯示專用說明(用 Chrome 開啟) */
       if(document.getElementById("android-install-hint"))return;
       var d=document.createElement("div");d.id="android-install-hint";
       d.style.cssText="position:fixed;left:8px;right:8px;top:8px;z-index:100000;background:#1c1c1e;color:#fff;border:2px solid #FFD700;border-radius:12px;padding:12px 44px 12px 12px;display:flex;align-items:center;gap:12px;font:600 16px/1.4 sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.4)";
