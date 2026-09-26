@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 12:54";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 12:59";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 12:59  螢幕資訊改成進入全頁後自動回傳：進全頁、開獎單量測穩定(貼齊下紅線，必要時先自動校正)後 1.5 秒自動送出螢幕資訊＋全頁數據，不用按；每一版每支手機只送一次(送成功才記下，失敗下次進全頁再送)；開啟程式時不再送。
    2026-09-26 12:54  螢幕資訊回傳改成每一版只送一次：裝好新版後第一次開啟，開好 1 秒就送(送成功才記下，沒網路下次開啟再送)；取消每次開啟/切回來、畫面尺寸改變、全頁自動校正時的自動回傳。手動「立即回傳」照舊。
    2026-09-26 12:49  版本檢查與強制更新：開啟程式(及從背景切回來)時讀網站上最新檔案開頭的 APP_BUILD(只讀幾 KB)，比目前新就要求更新；「立即更新」先刪除原來的程式(註銷 service worker、刪除快取)再重新載入安裝新程式，標記與設定保留；更新後仍是舊版則改顯示刪除 App、重新加入主畫面的步驟(iPhone/Android 分開)，可「先用舊版」。只在網站上執行，直接開檔案不查。
    2026-09-26 12:43  螢幕資訊回傳改成一開啟程式就送：開啟後 4 秒一律回傳一次(不看有沒有改變、在不在首頁、直橫向)；App 從背景切回來也送(10 分鐘內不重複)。
@@ -8929,11 +8930,8 @@ setInterval(function(){
   window.addEventListener("load",function(){setTimeout(function(){ping(false).catch(function(){})},2000)});
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")setTimeout(function(){ping(false).catch(function(){})},1500)});/* 放在背景隔天再切回來也算一次 */
   var timer=null;function schedule(ms){clearTimeout(timer);timer=setTimeout(function(){send(false).catch(function(){})},ms)}
-  /* 2026-09-26 12:54 使用者指示「螢幕資訊不需要每一次都回傳，安裝新程式之後開啟的第一次立刻回傳就好」：
-     每一版(APP_BUILD)在每支手機只自動回傳一次＝裝好新版後第一次開啟，開好 1 秒就送；送成功才記下，沒網路送不出去下次開啟再送。
-     其他自動回傳(畫面尺寸改變、全頁自動校正、每次開啟/切回來)都取消；「設定→螢幕資訊→立即回傳」手動送照舊。 */
-  var BUILD_KEY="539_report_build";
-  window.addEventListener("load",function(){setTimeout(function(){var bd=window.APP_BUILD||"";if(!bd||lsGet(BUILD_KEY)===bd)return;send(true,"新版第一次開啟").then(function(r){if(r&&r.ok)lsSet(BUILD_KEY,bd)}).catch(function(){})},1000)});
+  /* 2026-09-26 12:59 使用者指示「進入全螢幕(全頁)之後再傳送螢幕資訊，自動，不用使用者按」：改由全頁檢查(見檔尾「全頁高度自我校正」)在進入全頁、量測穩定後自動送；
+     每一版(APP_BUILD)每支手機只送一次(送成功才記在 539_report_build)，沒網路下次進全頁再送。開啟程式時不再送。 */
   /* 設定選單加「螢幕資訊」(選單是開機時建好的；不用 paper-size-option 的點擊行為，只借它的外觀) */
   function textOf(i){var L=[];L.push("版本："+(window.APP_BUILD||"?"));/* 2026-09-26 螢幕資訊加顯示版本時間，確認手機上跑的是不是最新版 */L.push("程式："+i.app+"  "+i.v+"  （"+({app:"桌面App",web:"瀏覽器",file:"檔案"}[i.mode]||i.mode)+"）");
     L.push("型號："+(i.model||"(讀不到)")+(i.platform?"  "+i.platform+" "+(i.platformVersion||""):""));
@@ -9132,6 +9130,10 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
 (function(){let lastTouch=0;let sentThisLoad=false;
   /* 2026-09-26 全頁診斷數據：記下最近一次全頁最小尺寸時的量測(畫面高、紅線間距、開獎單高、拉伸倍率、校正次數)，顯示在「設定→螢幕資訊」並隨回傳送出；存在手機裡，重開 App 也看得到 */
   let D={};try{D=JSON.parse(localStorage.getItem("539_fp_diag")||"{}")||{}}catch(e){D={}}D.fixes=0;D.fixesPrev=D.fixesTotal||0;window.__fpDiag=D;let lastSave=0;
+  /* 進入全頁、量測穩定(開獎單剛好貼下紅線)後自動回傳螢幕資訊＋全頁數據：每一版只送一次，送成功才記下 */
+  let reportTried=false;function autoReport(){if(reportTried)return;const bd=window.APP_BUILD||"";let done=null;try{done=localStorage.getItem("539_report_build")}catch(e){}if(!bd||done===bd){reportTried=true;return}
+    if(typeof window.__screenReportSend!=="function")return;reportTried=true;save(true);
+    setTimeout(function(){try{window.__screenReportSend(true,"進入全頁").then(function(r){if(r&&r.ok){try{localStorage.setItem("539_report_build",bd)}catch(e){}}else reportTried=false}).catch(function(){reportTried=false})}catch(e){reportTried=false}},1500)}
   function save(force){const now=Date.now();if(!force&&now-lastSave<3000)return;lastSave=now;D.fixesTotal=(D.fixesPrev||0)+(D.fixes||0);try{localStorage.setItem("539_fp_diag",JSON.stringify(D))}catch(e){}}/* 改用「最後一次碰螢幕的時間」判斷(原本數手指數量，蘋果上放開手指的事件若被別的程式攔掉會一直以為手指還在，校正永遠不做) */
   ["touchstart","touchmove","touchend","touchcancel"].forEach(function(ev){window.addEventListener(ev,function(){lastTouch=Date.now()},{passive:true,capture:true})});
   function fix(){try{const b=document.body.classList;if(!b.contains("pinch-fullscreen-mode")||Date.now()-lastTouch<500||window.__fullPageDisplayReady===false)return;
@@ -9143,7 +9145,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     const hOk=Math.abs(sr.height-pad-target)<=1.5,pOk=Math.abs(pr.height-target)<=1;
     const vv=window.visualViewport;const r1=function(x){return Math.round(x*10)/10};
     D.t=new Date().toLocaleTimeString("zh-TW",{hour12:false});D.zoom=pageZoom;D.innerH=innerHeight;D.vvH=vv?r1(vv.height):null;D.sheetTop=r1(sr.top);D.redTop=r1(rr.top);D.target=r1(target);D.panelsH=r1(pr.height);D.scrollerH=r1(sr.height);D.scaleY=Math.round(cur*10000)/10000;save();
-    if(hOk&&pOk)return;
+    if(hOk&&pOk){autoReport();return}
     const next=cur*target/pr.height;if(!(next>0.2&&next<5))return;
     D.fixes=(D.fixes||0)+1;D.last=D.t+" 開獎單高 "+r1(pr.height)+"→"+r1(target)+"、拉伸 "+cur.toFixed(4)+"→"+next.toFixed(4);save(true);
     /* 全頁校正不再自動回傳(使用者指示只在新版第一次開啟時回傳)；數據記在螢幕資訊，可手動「立即回傳」 */
