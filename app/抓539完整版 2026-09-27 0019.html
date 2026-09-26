@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 23:47";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 00:19";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 00:19  修正「抓牌回看一二期、沒有任何標記，按三層畫面會閃一下(少一期、露出整列空白期再恢復)」：回看時三層會先捲回最新一期判斷再捲回來；完全沒有標記時改成直接不動作、不捲動。
    2026-09-26 23:47  三層第三區預測號碼最多顯示格數：539 五個；六合彩、大樂透七個(連特別號欄)。
    2026-09-26 23:46  三層第三區也照一、二區的邏輯顯示預測號碼並畫線：①綠線(十字差，定顯)：一、二區成立的每一組，第三區同一期同一欄的號碼＋同一個十字差＝預測號碼，從第三區那個號碼畫綠線過去；②紅線(定顯、全顯)：一、二區第6期的共同號碼也放進第三區，從第三區最近的標的畫紅線過去。第三區第6期是空白期＝預測號碼由小到大填進空白格；第6期已開獎(三層往下捲或非最後一期)＝比照九宮非最後一期：整列蓋成空白期樣子，真實號碼放右上角紅色小字、預測號碼放左下角。
    2026-09-26 23:20  全頁左右灰色邊線改成 2px(外框線要比裡面的格線粗一些)。
@@ -4527,7 +4528,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   setInterval(function(){if(bc().contains("zhuapai-mode")||R.row)sync()},300);
   new MutationObserver(function(){if(!active()&&R.row)uncover()}).observe(document.body,{attributes:true,attributeFilter:["class"]});
   /* 三層開啟前先還原(三層要讀畫面上的號碼與標記)；第 19 列上不接受第一招雙擊(看不到號碼) */
-  (function wrapSC(){if(typeof window.__zpSanCengToggle==="function"&&!window.__zpSanCengToggle.__r19){const __ot=window.__zpSanCengToggle;const w=function(){uncover();return __ot.apply(this,arguments)};w.__r19=true;window.__zpSanCengToggle=w}else setTimeout(wrapSC,500)})();
+  (function wrapSC(){if(typeof window.__zpSanCengToggle==="function"&&!window.__zpSanCengToggle.__r19){const __ot=window.__zpSanCengToggle;const w=function(){uncover();const __r=__ot.apply(this,arguments);if(!__r){try{sync()}catch(e){}}/* 2026-09-27 00:19 三層沒有動作(沒有標記等)時，同一拍立刻把第 19 列蓋回空白期，畫面不會閃出真實號碼 */return __r};w.__r19=true;window.__zpSanCengToggle=w}else setTimeout(wrapSC,500)})();
   window.addEventListener("dblclick",function(e){const td=e.target&&e.target.closest?e.target.closest("td.num.zp-r19"):null;if(td){e.stopImmediatePropagation();e.preventDefault()}},true);
   if(typeof buildPanels==="function"){const __obp=buildPanels;buildPanels=function(){uncover();return __obp.apply(this,arguments)}}
 })();
@@ -5121,6 +5122,9 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
       原本三層只看「畫面上看得到的最後5期」，回看時標定的那期被推出畫面＝判定沒有標定號碼、完全不動作。
       改成：有回看時先捲回最新一期再判斷(表格有0.15秒滑動動畫，等它到位才量得準)；最新一期不成立，再回到剛才回看的位置判斷；都不成立就留在原本回看的位置 */
    const k0=(typeof cModeScrollOffset==="number")?cModeScrollOffset:0;
+   /* 00:19 使用者回報「在抓牌捲動回溯一二期、沒有任何標記號碼，按三層會出現縮減跟整列沒號碼的現象」：回看時為了判斷會先捲回最新一期、不成立再捲回來，
+      但完全沒有標記時三層一定不成立，這一趟來回只會讓畫面閃一下(期數少一期、露出一整列空白期)。改成：沒有任何主動標記就直接不動作，不捲動 */
+   if(k0>0&&!(typeof pickedPaths!=="undefined"&&pickedPaths&&pickedPaths.length))return false;
    if(k0>0&&typeof window.__zpScrollTo==="function"){
      ST.opening=true;window.__zpScrollTo(0);
      setTimeout(function(){let ok=false;try{ok=build(0,null,true)}catch(e){}
