@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 00:43";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 00:51";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 00:51  iPhone 開獎單號碼大小由 80% 改為 75%(安卓、Google 預覽不變)。
    2026-09-27 00:43  三層修正「第二招標倒數第二期→下拉一期→按三層」第三區那期整列空白、空格被標記：回看時第 19 列會蓋成空白期樣子，三層複製列時剛好蓋著就複製成空白列。改成複製時一律還原蓋住的號碼，且三層啟動中(先捲回最新一期判斷那段時間)不蓋第 19 列。
    2026-09-27 00:36  三層修正「先回捲一期再按三層」顯示錯誤：日期已過但還沒抓到開獎號碼的那一期被當成已開獎，三層起始位置往下錯一列、第三區露出兩列空白期、空格被拿去計算。改成整列沒有開獎號碼就一律當空白期(起始位置、計算、第三區顯示都照這個判斷)。
    2026-09-27 00:34  三層計算一律把空白期(未開獎)的格子當成沒有號碼：修正「第三區空白期的空格被標成藍色、並拿去算預測號碼」(使用者回報捲回一期時顯示錯誤)；第三區填預測號碼前先清掉空白格裡藏的內容。
@@ -1987,7 +1988,7 @@ body.zhuapai-mode #data-blank-divider-line{ display:none !important; } /* 2026-0
    要再調大小只改 --num-scale(1＝原本大小)。同主程式 Ai抓牌 的同一項修改。 */
 :root{ --num-scale:1; }  /* Android／電腦：維持原本大小 */
 /* 2026-09-24 14:51 使用者指示「只有開獎單裡的號碼太大，其他不太會；只是蘋果手機的微調，安卓不用改」：只縮開獎單(首頁四欄開獎單、全頁)；定期／C式／抓牌三層段落(recent-only-mode)維持原本大小。 */
-html.is-ios{ --num-scale:0.80; }
+html.is-ios{ --num-scale:0.75; }/* 2026-09-27 00:51 使用者指示「蘋果 80% 改 75%」 */
 html.is-preview{ --num-scale:0.90; }  /* 2026-09-24 19:42 使用者指示「Google 預覽文字、開獎單號碼從原本改為 90%；蘋果、安卓不動」 */  /* 2026-09-24 19:35 使用者指示「Google 預覽原 80% 改為 85%，只改 Google 預覽」 */  /* 2026-09-24 19:32 使用者指示「Google 預覽原 70% 改為 80%，只改 Google 預覽」(iPhone 維持 0.70) */  /* 2026-09-24 19:27 Google 預覽(Android WebView)比照蘋果 */  /* 2026-09-24 19:02 使用者指示「蘋果 80% 改 70%」 */  /* 2026-09-24 15:07 使用者指示「改成 80%，號碼要在格子置中」(原 0.85) */  /* 2026-09-24 14:48 使用者指示「縮小 85% 應該只針對蘋果手機，安卓不用」 */
 body:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet):not(.recent-only-mode) table.road td.num{ font-size:calc(15.802px * var(--num-scale)); }
 body:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet):not(.recent-only-mode).game-wide table.road td.num{ font-size:calc(17.558px * var(--num-scale)); }
@@ -5703,7 +5704,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     var cs=getComputedStyle(sp);var c=ctx();c.font=cs.fontWeight+" 100px "+cs.fontFamily;var m=c.measureText("0123456789"),w=c.measureText("88");if(typeof m.actualBoundingBoxAscent!=="number")return;
     var aH=(m.actualBoundingBoxAscent+m.actualBoundingBoxDescent)/100,aW=(w.actualBoundingBoxLeft+w.actualBoundingBoxRight)/100;if(!(aH>0))return;
     var corr=ref?ref.h/aH:1;if(ref&&aW*corr>ref.w*1.02)corr=ref.w*1.02/aW;corr=Math.max(0.75,Math.min(1.35,corr));if(Math.abs(corr-1)<0.015)corr=1;
-    var dev=H.classList.contains("is-ios")?0.8:1;var v=String(+(dev*corr).toFixed(4));
+    var dev=H.classList.contains("is-ios")?0.75:1;/* 00:51 蘋果 80%→75% */var v=String(+(dev*corr).toFixed(4));
     if(H.style.getPropertyValue("--num-scale")!==v)H.style.setProperty("--num-scale",v);window.__numScaleAuto={font:key,inkH:+aH.toFixed(3),ink88W:+aW.toFixed(3),補正:+corr.toFixed(3),裝置:dev,numScale:+v}}catch(e){}}
   var q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;run()},60)}
   function start(){sch();setTimeout(sch,1000);setTimeout(sch,3000);window.addEventListener("resize",sch);try{new MutationObserver(sch).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
