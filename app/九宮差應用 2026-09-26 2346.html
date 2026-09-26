@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 23:20";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 23:46";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 23:46  三層第三區也照一、二區的邏輯顯示預測號碼並畫線：①綠線(十字差，定顯)：一、二區成立的每一組，第三區同一期同一欄的號碼＋同一個十字差＝預測號碼，從第三區那個號碼畫綠線過去；②紅線(定顯、全顯)：一、二區第6期的共同號碼也放進第三區，從第三區最近的標的畫紅線過去。第三區第6期是空白期＝預測號碼由小到大填進空白格；第6期已開獎(三層往下捲或非最後一期)＝比照九宮非最後一期：整列蓋成空白期樣子，真實號碼放右上角紅色小字、預測號碼放左下角。
    2026-09-26 23:20  全頁左右灰色邊線改成 2px(外框線要比裡面的格線粗一些)。
    2026-09-26 23:19  全頁左右灰色邊線恢復(使用者：「那條線必須有，只要改細一些」)，粗細由 3px 改成 1px。
    2026-09-26 23:16  全頁拿掉左右兩條灰色邊線(3px)：它們蓋在開獎單上，最右一欄號碼被切掉一半、看起來像一條粗灰線(使用者 iPhone 17 回報)；上下的線不變。
@@ -8180,7 +8181,8 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     const tr=td.getBoundingClientRect(),tcs=getComputedStyle(td);const pv=td.previousElementSibling;const bwL=Math.max(parseFloat(tcs.borderLeftWidth)||0,pv?(parseFloat(getComputedStyle(pv).borderRightWidth)||0):0);/* 格線合併(border-collapse)實測：號碼格之間的格線一半在左格、一半在右格；第一個號碼格(左邊是星期欄)的左格線整條畫在這一格裡 */const innerL=tr.left+bwL*k*((pv&&pv.classList.contains("num"))?0.5:1);let innerB=tr.bottom-(parseFloat(tcs.borderBottomWidth)||0)*k;/* 下框線(黑線)整條在格子裡；格子超出的部分會被裁掉，裁切邊＝黑線上緣 */
     const mask=document.getElementById("zp-bottom-mask");if(mask&&mask.style.display!=="none"){const mr=mask.getBoundingClientRect();if(mr.height>0&&mr.top<innerB&&mr.top>tr.top)innerB=mr.top}
     td.dataset.zpInkL=(innerL+1-tr.left).toFixed(3);td.dataset.zpInkB=(tr.bottom-(innerB-1)).toFixed(3);/* 記下筆畫目標位置(相對格子)，截圖補畫用 */const dx=(innerL+1)-inkL,dy=inkB-(innerB-1);/* 用 transform 位移(left/bottom 會被瀏覽器對齊整數像素，這個表格有縮放，一格跳約 3.6px，停不到剛好 1px) */inner.style.setProperty("transform","translate("+(dx/k).toFixed(3)+"px,"+(-dy/k).toFixed(3)+"px)","important")}catch(e){}}
-  function refitCov(){panels.querySelectorAll("td.num.zp-sb-cover").forEach(function(td){inkPlace(td);inkPlace(td)})}/* 量兩次(第二次在第一次位置確定後再校正) */
+  function refitCov(){panels.querySelectorAll("td.num.zp-sb-cover").forEach(function(td){inkPlace(td);inkPlace(td)})}
+  window.__zpSbInkPlace=inkPlace;/* 23:35 三層第三區第6期(已開獎時)也用同一套預測號碼定位 *//* 量兩次(第二次在第一次位置確定後再校正) */
   function uncover(){panels.querySelectorAll("td.num.zp-sb-cover").forEach(function(td){td.classList.remove("zp-sb-blank","c-ding-top3","zp-sb-cover");td.innerHTML=td.dataset.zpSbOrig||"&nbsp;";td.classList.toggle("pending",td.dataset.zpSbPending==="1");delete td.dataset.zpSbOrig;delete td.dataset.zpSbPending;delete td.dataset.zpSbReal})}
   /* 清掉尋號結果：蓋住的第 19 列維持空白期樣子(只清號碼)；真正的空白期格子恢復成空白 */
   function clearBlank(){panels.querySelectorAll("td.num.zp-sb-blank").forEach(function(td){if(td.classList.contains("zp-sb-cover")){setCov(td,null);return}td.classList.remove("zp-sb-blank","c-ding-top3");td.innerHTML="&nbsp;";td.classList.add("pending")})}
@@ -8510,7 +8512,34 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
    ST.zones=zones.map(function(z,zi){const base=(mode===0)?zi*6:12;return outRows.slice(base,base+6)});
    /* 2026-09-22 使用者指示：每區第6期(最後一列)用底色標示，比外框明顯 */
    ST.zones.forEach(function(g){const tr=g[g.length-1];if(tr)tr.classList.add("zp-sc-last-row")});
-   applyTripleHitMarks();applyKeyRowSixLinks()}
+   applyTripleHitMarks();applyKeyRowSixLinks();applyZone3Preds()}
+ /* 23:31 使用者指示「第三區也照上面的邏輯，把計算後的號碼顯示在空白期並畫線」：
+    ・綠線(十字差，只有定顯)：一、二區成立的每一組，第三區同一期同一欄的號碼＋同一個十字差＝預測號碼，從第三區那個號碼畫綠線到預測號碼。
+    ・紅線(定顯、全顯)：一、二區第6期的共同號碼也放進第三區，從第三區最近的標的畫紅線到它。
+    ・第三區第6期是空白期：預測號碼(重複的只放一次)由小到大填進空白格(樣式同空白期填號)，再畫線；
+      第三區第6期已經開獎(往回捲時)：不填號碼，第6期裡有同樣號碼就標滿格並畫線，沒有就不畫。 */
+ function applyZone3Preds(){const z2=ST.zones[2];if(!ST.on||ST.mode!==0||!z2)return;const row6=z2[5];if(!row6)return;
+   /* 同一組複製列可能被重算好幾次：先把上一次填進去的預測號碼清掉，不會重複 */
+   Array.prototype.forEach.call(row6.querySelectorAll("td.zp-sc-pred3"),function(td){td.classList.remove("zp-sc-pred3","c-ding-top3");if(td.classList.contains("zp-sc-cov3")){td.innerHTML=td.dataset.zpScReal?'<span class="cell-shift">&nbsp;</span><span class="ding-top-badge zp-sb-real">'+td.dataset.zpScReal+"</span>":'<span class="cell-shift">&nbsp;</span>'}else{td.innerHTML="&nbsp;";td.classList.add("pending")}});
+   const g=(ST.z3g||[]).filter(function(it){return it.from&&it.from.isConnected&&it.v>0}),r=(ST.z3r||[]).filter(function(v){return v>0});
+   if(!g.length&&!r.length)return;
+   const vals=[];g.forEach(function(it){if(vals.indexOf(it.v)<0)vals.push(it.v)});r.forEach(function(v){if(vals.indexOf(v)<0)vals.push(v)});vals.sort(function(a,b){return a-b});
+   const cc=cModeColCount();const cells=Array.prototype.slice.call(row6.querySelectorAll("td.num")).slice(0,cc);const map={};
+   const isBlank=!row6.classList.contains("zp-sc-cov3row")&&(row6.classList.contains("future")||cells.every(function(td){return !normalizedNum(td)}));
+   if(isBlank){const free=cells.filter(function(td){return !normalizedNum(td)&&!td.classList.contains("num-picked")});
+     vals.forEach(function(v,i){const td=free[i];if(!td)return;td.innerHTML='<span class="cell-shift">'+String(v).padStart(2,"0")+"</span>";td.classList.remove("pending");td.classList.add("c-ding-top3","zp-sc-pred3");map[v]=td})}
+   else{/* 23:35 使用者指示「如果啟動三層的期數並非最後一期，就比照九宮裡非最後一期的顯示方式」：第三區第6期已開獎時，整列蓋成空白期的樣子——
+          真實號碼改用右上角紅色小字，預測號碼由小到大放在左下角(同單桿尋號第 19 列的顯示與定位)。這些是三層的複製列，重畫三層就還原 */
+     row6.classList.add("zp-sc-cov3row");
+     Array.prototype.forEach.call(row6.querySelectorAll("td.num"),function(td){if(!td.classList.contains("zp-sc-cov3")){const real=normalizedNum(td);td.dataset.zpScReal=real?String(real).padStart(2,"0"):"";if(real&&td.dataset.streak7Num===undefined)td.dataset.streak7Num=real;
+         ["num-marked","num-marked-click","num-marked-drag","fullpage-mode-derived","zp-sc-key","zp-sc-triple-hit","zp-sc-cross6","zp-sc-common6"].forEach(function(c){td.classList.remove(c)});td.classList.add("zp-sb-cover","zp-sc-cov3");td.classList.remove("pending")}
+       td.innerHTML='<span class="cell-shift">&nbsp;</span>'+(td.dataset.zpScReal?'<span class="ding-top-badge zp-sb-real">'+td.dataset.zpScReal+"</span>":"")});
+     vals.forEach(function(v,i){const td=cells[i];if(!td)return;td.innerHTML='<span class="cell-shift"><span class="zp-sb-pred">'+String(v).padStart(2,"0")+"</span></span>"+(td.dataset.zpScReal?'<span class="ding-top-badge zp-sb-real">'+td.dataset.zpScReal+"</span>":"");td.classList.add("c-ding-top3","zp-sc-pred3");map[v]=td});
+     const fit=function(){if(typeof window.__zpSbInkPlace==="function")Array.prototype.forEach.call(row6.querySelectorAll("td.zp-sc-pred3"),function(td){if(td.isConnected){window.__zpSbInkPlace(td);window.__zpSbInkPlace(td)}})};fit();requestAnimationFrame(fit);[150,500,1200].forEach(function(ms){setTimeout(fit,ms)})}
+   g.forEach(function(it){const td=map[it.v];if(td)ST.tripleHits.push({td0:it.from,td1:td,offset:0})});
+   if(r.length){const keys=[];z2.forEach(function(tr){if(tr)Array.prototype.forEach.call(tr.querySelectorAll("td.num.zp-sc-key"),function(td){keys.push(td)})});
+     r.forEach(function(v){const td=map[v];if(!td)return;let best=null,bd=Infinity;keys.forEach(function(kt){const d=zpCellDist(kt,td);if(d<bd-0.01){bd=d;best=kt}});if(best)ST.keyRowSixLinks.push({td0:best,td1:td})})}
+ }
  /* 2026-09-22 使用者設計「三層+定顯」專屬搜尋：第一區第1~5期(每期colCount個號碼)逐一號碼配十字差(-10/-1/0/1/10這5個，
     使用者定名「十字差」，見ZP_SC_CROSS_DIFF_OFFSETS；跟全域的九宮差/九宮拖牌是不同概念，只用於這個搜尋)，
     若某個偏移命中該區第6期(任一欄即可)，換第二區同一(期,欄)位置、同一個偏移再試一次；也命中第二區第6期＝條件成立，
@@ -8521,7 +8550,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
  /* 2026-09-24 16:21 兩格之間的連線長度(螢幕上格子中心的距離，跟畫線用同一套 cellScreenRect)；量不到時退回用列/欄位置估 */
  function zpCellDist(a,b){if(!a||!b)return Infinity;try{const r0=cellScreenRect(a),r1=cellScreenRect(b);if(r0.halfW>0&&r1.halfW>0)return Math.hypot(r1.cx-r0.cx,r1.cy-r0.cy)}catch(e){}const pos=function(td){const tr=td.parentNode;const rows=tr&&tr.parentNode?Array.prototype.indexOf.call(tr.parentNode.children,tr):0;return{r:rows,c:Array.prototype.indexOf.call(tr?tr.children:[],td)}};const p=pos(a),q=pos(b);return Math.hypot(q.r-p.r,q.c-p.c)}
  function applyTripleHitMarks(){
-   ST.tripleHits=[];
+   ST.tripleHits=[];ST.z3g=[];
    if(!(ST.on&&ST.mode===0&&window.fullPageSheetMode==="同"&&ST.zones.length>=3))return;
    const z0=ST.zones[0],z1=ST.zones[1],z2=ST.zones[2];
    const maxBall=cModeMaxBall(),cc=cModeColCount();
@@ -8541,7 +8570,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
           (zp-sc-triple-hit：藍框紅底)。同一格若剛好也是定點zp-sc-key，不能再蓋反轉配色，維持定點原本的一般配色 */
        const markHit=function(td){td.classList.add("num-marked","num-marked-click");if(!td.classList.contains("zp-sc-key"))td.classList.add("zp-sc-triple-hit")};
        [td0,td1].forEach(markHit);
-       const td2=tds2?tds2[c]:null;if(td2&&normalizedNum(td2))markHit(td2);
+       const td2=tds2?tds2[c]:null;if(td2&&normalizedNum(td2)){markHit(td2);/* 23:31 使用者指示「第三區也照上面的邏輯，把計算後的號碼顯示在空白期並畫線」：第三區同位置號碼＋同一個十字差＝預測號碼 */ST.z3g.push({from:td2,v:parseInt(calcNineGridDrag(parseInt(normalizedNum(td2),10),maxBall)[hitK],10)})}
        /* 第一區命中的號碼連線到第一區第6期真正命中的那個號碼；第二區同理連第二區自己的第6期，不是連到另一區 */
        const offVal=NINE_GRID_DRAG_OFFSETS[hitK];
        /* 2026-09-24 18:53 使用者指示「三層十字差找到的第六期裡的號碼也這樣顯示」：綠線另一端(第一、二區第6期命中的號碼)也加滿格＋字色底色對調(同一、二區相同號碼) */
@@ -8556,12 +8585,13 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     只比對第一、二區(跟十字差驗證範圍一致，第三區不用再驗證)；三層+三層段落時計算。
     2026-09-23 使用者指示：全顯也要這個邏輯(原本只有定顯)，定顯、全顯都畫 */
  function applyKeyRowSixLinks(){
-   ST.keyRowSixLinks=[];
+   ST.keyRowSixLinks=[];ST.z3r=[];
    if(!(ST.on&&ST.mode===0&&(window.fullPageSheetMode==="同"||window.fullPageSheetMode==="異")&&ST.zones.length>=3))return;
    const z0=ST.zones[0],z1=ST.zones[1];
    const numMap=function(tr){const m={};if(!tr)return m;Array.prototype.forEach.call(tr.querySelectorAll("td.num"),function(td){const n=normalizedNum(td);if(n&&!m[n])m[n]=td});return m};
    const map0=numMap(z0[5]),map1=numMap(z1[5]);
    const common=Object.keys(map0).filter(function(n){return map1[n]});
+   ST.z3r=common.map(function(n){return parseInt(n,10)});/* 23:31 第三區也顯示一、二區第6期的共同號碼(紅線) */
    if(!common.length)return;
    /* 2026-09-24 16:50 使用者指示「一、二區第六期號碼相同者忘了標記，要滿格標準標記」(例：兩區第6期都有 02、04)：
       共同號碼在第一區、第二區第6期那兩格都加上第二招的滿格標記(num-marked-drag：標記底色填滿整格＋框色外框)。
