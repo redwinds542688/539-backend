@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 14:03";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 14:05";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-26 14:05  九宮預測號碼扣除改成只扣第 17、18 期開過的號碼(原本扣 16/17/18)：成立條件「扣完至少剩 1 個」與第 19 期顯示的預測號碼都照此計算。
    2026-09-26 14:03  九宮成立條件再加「第 16 期不可以中」：16 期沒中任何目標號碼，17、18 期都有中且兩期中不同號，才成立。
    2026-09-26 14:00  九宮(單桿尋號)成立條件改成「第 17、18 期都要中，且兩期中的號碼不可以一樣」(原本 16/17/18 三期都要中)：兩期各至少中 1 個目標號碼，且能各挑一個不同的號碼；扣掉 16/17/18 期開過的號碼後至少剩 1 個預測號碼的規則不變。
    2026-09-26 13:23  全頁自動修復加強(使用者：「自動修復很重要」)：①全頁每次排版(window.refitFullPageSheet，含進入全頁、縮放放開、換彩券、網址列伸縮)一做完立刻校正；②開獎單拉伸設定被任何程式改動時，在畫面繪製前立刻校正(MutationObserver)；③原本每 0.3 秒的檢查保留當後備。模擬蘋果量法逐幀檢查：進入全頁從第一幀起就正確，壓扁一幀都不會露出。原本的全頁程式一字未動。
@@ -4634,7 +4635,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     if(!hit[0]||!hit[1]||!hit[0].length||!hit[1].length)return false;
     if(!hit[0].some(function(a){return hit[1].some(function(b){return a!==b})}))return false;
     /* 2026-09-26 02:43 使用者指示「預測號碼必須大於 0 號，否則依舊視為無效，直接跳過」：扣掉第 16/17/18 期開過的號碼後，至少要剩 1 個預測號碼才成立 */
-    const below={};rs.forEach(function(row){row.forEach(function(c){if(c.v!==null)below[c.v]=true})});if(!tg.some(function(t){return !below[t]}))return false;
+    const below={};rs.slice(1).forEach(function(row){if(row)row.forEach(function(c){if(c.v!==null)below[c.v]=true})});if(!tg.some(function(t){return !below[t]}))return false;/* 14:05 使用者指示「扣掉的號碼也改成只扣 17/18 期」 */
     return true}
   function findValid(from){for(let k=0;k<SB_OFFS.length;k++){const i=(from+k)%SB_OFFS.length;if(isValid(i))return i}return -1}
   function runSearch(from){if(!SB.on)return;cancelRun();clearHits();const pick=findValid(typeof from==="number"?from:SB.oi);
@@ -4644,7 +4645,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     const g=grid();const bi=barIdx();const barNums=barNumsNow();if(!barNums.length)return;
     const got=[];let i=0;placeTagText();
     function step(){if(token!==SB.runToken||!SB.on)return;if(i>=barNums.length){SB.runTimer=0;
-      {const below=[];checkRows().forEach(function(row){if(row)row.forEach(function(c){if(c.v!==null)below.push(c.v)})})/* 第 16/17/18 期開過的號碼不顯示在空白期 */
+      {const below=[];checkRows().slice(1).forEach(function(row){if(row)row.forEach(function(c){if(c.v!==null)below.push(c.v)})})/* 第 17/18 期開過的號碼不顯示在空白期(14:05 使用者指示只扣 17/18 期，原本 16/17/18) */
        const uniq=[];barNums.forEach(function(n){const t=wrapNum(n,off,max);if(uniq.indexOf(t)<0)uniq.push(t)});const show=uniq.filter(function(t){return below.indexOf(t)<0}).sort(function(a,b){return a-b});fillBlank(show);
        if(typeof logEvent==="function")try{logEvent("單桿尋號","空白第一期顯示："+(show.map(function(v){return String(v).padStart(2,"0")}).join(" ")||"(全部在下面3期開過)"))}catch(e){}}if(typeof logEvent==="function")try{logEvent("單桿尋號","第 "+SB.period+" 期 九宮差 "+offLabel(off)+"："+got.join("、"))}catch(e){}return}
       const n=barNums[i];const target=wrapNum(n,off,max);let c=0;
