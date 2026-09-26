@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 02:55";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 09:30";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-26 09:30  ①抓牌「號碼淡出」捲動方式定案，規格寫進程式說明(★★ 標記，之後不可改掉)；②單桿列裡符合條件的號碼(例：桿上 36)改用標定底色/字色顯示(原本被單桿底色蓋掉)，單桿外框保留。
    2026-09-26 02:55  抓牌捲動時第 19 列改成「號碼淡出」：拿掉固定白色遮罩(看起來假、數字被切半截像殘影)；拖動時各列號碼依進入第 19 格的比例變透明，格線/底色/日期照常移動；拖動中暫停第 19 列清空/還原，放手定位後再清空。
    2026-09-26 02:43  單桿尋號成立條件加一條：扣掉第 16/17/18 期開過的號碼後，預測號碼必須至少 1 個，否則視為不成立、直接跳到下一個九宮差。
    2026-09-26 02:41  單桿移動範圍由第 1～15 期改成第 1～18 期(初始仍在第 15 期)；單桿在第 18 期時九宮差欄位顯示在第 19 列的日期/星期欄。
@@ -4458,6 +4459,12 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
       const ref=Array.prototype.slice.call(all[i0+17].querySelectorAll("td.num")).find(function(td){return !td.classList.contains("num-marked")})||nums[0];const cs=getComputedStyle(ref);
       let bg=cs.backgroundColor;if(!bg||bg==="rgba(0, 0, 0, 0)"||bg==="transparent")bg=document.body.classList.contains("theme-dark")?"#1a1a1a":"#ffffff";
       V.geo={top:rr.top,bottom:bottom,left:nums[0].getBoundingClientRect().left,right:nums[nums.length-1].getBoundingClientRect().right,xs:nums.map(function(td){return td.getBoundingClientRect().right}),bg:bg,line:cs.borderRightColor||"#bbb",lw:Math.max(1,(parseFloat(cs.borderRightWidth)||1))}}catch(e){}}
+  /* ★★ 2026-09-26 09:30 使用者定案「這捲動太棒了，程式記錄起來這捲動的方式」——抓牌捲動＝以下「號碼淡出」做法，之後修改不可改掉：
+     ①拖動中：畫面第 19 格固定位置以上照常顯示；每一列號碼依「進入第 19 格的比例」調透明度(opacity＝1−進入比例，完全進入＝0)，往上滑出則漸漸出現；
+       只動號碼(.cell-shift)的透明度，格線、底色、日期、星期跟著表格正常平滑移動；不可用固定遮罩(會假、會切半截)。
+     ②拖動中與放手定位中(0.45 秒)：暫停第 19 列的清空/還原，內容不中途更換(避免閃動)。
+     ③放手定位後：第 19 列號碼清空成空白期樣子(原號碼存 dataset.streak7Num，計算照讀)，透明度全部恢復。
+     ④三層開啟前、單桿尋號開啟前先還原第 19 列；單桿有自己的第 19 列(空白期＋左下預測＋右上真實號碼)。 */
   /* 2026-09-26 02:55 使用者回報「捲動下拉有殘影、不夠自然，第十九期五個空白欄位看起來很假」：拿掉固定不動的白色遮罩(表格在底下滑、遮罩不動，一看就是蓋上去的；
      列滑過遮罩上緣時數字被切成半截＝殘影)。改成「號碼淡出」：手指拖著捲動時，每一列的號碼依照進入第 19 格的比例變透明(完全進入＝看不到)，
      往上滑出第 19 格則漸漸出現；格線、底色、日期、星期都跟著表格正常移動。拖動中暫停第 19 列的清空/還原(避免中途換內容造成閃動)，放手定位後再清空、恢復透明度。 */
@@ -4535,7 +4542,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     const cells=Array.prototype.slice.call(tr.querySelectorAll("td.num")).slice(0,cModeColCount());
     cells.forEach(function(td,i){td.style.setProperty("background",rowBg,"important");td.style.setProperty("color","#1F1F1F","important");
       const sh=["inset 0 1.5px 0 0 "+rowBorder,"inset 0 -1.5px 0 0 "+rowBorder];if(i===0)sh.push("inset 1.5px 0 0 0 "+rowBorder);if(i===cells.length-1)sh.push("inset -1.5px 0 0 0 "+rowBorder);
-      td.style.setProperty("box-shadow",sh.join(", "),"important");td.classList.add("zp-sb-cell");SB.painted.push(td)})}
+      td.style.setProperty("box-shadow",sh.join(", "),"important");td.classList.add("zp-sb-cell");SB.painted.push(td);barHitStyle(td)})}
   /* 2026-09-25 21:56 使用者指示：拖曳鍵改紅底(#e02020，同 C式紅底)、藍色箭頭(#1E63D0) */function buildHandle(){if(SB.handle)return SB.handle;const h=document.createElement("div");h.id="zp-sb-handle";
     try{const ns="http://www.w3.org/2000/svg";const svg=document.createElementNS(ns,"svg");svg.setAttribute("width","24");svg.setAttribute("height","24");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("fill","none");svg.setAttribute("stroke","#1E63D0");svg.setAttribute("stroke-width","2.2");svg.setAttribute("stroke-linecap","round");svg.setAttribute("stroke-linejoin","round");const path=document.createElementNS(ns,"path");path.setAttribute("d","M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4");svg.appendChild(path);h.appendChild(svg)}catch(e){h.textContent="↕"}
     Object.assign(h.style,{position:"fixed",width:"34px",height:"34px",borderRadius:"50%",background:"#e02020",color:"#fff",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9600",touchAction:"none",boxShadow:"0 0 4px rgba(0,0,0,0.7)",border:"2px solid #fff",boxSizing:"border-box",userSelect:"none",webkitUserSelect:"none"});
@@ -4560,7 +4567,10 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   function wrapNum(n,off,max){let z=n+off;if(off<0){if(z<=0)z=max+z}else if(off>0){if(z>max)z=z-max}return z}
   function cellsOf(tr){return Array.prototype.slice.call(tr.querySelectorAll("td.num")).slice(0,cModeColCount())}
   function numOf(td){const v=parseInt(normalizedNum(td),10);return isNaN(v)?null:v}
-  function markHit(td){if(SB.hits.indexOf(td)<0)SB.hits.push(td);td.classList.add("num-marked","num-marked-click","zp-sb-hit")}
+  /* 2026-09-26 09:30 使用者回報「桿上 36 符合條件沒有標示」：單桿那一列的格子有單桿自己的底色(inline !important)，蓋掉了標定樣式。
+     改成：單桿列裡符合條件的號碼改用標定的底色/字色(--mark-bg-color/--mark-text-color)，單桿外框保留 */
+  function barHitStyle(td){if(td.classList.contains("zp-sb-cell")&&td.classList.contains("zp-sb-hit")){td.style.setProperty("background","var(--mark-bg-color, #FF3B3B)","important");td.style.setProperty("color","var(--mark-text-color, #000)","important")}}
+  function markHit(td){if(SB.hits.indexOf(td)<0)SB.hits.push(td);td.classList.add("num-marked","num-marked-click","zp-sb-hit");barHitStyle(td)}
   /* 2026-09-25 22:58 使用者指示「尋找出的號碼顯示在空白第一期；在 16/17/18 期內有中的號碼則不顯示在空白期」：成立的九宮差逐號標定跑完後，5(6) 個號碼扣掉單桿下面 3 期有開出的，其餘由小到大填進空白期第一列(樣式同空白期填號 c-ding-top3)；換九宮差/拖桿/離開時清掉 */
   /* 2026-09-26 00:06 使用者指示「第十九期不管是不是已開期，五個號碼欄位皆像空白期那樣顯示」：一進入單桿就把畫面第 19 列蓋成空白期的樣子(不論有沒有找到結果、顯示「無」時也一樣)，
      右上角照樣用小字標出真實號碼；尋號結果寫在蓋好的格子上。只有離開單桿(或畫面重排)才把原本的號碼放回去 */
@@ -4592,7 +4602,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     if(fr.querySelector("td.num.zp-sb-cover")){const cs=Array.prototype.slice.call(fr.querySelectorAll("td.num.zp-sb-cover")).slice(0,cModeColCount());cs.forEach(function(td,i){setCov(td,i<nums.length?nums[i]:null)});refitCov();requestAnimationFrame(refitCov);[150,500,1200].forEach(function(ms){setTimeout(function(){if(SB.on)refitCov()},ms)})/* 排版/字型穩定後再校正 */;return}
     const cells=Array.prototype.slice.call(fr.querySelectorAll("td.num")).filter(function(td){return td.classList.contains("pending")&&!td.classList.contains("num-picked")&&(td.textContent||"").trim()===""});
     nums.forEach(function(n,i){const td=cells[i];if(!td)return;td.innerHTML='<span class="cell-shift">'+String(n).padStart(2,"0")+"</span>";td.classList.remove("pending");td.classList.add("c-ding-top3","zp-sb-blank")})}
-  function clearHits(){clearBlank();SB.hits.forEach(function(td){try{td.classList.remove("zp-sb-hit","num-marked","num-marked-click")}catch(e){}});SB.hits=[]}
+  function clearHits(){clearBlank();let bar=false;SB.hits.forEach(function(td){try{if(td.classList.contains("zp-sb-cell"))bar=true;td.classList.remove("zp-sb-hit","num-marked","num-marked-click")}catch(e){}});SB.hits=[];if(bar&&SB.on){try{paint(rowOf(SB.period))}catch(e){}}/* 單桿列恢復單桿底色 */}
   function reapplyHits(){SB.hits.forEach(function(td){if(td.isConnected)td.classList.add("num-marked","num-marked-click","zp-sb-hit")})}
   function cancelRun(){SB.runToken++;if(SB.runTimer){clearTimeout(SB.runTimer);SB.runTimer=0}}
   /* 2026-09-25 22:52 使用者指示「一次出來會有 5 個號碼(大樂/香港 6 個)，對照 16 最少中一號、17 也最少中一號、18 也最少中一號，整個式子才算成立；如果沒有，就自動九宮差換下一個」：
