@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 11:26";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 12:38";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 12:38  全頁高度校正加強(使用者 iPhone 回報仍壓扁)：①判斷手指是否離開改用最後觸控時間(蘋果放開手指的事件可能被攔，原本會一直以為手指還在而不校正)；②拉伸被清掉時也校正；③設定→螢幕資訊第一行顯示版本時間，可確認手機跑的是不是新版。
    2026-09-26 11:26  全頁高度自我校正(iPhone 17 回報)：①放大後捲到底，最後幾期被按鍵蓋住；②縮小畫面後開獎單被壓扁、下面留白。原因是拉伸倍率在蘋果版面還沒定時量錯。改成最小尺寸時每 0.3 秒檢查開獎單底邊是否貼下紅線，不準就自動校正；放大時捲動範圍以開獎單實際底邊為準，一定捲得到最後一期。
    2026-09-26 09:56  單桿中長按截圖修正：①單桿擋捲動改成只擋「換位置」，截圖前後的重新定位照常做(原本被擋掉，存出來的期數錯、標記全不見，像被清除)；②第 19 列預測號碼照畫面位置補畫在左下角(原本畫兩次、偏下被切掉)；③拖曳鍵、九宮差欄位範圍不補畫(原本日期畫在上面)；④補畫範圍與按鍵分開裁切(原本按鍵上被畫出第 20 列號碼)。
    2026-09-26 09:48  修正：單桿(九宮)中長按截圖，存出來的圖是別段期數、單桿與標定都不見。原因是單桿中擋掉了畫面重新定位，截圖前的定位沒有執行；改成只擋「換到不同期數」。
@@ -8926,7 +8927,7 @@ setInterval(function(){
   window.addEventListener("load",function(){schedule(4000)});
   window.addEventListener("resize",function(){schedule(3000)});
   /* 設定選單加「螢幕資訊」(選單是開機時建好的；不用 paper-size-option 的點擊行為，只借它的外觀) */
-  function textOf(i){var L=[];L.push("程式："+i.app+"  "+i.v+"  （"+({app:"桌面App",web:"瀏覽器",file:"檔案"}[i.mode]||i.mode)+"）");
+  function textOf(i){var L=[];L.push("版本："+(window.APP_BUILD||"?"));/* 2026-09-26 螢幕資訊加顯示版本時間，確認手機上跑的是不是最新版 */L.push("程式："+i.app+"  "+i.v+"  （"+({app:"桌面App",web:"瀏覽器",file:"檔案"}[i.mode]||i.mode)+"）");
     L.push("型號："+(i.model||"(讀不到)")+(i.platform?"  "+i.platform+" "+(i.platformVersion||""):""));
     L.push("實體解析度："+i.physical.w+" × "+i.physical.h);L.push("像素倍率："+i.dpr);
     L.push("螢幕尺寸："+i.screen.w+" × "+i.screen.h+"（可用 "+i.screen.availW+" × "+i.screen.availH+"）");
@@ -9119,12 +9120,12 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
    算太大＝開獎單比紅線範圍高、底下幾期被蓋住；算太小＝開獎單被壓扁、下面留白。
    修正：最小尺寸(pageZoom=1)且手指沒碰螢幕時，每 0.3 秒檢查開獎單底邊是不是剛好貼下紅線，差超過 1px 就依實際高度把倍率校正回來(自我修復，不管哪種手機、何時量錯都會拉回來)；
    另外放大時的捲動範圍改以開獎單實際底邊為準(見 clampFullPageScrollY／applyPageZoom)，就算還沒校正也一定捲得到最後一期。 */
-(function(){let touching=0;
-  ["touchstart","touchend","touchcancel"].forEach(function(ev){document.addEventListener(ev,function(e){touching=e.touches?e.touches.length:0},{passive:true,capture:true})});
-  function fix(){try{const b=document.body.classList;if(!b.contains("pinch-fullscreen-mode")||touching>0||window.__fullPageDisplayReady===false)return;
+(function(){let lastTouch=0;/* 改用「最後一次碰螢幕的時間」判斷(原本數手指數量，蘋果上放開手指的事件若被別的程式攔掉會一直以為手指還在，校正永遠不做) */
+  ["touchstart","touchmove","touchend","touchcancel"].forEach(function(ev){window.addEventListener(ev,function(){lastTouch=Date.now()},{passive:true,capture:true})});
+  function fix(){try{const b=document.body.classList;if(!b.contains("pinch-fullscreen-mode")||Date.now()-lastTouch<500||window.__fullPageDisplayReady===false)return;
     if(typeof pageZoom==="undefined"||pageZoom!==1)return;
     const P=document.getElementById("panels"),S=document.querySelector(".scroller"),red=document.getElementById("bottom-frame-line-wrap");if(!P||!S||!red)return;
-    const m=/scaleY\(([\d.]+)\)/.exec(P.style.transform||"");if(!m)return;const cur=parseFloat(m[1]);if(!(cur>0))return;
+    const tf=(P.style.transform||"").trim();const m=/^scaleY\(([\d.eE+-]+)\)$/.exec(tf);if(!m&&tf!==""&&tf!=="none")return;const cur=m?parseFloat(m[1]):1;if(!(cur>0))return;/* 沒有拉伸(transform 被清掉)也一樣校正 */
     const sr=S.getBoundingClientRect(),pr=P.getBoundingClientRect(),rr=red.getBoundingClientRect();if(!(pr.height>0&&rr.height>0))return;
     const pad=parseFloat(getComputedStyle(S).paddingBottom)||0;const target=rr.top-sr.top-pad;if(!(target>50))return;
     const hOk=Math.abs(sr.height-pad-target)<=1.5,pOk=Math.abs(pr.height-target)<=1;if(hOk&&pOk)return;
