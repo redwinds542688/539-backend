@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 12:41";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 12:43";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 12:43  螢幕資訊回傳改成一開啟程式就送：開啟後 4 秒一律回傳一次(不看有沒有改變、在不在首頁、直橫向)；App 從背景切回來也送(10 分鐘內不重複)。
    2026-09-26 12:41  螢幕資訊加「全頁」診斷數據：記下最近一次全頁的畫面高、開獎單頂、下紅線、紅線間距、開獎單高、拉伸倍率、自動校正次數與最後一次校正內容，顯示在設定→螢幕資訊，並隨回傳送出(回傳另加版本時間)；發生自動校正時自動回傳一次。
    2026-09-26 12:38  全頁高度校正加強(使用者 iPhone 回報仍壓扁)：①判斷手指是否離開改用最後觸控時間(蘋果放開手指的事件可能被攔，原本會一直以為手指還在而不校正)；②拉伸被清掉時也校正；③設定→螢幕資訊第一行顯示版本時間，可確認手機跑的是不是新版。
    2026-09-26 11:26  全頁高度自我校正(iPhone 17 回報)：①放大後捲到底，最後幾期被按鍵蓋住；②縮小畫面後開獎單被壓扁、下面留白。原因是拉伸倍率在蘋果版面還沒定時量錯。改成最小尺寸時每 0.3 秒檢查開獎單底邊是否貼下紅線，不準就自動校正；放大時捲動範圍以開獎單實際底邊為準，一定捲得到最後一期。
@@ -8926,7 +8927,10 @@ setInterval(function(){
   window.addEventListener("load",function(){setTimeout(function(){ping(false).catch(function(){})},2000)});
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")setTimeout(function(){ping(false).catch(function(){})},1500)});/* 放在背景隔天再切回來也算一次 */
   var timer=null;function schedule(ms){clearTimeout(timer);timer=setTimeout(function(){send(false).catch(function(){})},ms)}
-  window.addEventListener("load",function(){schedule(4000)});
+  /* 2026-09-26 使用者指示「一開啟程式就要回傳」：開啟後 4 秒一律回傳一次(不管有沒有改變、在不在首頁)；App 從背景切回來也算開啟(10 分鐘內不重複) */
+  var lastOpenSend=0;function openSend(reason){lastOpenSend=Date.now();send(true,reason).catch(function(){})}
+  window.addEventListener("load",function(){setTimeout(function(){openSend("開啟程式")},4000)});
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&Date.now()-lastOpenSend>600000)setTimeout(function(){openSend("切回程式")},2000)});
   window.addEventListener("resize",function(){schedule(3000)});
   /* 設定選單加「螢幕資訊」(選單是開機時建好的；不用 paper-size-option 的點擊行為，只借它的外觀) */
   function textOf(i){var L=[];L.push("版本："+(window.APP_BUILD||"?"));/* 2026-09-26 螢幕資訊加顯示版本時間，確認手機上跑的是不是最新版 */L.push("程式："+i.app+"  "+i.v+"  （"+({app:"桌面App",web:"瀏覽器",file:"檔案"}[i.mode]||i.mode)+"）");
