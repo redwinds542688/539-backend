@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 12:43";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 12:49";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 12:49  版本檢查與強制更新：開啟程式(及從背景切回來)時讀網站上最新檔案開頭的 APP_BUILD(只讀幾 KB)，比目前新就要求更新；「立即更新」先刪除原來的程式(註銷 service worker、刪除快取)再重新載入安裝新程式，標記與設定保留；更新後仍是舊版則改顯示刪除 App、重新加入主畫面的步驟(iPhone/Android 分開)，可「先用舊版」。只在網站上執行，直接開檔案不查。
    2026-09-26 12:43  螢幕資訊回傳改成一開啟程式就送：開啟後 4 秒一律回傳一次(不看有沒有改變、在不在首頁、直橫向)；App 從背景切回來也送(10 分鐘內不重複)。
    2026-09-26 12:41  螢幕資訊加「全頁」診斷數據：記下最近一次全頁的畫面高、開獎單頂、下紅線、紅線間距、開獎單高、拉伸倍率、自動校正次數與最後一次校正內容，顯示在設定→螢幕資訊，並隨回傳送出(回傳另加版本時間)；發生自動校正時自動回傳一次。
    2026-09-26 12:38  全頁高度校正加強(使用者 iPhone 回報仍壓扁)：①判斷手指是否離開改用最後觸控時間(蘋果放開手指的事件可能被攔，原本會一直以為手指還在而不校正)；②拉伸被清掉時也校正；③設定→螢幕資訊第一行顯示版本時間，可確認手機跑的是不是新版。
@@ -9150,6 +9151,61 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     if(typeof logEvent==="function")try{logEvent("全頁高度校正","開獎單高 "+pr.height.toFixed(1)+" → 紅線間 "+target.toFixed(1)+"，scaleY "+cur.toFixed(4)+" → "+next.toFixed(4))}catch(e){}
   }catch(e){}}
   setInterval(fix,300);
+})();</script>
+
+<script>/* ===== 版本檢查與強制更新(2026-09-26 12:49 使用者指示「當下使用的程式與最新上傳 GitHub 的程式不同，程式需告訴使用者要求更新，然後先刪除原來的程式，再安裝新程式」) =====
+   ・何時查：開啟程式後 3 秒；App 從背景切回來(10 分鐘內不重查)。只在網站上執行(https/http)，直接開檔案不查。
+   ・怎麼查：向網站讀「目前這個網址」的最新檔案(加時間參數避開快取)，只讀開頭幾 KB 找 window.APP_BUILD 就停，不下載整個檔案；比這支程式的 APP_BUILD 新才算有新版。
+   ・有新版：蓋一層提示「發現新版本，必須更新」，只有「立即更新」一顆鍵。
+   ・立即更新＝先刪除原來的程式(註銷 service worker、刪除所有快取的程式檔)，再重新載入安裝新程式；使用者的標記、設定(localStorage)保留。
+   ・更新後若還是舊版(手機快取頑強)：提示改成「刪除 App → 重新加入主畫面」的步驟(iPhone／Android 分開寫)，並提供「先用舊版」，不會把人鎖在外面。 */
+(function(){
+  const LOCAL=window.APP_BUILD||"";const TKEY="539_update_target",AKEY="539_update_tries";
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+  if(!/^https?:$/.test(location.protocol))return;
+  try{if(/[?&]u=\d+/.test(location.search)){history.replaceState(null,"",location.pathname+location.search.replace(/([?&])u=\d+&?/,"$1").replace(/[?&]$/,"")+location.hash)}}catch(e){}
+  function isIOS(){return document.documentElement.classList.contains("is-ios")||/iP(hone|od|ad)/.test(navigator.userAgent)}
+  async function remoteBuild(){const url=location.origin+location.pathname+"?_v="+Date.now();
+    const res=await fetch(url,{cache:"no-store",headers:{"Range":"bytes=0-16383"}});if(!res.ok&&res.status!==206)throw new Error("HTTP "+res.status);
+    let txt="";if(res.body&&res.body.getReader){const rd=res.body.getReader();const dec=new TextDecoder();while(txt.length<300000){const r=await rd.read();if(r.done)break;txt+=dec.decode(r.value,{stream:true});const m=/window\.APP_BUILD="([^"]+)"/.exec(txt);if(m){try{rd.cancel()}catch(e){}return m[1]}}}else txt=await res.text();
+    const m=/window\.APP_BUILD="([^"]+)"/.exec(txt);return m?m[1]:null}
+  function box(html){let ov=document.getElementById("app-update-overlay");if(ov)ov.remove();ov=document.createElement("div");ov.id="app-update-overlay";
+    ov.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;touch-action:none;";
+    ov.innerHTML='<div style="background:#fff;color:#000;border-radius:14px;padding:18px 16px;width:360px;max-width:94vw;max-height:90vh;overflow:auto;box-sizing:border-box;box-shadow:0 10px 36px rgba(0,0,0,.45);font-family:-apple-system,\'PingFang TC\',\'Noto Sans TC\',sans-serif;">'+html+'</div>';
+    ["click","dblclick","pointerdown","pointerup","touchstart","touchend","contextmenu"].forEach(function(ev){ov.addEventListener(ev,function(e){e.stopPropagation()},false)});
+    document.body.appendChild(ov);return ov}
+  const H='<div style="font-size:22px;font-weight:800;text-align:center;margin-bottom:10px;">';const P='<div style="font-size:16px;line-height:1.6;margin-bottom:8px;">';
+  const BTN='role="button" style="display:block;width:100%;box-sizing:border-box;text-align:center;font-size:20px;line-height:1.3;font-weight:800;padding:12px 0;border-radius:10px;background:#FFD700;color:#000;margin-top:10px;cursor:pointer;user-select:none;-webkit-user-select:none;"';/* 用 div 不用 button：程式裡「按鍵文字最大化」會改所有 button 的大小 */
+  function askUpdate(remote){const ov=box(H+'發現新版本</div>'+P+'目前使用：'+LOCAL+'<br>最新版本：<b>'+remote+'</b></div>'+P+'必須更新才能繼續使用。按「立即更新」會先刪除手機上原來的程式，再安裝新程式（標記與設定會保留）。</div><div id="app-update-go" '+BTN+'>立即更新</div><div id="app-update-msg" style="font-size:15px;text-align:center;margin-top:8px;min-height:20px;"></div>');
+    ov.querySelector("#app-update-go").addEventListener("click",function(){doUpdate(remote,ov)})}
+  async function doUpdate(remote,ov){const msg=ov&&ov.querySelector("#app-update-msg");const say=function(t){if(msg)msg.textContent=t};if(ov&&ov.__busy)return;if(ov)ov.__busy=true;
+    ls(TKEY,remote);ls(AKEY,String((parseInt(ls(AKEY)||"0",10)||0)+1));
+    say("正在刪除原來的程式…");
+    try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(function(r){return r.unregister()}))}}catch(e){}
+    try{if(window.caches&&caches.keys){const ks=await caches.keys();await Promise.all(ks.map(function(k){return caches.delete(k)}))}}catch(e){}
+    say("正在安裝新程式…");
+    setTimeout(function(){location.replace(location.pathname+"?u="+Date.now()+location.hash)},400)}
+  function manual(remote){const ios=isIOS();
+    const steps=ios?'<ol style="font-size:16px;line-height:1.7;padding-left:22px;margin:4px 0 8px;"><li>回到手機桌面，長按這個 App 的圖示 →「移除 App」→「刪除 App」。</li><li>打開 Safari，輸入原本的網址打開本程式。</li><li>按下方「分享」鍵 →「加入主畫面」。</li></ol>'
+      :'<ol style="font-size:16px;line-height:1.7;padding-left:22px;margin:4px 0 8px;"><li>回到手機桌面，長按這個 App 的圖示 →「解除安裝」或「移除」。</li><li>打開 Chrome，輸入原本的網址打開本程式。</li><li>按右上角「⋮」→「加到主畫面」或「安裝應用程式」。</li></ol>';
+    const ov=box(H+'請重新安裝</div>'+P+'自動更新後手機仍在用舊版（目前 '+LOCAL+'，最新 <b>'+remote+'</b>）。請先刪除原來的程式，再安裝新程式：</div>'+steps+'<div id="app-update-again" '+BTN+'>再試一次自動更新</div><div id="app-update-later" role="button" style="display:block;width:100%;text-align:center;font-size:16px;padding:10px 0;color:#555;margin-top:6px;text-decoration:underline;cursor:pointer;">先用舊版</div><div id="app-update-msg" style="font-size:15px;text-align:center;margin-top:6px;min-height:20px;"></div>');
+    ov.querySelector("#app-update-again").addEventListener("click",function(){doUpdate(remote,ov)});
+    ov.querySelector("#app-update-later").addEventListener("click",function(){ov.remove();laterUntil=Date.now()+600000})}
+  function toast(t){const d=document.createElement("div");d.textContent=t;d.style.cssText="position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translateX(-50%);z-index:2147483000;background:#1c1c1e;color:#fff;border:2px solid #FFD700;border-radius:12px;padding:10px 16px;font:700 16px/1.4 -apple-system,sans-serif;pointer-events:none;";document.body.appendChild(d);setTimeout(function(){d.remove()},3500)}
+  let laterUntil=0,lastCheck=0,busy=false;
+  /* 更新回來後：到了新版就報「已更新」；還是舊版且已經自動試過，就改顯示手動重裝步驟 */
+  const target=ls(TKEY);
+  if(target){if(LOCAL>=target){ls(TKEY,null);ls(AKEY,null);window.addEventListener("load",function(){setTimeout(function(){toast("已更新到最新版 "+LOCAL)},800)})}}
+  async function check(){if(busy||Date.now()<laterUntil)return;busy=true;lastCheck=Date.now();
+    try{const remote=await remoteBuild();if(!remote||!(remote>LOCAL))return;
+      if(document.getElementById("app-update-overlay"))return;
+      const t=ls(TKEY),tries=parseInt(ls(AKEY)||"0",10)||0;
+      if(t===remote&&tries>=1)manual(remote);else askUpdate(remote);
+      if(typeof logEvent==="function")try{logEvent("版本檢查","目前 "+LOCAL+"，GitHub 最新 "+remote+"，要求更新")}catch(e){}
+    }catch(e){}finally{busy=false}}
+  window.__appUpdateCheck=check;
+  window.addEventListener("load",function(){setTimeout(check,3000)});
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&Date.now()-lastCheck>600000)setTimeout(check,1500)});
 })();</script>
 
 </body>
