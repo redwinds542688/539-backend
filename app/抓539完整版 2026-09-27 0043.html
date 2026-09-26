@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 00:36";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 00:43";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 00:43  三層修正「第二招標倒數第二期→下拉一期→按三層」第三區那期整列空白、空格被標記：回看時第 19 列會蓋成空白期樣子，三層複製列時剛好蓋著就複製成空白列。改成複製時一律還原蓋住的號碼，且三層啟動中(先捲回最新一期判斷那段時間)不蓋第 19 列。
    2026-09-27 00:36  三層修正「先回捲一期再按三層」顯示錯誤：日期已過但還沒抓到開獎號碼的那一期被當成已開獎，三層起始位置往下錯一列、第三區露出兩列空白期、空格被拿去計算。改成整列沒有開獎號碼就一律當空白期(起始位置、計算、第三區顯示都照這個判斷)。
    2026-09-27 00:34  三層計算一律把空白期(未開獎)的格子當成沒有號碼：修正「第三區空白期的空格被標成藍色、並拿去算預測號碼」(使用者回報捲回一期時顯示錯誤)；第三區填預測號碼前先清掉空白格裡藏的內容。
    2026-09-27 00:19  修正「抓牌回看一二期、沒有任何標記，按三層畫面會閃一下(少一期、露出整列空白期再恢復)」：回看時三層會先捲回最新一期判斷再捲回來；完全沒有標記時改成直接不動作、不捲動。
@@ -4466,7 +4467,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   const R={row:null};
   const STRIP=["num-marked-click","num-marked-drag","fullpage-mode-derived","zp-sb-hit","c-ding-top3"];
   function bc(){return document.body.classList}
-  function active(){const b=bc();return b.contains("zhuapai-mode")&&!b.contains("zp-sanceng")&&!b.contains("zp-single-bar")&&!(typeof window.__zpSingleBarOn==="function"&&window.__zpSingleBarOn())}
+  function active(){const b=bc();return b.contains("zhuapai-mode")&&!b.contains("zp-sanceng")&&!b.contains("zp-single-bar")&&!(typeof window.__zpSingleBarOn==="function"&&window.__zpSingleBarOn())&&!(typeof window.__zpSanCengOpening==="function"&&window.__zpSanCengOpening())/* 00:40 三層啟動中(先捲回最新一期判斷的那 0.35～0.7 秒)不蓋第 19 列 */}
   /* 畫面上第 19 列：第一個頂端在畫面內的列往下數第 19 列(列依序由上往下，用二分搜尋少量取位置) */
   function screenRow19(){const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"})||panels;
     const all=Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(tr){return tr.style.display!=="none"&&!tr.classList.contains("c-scroll-peek")&&tr.querySelector("td.num")});
@@ -4878,7 +4879,10 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
  function curInfo(){if(!ST.info||!ST.info.cur)return null;return Object.assign({c:ST.info.c},ST.info.cur)}
  const MARK_CLS=["num-marked","num-marked-click","num-marked-drag","fullpage-mode-derived"];
  /* 複製一列給畫面用：保留 data-date(第一招雙擊複製品會標到真正那一期)；只畫定點格的圈＋框色外框，其他標記拿掉 */
- function cloneRow(tr,info,km){const c=tr.cloneNode(true);c.classList.add("zp-sc-synth");c.classList.remove("c-scroll-peek","c-mode-cover-row");c.style.display="";c.style.transform="";
+ function cloneRow(tr,info,km){const c=tr.cloneNode(true);/* 2026-09-27 00:40 使用者回報「第二招標倒數第二期→下拉一期→按三層，第三區那一期整列變空白、空格被標記」：回看時第 19 列會蓋成空白期的樣子(號碼暫存起來)，
+    三層剛好在蓋著的時候複製這一列，複製品就變成空白列，藏著的號碼還被拿去計算。複製時把蓋住的格子還原成原本的號碼 */
+   Array.prototype.forEach.call(c.querySelectorAll("td.num.zp-r19"),function(td){if(td.dataset.zpR19Orig!==undefined)td.innerHTML=td.dataset.zpR19Orig;td.classList.remove("zp-r19");if(td.dataset.zpR19Had7==="0")delete td.dataset.streak7Num;delete td.dataset.zpR19Orig;delete td.dataset.zpR19Had7});
+   c.classList.add("zp-sc-synth");c.classList.remove("c-scroll-peek","c-mode-cover-row");c.style.display="";c.style.transform="";
    const cols=(km||info.keyMap)[tr.dataset.date||""]||null;
    const __origTds=tr.querySelectorAll("td.num");Array.prototype.forEach.call(c.querySelectorAll("td.num"),function(td,ci){const keep=!!cols&&cols.indexOf(ci)>=0;
      if(keep){td.classList.add("num-marked","num-marked-click","zp-sc-key");/* 2026-09-24 19:07 使用者指示「在三層裡主動標定號碼框閃爍」：真正開獎單上同一格是使用者自己標的(有標記、且不是定顯/全顯衍生)才閃 */const __o=__origTds[ci];if(__o&&__o.classList.contains("num-marked")&&!__o.classList.contains("fullpage-mode-derived"))td.classList.add("zp-sc-active-blink")}else{MARK_CLS.forEach(function(k){td.classList.remove(k)});td.classList.remove("zp-sc-key")}});
@@ -5124,6 +5128,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
    requestAnimationFrame(f);setTimeout(f,150);setTimeout(f,450);setTimeout(f,1000)}
  /* 2026-09-22 使用者指示：三層裡一二三招失效；返回(單擊/雙擊)＝只退出三層回到抓牌；清除單擊/雙擊失效；三層鍵單擊/雙擊＝只退出三層(雙擊的第二下不會再開) */
  /* 2026-09-22 使用者指示：左下角這顆——單擊/雙擊「三層」＝進入三層(雙擊的第二下 700ms 內吃掉，不會馬上切換標的)；進去之後改名「切換」＝切換搜尋標的(原本右上角切換鍵的功能搬過來，右上角那顆拿掉)；不再由這顆退出三層，退出只靠「返回」 */
+ window.__zpSanCengOpening=function(){return !!ST.opening};
  window.__zpSanCengToggle=function(){if(ST.on){if(Date.now()<(ST.openedAt||0)+700)return false;return nextTarget()}
    if(ST.opening)return false;
    /* 2026-09-23 使用者指示：抓牌往下捲動回看不管幾期，按三層只要條件成立畫面就要馬上轉回來。
