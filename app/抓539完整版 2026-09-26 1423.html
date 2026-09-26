@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 14:05";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 14:23";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-26 14:23  單桿統計：①進入單桿時註記欄的號碼也隱藏(單桿中註記欄不能操作)，離開單桿才恢復；②單桿初始改在第 16 期；③長按「九宮」0.55 秒＝單桿從第 1 期跑到第 18 期，每期逐一顯示成立的九宮差(單桿移動、標定、第 19 列預測號碼、九宮差欄位＝搜尋動畫)，統計每個預測號碼出現次數，註記欄即時顯示前二名(同次數同名次；前二名合計小於等於 2 個號碼再加第三名)，右上角紅字＝次數；跑完單桿回原位；途中拖曳單桿＝中斷，返回＝離開並清掉統計。
    2026-09-26 14:05  九宮預測號碼扣除改成只扣第 17、18 期開過的號碼(原本扣 16/17/18)：成立條件「扣完至少剩 1 個」與第 19 期顯示的預測號碼都照此計算。
    2026-09-26 14:03  九宮成立條件再加「第 16 期不可以中」：16 期沒中任何目標號碼，17、18 期都有中且兩期中不同號，才成立。
    2026-09-26 14:00  九宮(單桿尋號)成立條件改成「第 17、18 期都要中，且兩期中的號碼不可以一樣」(原本 16/17/18 三期都要中)：兩期各至少中 1 個目標號碼，且能各挑一個不同的號碼；扣掉 16/17/18 期開過的號碼後至少剩 1 個預測號碼的規則不變。
@@ -4675,15 +4676,61 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function")renderConnections()}catch(e){}
     /* 2026-09-25 23:41 不再捲回最後面：停在目前畫面(往回捲幾期都照樣)；單桿中捲動仍失效。0.2/0.45/0.8 秒再量一次畫面，若剛好還在滑動慣性、列換了，就重找一次 */
     const __moved=false;SB.rowsDirty=true;SB.on=true;coverRow19();SB.on=false;/* 一進入就把第 19 列蓋成空白期 */
-    SB.on=true;SB.period=15;SB.oi=0;SB.none=false;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(!SB.on)return;const before=(SB.rowsCache||[])[0];SB.rowsDirty=true;const now=dataRows()[0];if(now!==before){uncover();coverRow19();update(true);if(!SB.drag)runSearch(0)}else{update(false);refitCov()}},ms)});
+    SB.on=true;SB.period=16;/* 14:20 使用者指示單桿初始設在第 16 期 */SB.oi=0;SB.stats=null;SB.none=false;SB.lastKey="";b.add("zp-single-bar");setLabel();[200,450,800].forEach(function(ms){setTimeout(function(){if(!SB.on)return;const before=(SB.rowsCache||[])[0];SB.rowsDirty=true;const now=dataRows()[0];if(now!==before){uncover();coverRow19();update(true);if(!SB.drag)runSearch(0)}else{update(false);refitCov()}},ms)});
     if(typeof logEvent==="function")try{logEvent("單桿","進入(長按定顯/全顯)，標記暫存 "+SB.stash.pickedPaths.length+" 筆、連線 "+SB.stash.connections.length+" 條")}catch(e){}
     update(true);setTimeout(function(){update(true)},200);setTimeout(function(){update(true)},450);if(!SB.raf)SB.raf=requestAnimationFrame(loop);
     /* 原本等 0.9 秒才開始找號；改成：畫面本來就在最底＝馬上找，有往回捲＝等 0.25 秒捲回動畫結束再找(之後 0.2/0.45/0.8 秒若又被拉回，會自動重找) */
     if(!__moved){if(!SB.drag)runSearch(0)}else setTimeout(function(){if(SB.on&&!SB.drag){SB.rowsDirty=true;update(true);runSearch(0)}},250);return true}
-  function exit(){if(!SB.on)return false;cancelRun();clearHits();uncover();SB.on=false;SB.drag=null;if(SB.tag)SB.tag.style.display="none";if(SB.raf){cancelAnimationFrame(SB.raf);SB.raf=0}unpaint();if(SB.handle)SB.handle.style.display="none";bc().remove("zp-single-bar");try{updateFloatSaveBtnForFullPage()}catch(e){}
+  function exit(){if(!SB.on)return false;cancelRun();clearHits();uncover();SB.on=false;SB.stats=null;SB.auto=false;try{renderStats()}catch(e){}{const __b=document.getElementById("float-save-btn");if(__b)__b.classList.remove("shot-lit")}/* 統計結果清掉，註記欄原本的號碼恢復顯示 */SB.drag=null;if(SB.tag)SB.tag.style.display="none";if(SB.raf){cancelAnimationFrame(SB.raf);SB.raf=0}unpaint();if(SB.handle)SB.handle.style.display="none";bc().remove("zp-single-bar");try{updateFloatSaveBtnForFullPage()}catch(e){}
     const st=SB.stash;SB.stash=null;if(st){pickedPaths=st.pickedPaths;connections=st.connections;broadened=st.broadened;historyStack=st.historyStack}
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function"){renderConnections();requestAnimationFrame(renderConnections)}}catch(e){}
     if(typeof logEvent==="function")try{logEvent("單桿","離開，標記放回")}catch(e){}return true}
+  /* ===== 2026-09-26 14:20 使用者指示「長按九宮：單桿從 1 到 18 都跑一次，把預測號統計起來，在註記欄顯示前二名；前二名小於等於二號則再取第三名；要看到搜尋的動畫」=====
+     ・長按「九宮」0.55 秒開始；單桿依序停在第 1～18 期，每一期把成立的九宮差逐一顯示(單桿、標定、第 19 列預測號碼、九宮差欄位都照平常顯示＝搜尋動畫)；
+       沒有成立的九宮差就顯示「無」短暫停一下。
+     ・統計：每一期每一個成立的九宮差得到的預測號碼(第 19 列顯示的那些)各算 1 次，累計次數。
+     ・名次：次數由多到少分名次(同次數同名次)，取第 1、2 名的所有號碼；這些號碼加起來小於等於 2 個，再加第 3 名。
+     ・結果顯示在註記欄(進入單桿時原本的註記號碼已隱藏)，右上角紅色小字＝次數；跑的過程中註記欄即時更新。跑完單桿回到原本的位置。
+     ・跑的途中拖曳單桿＝中斷；返回鍵＝離開單桿(統計一起清掉)。 */
+  const AUTO_OFF_MS=260,AUTO_NONE_MS=140;
+  SB.stats=null;SB.auto=false;SB.lpT=0;SB.lpAt=0;
+  (function(){try{const st=document.createElement("style");st.textContent="body.zp-single-bar #zp-pick-col .zp-pick-cell:not(.zp-sb-stat){display:none !important}#zp-pick-col .zp-pick-cell.zp-sb-stat{position:relative}";document.head.appendChild(st)}catch(e){}})();
+  function showOffset(oi){clearHits();const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const g=grid();const barNums=barNumsNow();
+    if(oi<0){SB.none=true;placeTagText();return []}
+    SB.oi=oi;SB.none=false;placeTagText();const off=SB_OFFS[oi];
+    barNums.forEach(function(n){const target=wrapNum(n,off,max);g.forEach(function(row){row.forEach(function(cl){if(cl.v===target)markHit(cl.td)})})});
+    const below=[];checkRows().slice(1).forEach(function(row){if(row)row.forEach(function(c){if(c.v!==null)below.push(c.v)})});
+    const uniq=[];barNums.forEach(function(n){const t=wrapNum(n,off,max);if(uniq.indexOf(t)<0)uniq.push(t)});
+    const show=uniq.filter(function(t){return below.indexOf(t)<0}).sort(function(a,b){return a-b});fillBlank(show);return show}
+  function ranking(cnt){const nums=Object.keys(cnt).map(Number);if(!nums.length)return [];
+    const levels=[];nums.map(function(n){return cnt[n]}).sort(function(a,b){return b-a}).forEach(function(c){if(levels.indexOf(c)<0)levels.push(c)});
+    let pick=nums.filter(function(n){return cnt[n]>=levels[Math.min(1,levels.length-1)]});
+    if(pick.length<=2&&levels.length>=3)pick=nums.filter(function(n){return cnt[n]>=levels[2]});
+    return pick.sort(function(a,b){return cnt[b]-cnt[a]||a-b}).map(function(n){return {v:n,c:cnt[n]}})}
+  function colEl(){return document.getElementById("zp-pick-col")}
+  function renderStats(){const col=colEl();if(!col)return;col.querySelectorAll(".zp-sb-stat").forEach(function(x){x.remove()});if(!SB.on||!SB.stats)return;
+    const head=col.querySelector(".zp-pick-head");const rowH=head?(parseFloat(head.style.height)||head.getBoundingClientRect().height):40;const colW=parseFloat(col.style.width)||col.getBoundingClientRect().width||70;
+    SB.stats.list.forEach(function(it){const cell=document.createElement("div");cell.className="zp-pick-cell zp-sb-stat";cell.dataset.value=String(it.v);
+      cell.style.height=rowH.toFixed(2)+"px";cell.style.lineHeight=rowH.toFixed(2)+"px";cell.style.fontSize=Math.max(14,Math.floor(Math.min(colW*0.6,rowH*0.8)))+"px";
+      cell.innerHTML='<span class="zp-pick-num">'+String(it.v).padStart(2,"0")+'</span><span class="zp-pick-dup">'+it.c+"</span>";col.appendChild(cell)})}
+  /* 註記欄被原本的程式重畫(換畫面、轉向…)時，把統計結果補回去 */
+  (function watchCol(){const col=colEl();if(!col){setTimeout(watchCol,500);return}new MutationObserver(function(){if(SB.on&&SB.stats&&SB.stats.list.length&&!col.querySelector(".zp-sb-stat"))renderStats()}).observe(col,{childList:true})})();
+  function autoRun(){if(!SB.on||SB.auto)return;cancelRun();const token=SB.runToken;SB.auto=true;const p0=SB.period;const cnt={};SB.stats={cnt:cnt,list:[]};renderStats();
+    const bt=document.getElementById("float-save-btn");if(bt)bt.classList.add("shot-lit");
+    if(typeof logEvent==="function")try{logEvent("單桿統計","長按九宮：單桿第 1～18 期全部跑一次")}catch(e){}
+    const plan=[];for(let p=1;p<=18;p++)plan.push(p);let pi=0,list=null,li=0;
+    function finish(ok){SB.auto=false;if(bt)bt.classList.remove("shot-lit");if(!ok)return;
+      SB.period=p0;update(true);runSearch(0);renderStats();
+      if(typeof logEvent==="function")try{logEvent("單桿統計","結果："+SB.stats.list.map(function(it){return String(it.v).padStart(2,"0")+"×"+it.c}).join("、"))}catch(e){}}
+    function tick(){if(token!==SB.runToken||!SB.on){finish(false);return}
+      if(list===null){if(pi>=plan.length){finish(true);return}SB.period=plan[pi];update(true);list=[];for(let k=0;k<SB_OFFS.length;k++)if(isValid(k))list.push(k);li=0;
+        if(!list.length){showOffset(-1);list=null;pi++;SB.autoT=setTimeout(tick,AUTO_NONE_MS);return}}
+      const show=showOffset(list[li]);show.forEach(function(n){cnt[n]=(cnt[n]||0)+1});SB.stats.list=ranking(cnt);renderStats();
+      li++;if(li>=list.length){list=null;pi++}SB.autoT=setTimeout(tick,AUTO_OFF_MS)/* 用自己的計時器：拖曳單桿(cancelRun)只改 runToken，下一拍發現後正常收尾(熄燈) */}
+    tick()}
+  function lpCancel(){if(SB.lpT){clearTimeout(SB.lpT);SB.lpT=0}}
+  function lpStart(){lpCancel();SB.lpT=setTimeout(function(){SB.lpT=0;if(!SB.on)return;SB.lpAt=Date.now();if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}autoRun()},550)}
+  ["pointerup","pointercancel"].forEach(function(ev){window.addEventListener(ev,lpCancel,true)});
   window.__zpSingleBarStart=start;window.__zpSingleBarExit=exit;window.__zpSingleBarOn=function(){return SB.on};window.__zpSingleBarPeriod=function(){return SB.on?SB.period:null};window.__zpSingleBarOffset=function(){return SB.on?(SB.none?null:SB_OFFS[SB.oi]):null};window.__zpSingleBarNext=function(){if(SB.on)nextOffset()};
   /* 單桿開著：一二三招失效、抓牌單指捲動(視窗重排)停用 */
   if(typeof marksAllowed==="function"){const __oma=marksAllowed;marksAllowed=function(){if(SB.on)return false;return __oma.apply(this,arguments)};window.marksAllowed=marksAllowed}
@@ -4703,7 +4750,9 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     const back=t.closest("#period-btn");
     if(!SB.on){if(back&&now<SB.guardUntil){e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault()}return}
     if(t.closest("#float-save-btn")){/* 九宮鍵：單擊或雙擊＝換下一個九宮差(第一下立刻生效，0.35 秒內的第二下不再多換)；長按不動作 */e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();
-      if(ev==="click"){if(now-SB.tapAt<350){SB.tapAt=now;return}SB.tapAt=now;const bt=document.getElementById("float-save-btn");if(bt){bt.classList.add("tap-flash");setTimeout(function(){bt.classList.remove("tap-flash")},180)}nextOffset()}return}
+      if(ev==="pointerdown")lpStart();else if(ev==="touchend"||ev==="mouseup")lpCancel();/* 14:20 長按九宮＝單桿 1～18 期全部跑一次並統計 */
+      if(ev==="click"){if(SB.auto||now-SB.lpAt<900)return;/* 統計跑的途中、或長按放開的那一下，不換九宮差 */if(now-SB.tapAt<350){SB.tapAt=now;return}SB.tapAt=now;const bt=document.getElementById("float-save-btn");if(bt){bt.classList.add("tap-flash");setTimeout(function(){bt.classList.remove("tap-flash")},180)}nextOffset()}return}
+    if(t.closest("#zp-pick-col")){/* 14:20 單桿中註記欄不能操作(長按選號、雙擊取消都不作用) */e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();return}
     if(t.closest("#zhuapai-btn")||t.closest("#fullpage-btn")){/* 三層鍵、清除鍵 */e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();return}
     if(back){e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();
       if(ev==="click"){exit();SB.guardUntil=now+700;window.__slotTapGuardUntil=now+700;window.__slotTapGuardPerf=performance.now()+700;const bt=document.getElementById("period-btn");if(bt){bt.classList.add("tap-flash");setTimeout(function(){bt.classList.remove("tap-flash")},200)}}}
