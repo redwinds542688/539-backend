@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 13:23";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 14:00";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 14:00  九宮(單桿尋號)成立條件改成「第 17、18 期都要中，且兩期中的號碼不可以一樣」(原本 16/17/18 三期都要中)：兩期各至少中 1 個目標號碼，且能各挑一個不同的號碼；扣掉 16/17/18 期開過的號碼後至少剩 1 個預測號碼的規則不變。
    2026-09-26 13:23  全頁自動修復加強(使用者：「自動修復很重要」)：①全頁每次排版(window.refitFullPageSheet，含進入全頁、縮放放開、換彩券、網址列伸縮)一做完立刻校正；②開獎單拉伸設定被任何程式改動時，在畫面繪製前立刻校正(MutationObserver)；③原本每 0.3 秒的檢查保留當後備。模擬蘋果量法逐幀檢查：進入全頁從第一幀起就正確，壓扁一幀都不會露出。原本的全頁程式一字未動。
    2026-09-26 13:10  蘋果全頁壓扁找到原因：開獎單(#panels)在全頁有 CSS zoom(iPhone 17 約 0.59)，蘋果 Safari 量有 zoom 的元素時不把 zoom 算進去，高度量成約 1/zoom 倍，拉伸倍率就算小、開獎單被壓成約 0.59 倍(與使用者截圖吻合)。原本的自動校正也用同一種量法，在蘋果上一樣被騙。改成量沒有 zoom 的外框(暫時讓外框貼合內容、量完同一幀還原)取得開獎單實際高度；捲動範圍也改用這個量法。螢幕資訊另記「直接量」與 zoom 值以便在蘋果上驗證。
    2026-09-26 12:59  螢幕資訊改成進入全頁後自動回傳：進全頁、開獎單量測穩定(貼齊下紅線，必要時先自動校正)後 1.5 秒自動送出螢幕資訊＋全頁數據，不用按；每一版每支手機只送一次(送成功才記下，失敗下次進全頁再送)；開啟程式時不再送。
@@ -8180,7 +8181,11 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 2026-09-25 23:31 使用者更正「不是單桿的下三期，是畫面裡的 16/17/18 期皆有中號碼才算」：對照期固定＝畫面上第 16、17、18 期(最後 3 期)，不隨單桿移動 */
   function checkRows(){const g=grid();return[g.length-3,g.length-2,g.length-1].map(function(i){return i>=0?g[i]:null})}
   function isValid(oi){const tg=targetsFor(oi);if(!tg.length)return false;const rs=checkRows();
-    for(let k=0;k<3;k++){const row=rs[k];if(!row)return false;if(!row.some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0}))return false}
+    /* 2026-09-26 14:00 使用者指示「改成 17/18 二期都要中，且二期中的號碼不可以一樣」(原本 16/17/18 三期都要中)：
+       第 17、18 期(畫面固定位置)各至少中 1 個目標號碼，而且兩期中的號碼要能各挑一個「不同」的號碼(例：17 期只中 05、18 期也只中 05＝不成立；17 期中 05、18 期中 12＝成立；17 期中 05 和 12、18 期中 05＝成立) */
+    const hit=[1,2].map(function(k){const row=rs[k];if(!row)return null;const h=[];row.forEach(function(c){if(c.v!==null&&tg.indexOf(c.v)>=0&&h.indexOf(c.v)<0)h.push(c.v)});return h});
+    if(!hit[0]||!hit[1]||!hit[0].length||!hit[1].length)return false;
+    if(!hit[0].some(function(a){return hit[1].some(function(b){return a!==b})}))return false;
     /* 2026-09-26 02:43 使用者指示「預測號碼必須大於 0 號，否則依舊視為無效，直接跳過」：扣掉第 16/17/18 期開過的號碼後，至少要剩 1 個預測號碼才成立 */
     const below={};rs.forEach(function(row){row.forEach(function(c){if(c.v!==null)below[c.v]=true})});if(!tg.some(function(t){return !below[t]}))return false;
     return true}
