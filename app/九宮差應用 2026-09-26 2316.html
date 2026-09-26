@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 23:11";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 23:16";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 23:16  全頁拿掉左右兩條灰色邊線(3px)：它們蓋在開獎單上，最右一欄號碼被切掉一半、看起來像一條粗灰線(使用者 iPhone 17 回報)；上下的線不變。
    2026-09-26 23:11  存圖(印單/存檔)星期欄右邊的灰線修正(使用者 iPhone 17 回報「邊界有一條豎灰色線很粗」)：截圖程式自己排的版跟畫面有細微差距、越往右越偏，它畫的星期欄灰底偏出黑格線外；星期欄底色本來就由程式照畫面位置補畫，擷取時改成不讓截圖程式畫星期欄底色。
    2026-09-26 18:10  所有標定顯示拿掉光暈：暗色系原本給所有標定號碼(num-marked、C式自動比對格)加白色光暈，全部取消，字維持粗體。按鍵、開獎球等不是標定的陰影不動。
    2026-09-26 18:08  三層第一、二區第 6 期的共同號碼與十字差命中號碼(字色底色對調的滿格)拿掉白色光暈，暗色系下字不再糊成一團。
@@ -4857,6 +4858,8 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
   #fullpage-edge-line-left{ left:0; }
   #fullpage-edge-line-right{ right:0; }
   body.pinch-fullscreen-mode #fullpage-edge-line-left, body.pinch-fullscreen-mode #fullpage-edge-line-right{ display:block; }
+  /* 23:16 使用者用 iPhone 17 回報「全頁最右邊的邊界有一條豎灰色線很粗」：左右邊線(3px)蓋在開獎單上，最右一欄的號碼(39、38)被切掉一半、看起來像一條粗灰線。改成不顯示左右邊線，開獎單左右完整露出；上下的線不變 */
+  html body.pinch-fullscreen-mode #fullpage-edge-line-left, html body.pinch-fullscreen-mode #fullpage-edge-line-right{ display:none !important; }
   body.theme-dark #fullpage-edge-line-left, body.theme-dark #fullpage-edge-line-right{ background:#555; }
   /* 第114條(2026-09-10)：亮色系全頁四邊框線原本是白色(#fff)，跟白底開獎單同色、跟#e9e9e9灰底也幾乎沒差，四條線等於看不見。
      比照暗色系(#555線配#0a0a0a底)，亮色系四條線(上紅線外框底邊、頂部線、下紅線、左右邊線)統一改成#888中灰，白底/灰底上都看得清楚；
