@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 12:49";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-26 12:54";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-26 12:54  螢幕資訊回傳改成每一版只送一次：裝好新版後第一次開啟，開好 1 秒就送(送成功才記下，沒網路下次開啟再送)；取消每次開啟/切回來、畫面尺寸改變、全頁自動校正時的自動回傳。手動「立即回傳」照舊。
    2026-09-26 12:49  版本檢查與強制更新：開啟程式(及從背景切回來)時讀網站上最新檔案開頭的 APP_BUILD(只讀幾 KB)，比目前新就要求更新；「立即更新」先刪除原來的程式(註銷 service worker、刪除快取)再重新載入安裝新程式，標記與設定保留；更新後仍是舊版則改顯示刪除 App、重新加入主畫面的步驟(iPhone/Android 分開)，可「先用舊版」。只在網站上執行，直接開檔案不查。
    2026-09-26 12:43  螢幕資訊回傳改成一開啟程式就送：開啟後 4 秒一律回傳一次(不看有沒有改變、在不在首頁、直橫向)；App 從背景切回來也送(10 分鐘內不重複)。
    2026-09-26 12:41  螢幕資訊加「全頁」診斷數據：記下最近一次全頁的畫面高、開獎單頂、下紅線、紅線間距、開獎單高、拉伸倍率、自動校正次數與最後一次校正內容，顯示在設定→螢幕資訊，並隨回傳送出(回傳另加版本時間)；發生自動校正時自動回傳一次。
@@ -5503,11 +5504,11 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   window.addEventListener("load",function(){setTimeout(function(){ping(false).catch(function(){})},2000)});
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")setTimeout(function(){ping(false).catch(function(){})},1500)});/* 放在背景隔天再切回來也算一次 */
   var timer=null;function schedule(ms){clearTimeout(timer);timer=setTimeout(function(){send(false).catch(function(){})},ms)}
-  /* 2026-09-26 使用者指示「一開啟程式就要回傳」：開啟後 4 秒一律回傳一次(不管有沒有改變、在不在首頁)；App 從背景切回來也算開啟(10 分鐘內不重複) */
-  var lastOpenSend=0;function openSend(reason){lastOpenSend=Date.now();send(true,reason).catch(function(){})}
-  window.addEventListener("load",function(){setTimeout(function(){openSend("開啟程式")},4000)});
-  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&Date.now()-lastOpenSend>600000)setTimeout(function(){openSend("切回程式")},2000)});
-  window.addEventListener("resize",function(){schedule(3000)});
+  /* 2026-09-26 12:54 使用者指示「螢幕資訊不需要每一次都回傳，安裝新程式之後開啟的第一次立刻回傳就好」：
+     每一版(APP_BUILD)在每支手機只自動回傳一次＝裝好新版後第一次開啟，開好 1 秒就送；送成功才記下，沒網路送不出去下次開啟再送。
+     其他自動回傳(畫面尺寸改變、全頁自動校正、每次開啟/切回來)都取消；「設定→螢幕資訊→立即回傳」手動送照舊。 */
+  var BUILD_KEY="539_report_build";
+  window.addEventListener("load",function(){setTimeout(function(){var bd=window.APP_BUILD||"";if(!bd||lsGet(BUILD_KEY)===bd)return;send(true,"新版第一次開啟").then(function(r){if(r&&r.ok)lsSet(BUILD_KEY,bd)}).catch(function(){})},1000)});
   /* 設定選單加「螢幕資訊」(選單是開機時建好的；不用 paper-size-option 的點擊行為，只借它的外觀) */
   function textOf(i){var L=[];L.push("版本："+(window.APP_BUILD||"?"));/* 2026-09-26 螢幕資訊加顯示版本時間，確認手機上跑的是不是最新版 */L.push("程式："+i.app+"  "+i.v+"  （"+({app:"桌面App",web:"瀏覽器",file:"檔案"}[i.mode]||i.mode)+"）");
     L.push("型號："+(i.model||"(讀不到)")+(i.platform?"  "+i.platform+" "+(i.platformVersion||""):""));
@@ -5579,7 +5580,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     if(hOk&&pOk)return;
     const next=cur*target/pr.height;if(!(next>0.2&&next<5))return;
     D.fixes=(D.fixes||0)+1;D.last=D.t+" 開獎單高 "+r1(pr.height)+"→"+r1(target)+"、拉伸 "+cur.toFixed(4)+"→"+next.toFixed(4);save(true);
-    if(!sentThisLoad&&typeof window.__screenReportSend==="function"){sentThisLoad=true;setTimeout(function(){try{window.__screenReportSend(true,"全頁校正").catch(function(){})}catch(e){}},1500)}/* 發生校正時自動回傳一次(含全頁數據) */
+    /* 全頁校正不再自動回傳(使用者指示只在新版第一次開啟時回傳)；數據記在螢幕資訊，可手動「立即回傳」 */
     P.style.transformOrigin="top left";P.style.transform="scaleY("+next.toFixed(5)+")";S.style.height=Math.round(target)+"px";
     if(typeof applyPageZoom==="function")applyPageZoom();
     if(typeof logEvent==="function")try{logEvent("全頁高度校正","開獎單高 "+pr.height.toFixed(1)+" → 紅線間 "+target.toFixed(1)+"，scaleY "+cur.toFixed(4)+" → "+next.toFixed(4))}catch(e){}
