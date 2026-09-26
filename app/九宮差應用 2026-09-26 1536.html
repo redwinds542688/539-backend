@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 15:28";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-26 15:36";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-26 15:36  長按九宮統計改回單桿跑第 1～18 期(撤回 15:28 只跑 17、18 期)。
    2026-09-26 15:28  長按九宮統計改成單桿只跑第 17、18 期(原本第 1～18 期)，統計與名次規則不變。
    2026-09-26 14:23  單桿統計：①進入單桿時註記欄的號碼也隱藏(單桿中註記欄不能操作)，離開單桿才恢復；②單桿初始改在第 16 期；③長按「九宮」0.55 秒＝單桿從第 1 期跑到第 18 期，每期逐一顯示成立的九宮差(單桿移動、標定、第 19 列預測號碼、九宮差欄位＝搜尋動畫)，統計每個預測號碼出現次數，註記欄即時顯示前二名(同次數同名次；前二名合計小於等於 2 個號碼再加第三名)，右上角紅字＝次數；跑完單桿回原位；途中拖曳單桿＝中斷，返回＝離開並清掉統計。
    2026-09-26 14:05  九宮預測號碼扣除改成只扣第 17、18 期開過的號碼(原本扣 16/17/18)：成立條件「扣完至少剩 1 個」與第 19 期顯示的預測號碼都照此計算。
@@ -8274,8 +8275,8 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   (function watchCol(){const col=colEl();if(!col){setTimeout(watchCol,500);return}new MutationObserver(function(){if(SB.on&&SB.stats&&SB.stats.list.length&&!col.querySelector(".zp-sb-stat"))renderStats()}).observe(col,{childList:true})})();
   function autoRun(){if(!SB.on||SB.auto)return;cancelRun();const token=SB.runToken;SB.auto=true;const p0=SB.period;const cnt={};SB.stats={cnt:cnt,list:[]};renderStats();
     const bt=document.getElementById("float-save-btn");if(bt)bt.classList.add("shot-lit");
-    if(typeof logEvent==="function")try{logEvent("單桿統計","長按九宮：單桿跑第 17、18 期")}catch(e){}
-    const plan=[17,18];/* 15:28 使用者指示「長按九宮統計改成搜尋 17 到 18」：單桿只跑第 17、18 期(原本 1～18 期) */let pi=0,list=null,li=0;
+    if(typeof logEvent==="function")try{logEvent("單桿統計","長按九宮：單桿第 1～18 期全部跑一次")}catch(e){}
+    const plan=[];for(let p=1;p<=18;p++)plan.push(p);/* 15:36 使用者指示改回跑第 1～18 期(15:28 曾改成只跑 17、18 期) */let pi=0,list=null,li=0;
     function finish(ok){SB.auto=false;if(bt)bt.classList.remove("shot-lit");if(!ok)return;
       SB.period=p0;update(true);runSearch(0);renderStats();
       if(typeof logEvent==="function")try{logEvent("單桿統計","結果："+SB.stats.list.map(function(it){return String(it.v).padStart(2,"0")+"×"+it.c}).join("、"))}catch(e){}}
