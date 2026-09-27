@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 11:01";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 11:18";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 11:18  ①全頁標定外框照格子大小等比例變細(全頁格寬÷抓牌格寬，最細 0.4 倍；放大到跟抓牌一樣大時就是 1.5px)。②標定、中獎、預測號碼全部改成淺框＋淺底＋深字(使用者指示，不用光暈)：標定＝淺粉底#FBC0C0＋淺藍框#93BFF5＋深棕近黑字#2B1F00；三層十字差命中＝淺藍底#C2DBFA＋藍框#93BFF5＋深藍字#0E2263(原本深藍底)；三層第6期中獎與第三區預測號碼＝淺黃底#FFE47F＋金框#FFCC1A＋深棕近黑字(原本深棕底)。每台手機自動換一次新預設框色。
    2026-09-27 11:01  版本檢查改成一啟動程式立刻檢查(原本等畫面載完再過 3 秒)；切回程式(超過 10 分鐘)與開著每 30 分鐘的檢查不變。
    2026-09-27 11:00  修正「第二招標最後一期→下捲一期→按三層，第三區倒數第二期(最後開獎那期)沒有號碼」：手指拖動回看時進入第 19 格的號碼會淡出(透明度 0)，放手後第 19 列蓋成空白期時把「透明的號碼」存起來，之後還原、三層複製都變成看不見的號碼(離開三層回抓牌也一樣)。改成存號碼時拿掉透明度、還原時與三層複製時也一律拿掉。
    2026-09-27 10:49  標定號碼字色再加深(使用者：淺底色且數字要清楚，不可用光暈)：字色由深金#6B5200(對比4.7)改成深棕近黑#2B1F00(對比10.3)，底色維持淺粉#FBC0C0、深藍框#16389B，不加光暈；亮色系、暗色系一致；每台手機再自動換一次新預設(之後自己點選的顏色照常保留)。
@@ -1980,7 +1981,13 @@ body.zp-sanceng table.road td.num.zp-sc-key{ box-shadow:inset calc(1.5px * var(-
    跟c-mode-cha-echo-cell同一套反轉配色(框色當底、底色當框)，一眼分得出哪個是標的、哪個是搜尋結果 */
 table.road td.num.num-marked.num-marked-click.zp-sc-triple-hit::before{ background:var(--mark-frame-color, #2ECC71) !important; border:1.4px solid var(--mark-bg-color, #FF3B3B) !important; }
 /* 2026-09-27 標定底色改淺粉、字改深金後：亮色系三層命中格(框色深藍當底)字改用底色(淺粉)，深藍底配淺粉字才看得清楚；暗色系框色本來是淺藍，維持原本字色 */
-body:not(.theme-dark) table.road td.num.num-marked.num-marked-click.zp-sc-triple-hit, body:not(.theme-dark) table.road td.num.num-marked.num-marked-click.zp-sc-triple-hit .cell-shift{ color:var(--mark-bg-color, #FBC0C0) !important; -webkit-text-fill-color:var(--mark-bg-color, #FBC0C0) !important; }
+/* 2026-09-27 使用者指示「標定號碼、中獎號碼、預測號碼的外框需淺色、底色需淺色、字要看得很明顯」(不用光暈)：
+   ・標定號碼：淺粉底#FBC0C0＋淺藍框#93BFF5＋深棕近黑字#2B1F00(預設色，設定裡可改)
+   ・三層十字差命中(原本框色當底的反轉格)：淺藍底#C2DBFA＋藍框#93BFF5＋深藍字#0E2263
+   ・三層第 6 期中獎(十字差命中、共同號碼)與第三區預測號碼(原本深底反轉格)：淺黃底#FFE47F＋金框#FFCC1A＋深棕近黑字#2B1F00
+   做法：在這幾種格子上直接換掉顏色變數(原本的規則、外框、截圖補畫都照變數走，不會出現兩套顏色)；字色只設在格子上，截圖時藏字的規則照常有效(不會重影) */
+html body table.road td.num.num-marked.num-marked-click.zp-sc-triple-hit{ --mark-frame-color:#C2DBFA; --mark-bg-color:#93BFF5; --mark-text-color:#0E2263; color:#0E2263 !important; }
+html body table.road td.num.num-marked.num-marked-drag.zp-sc-cross6, html body table.road td.num.num-marked.num-marked-drag.zp-sc-common6{ --mark-text-color:#FFE47F; --mark-bg-color:#2B1F00; --mark-frame-color:#FFCC1A; }
 #zp-sc-frames{ position:fixed; inset:0; z-index:0; pointer-events:none; }
 .zp-sc-frame{ position:absolute; box-sizing:border-box; border:1px solid #c62828; pointer-events:none; }/* 2026-09-22 使用者回報「外框呢」：底色框在亮色系看不見，改紅框；粗細1px */
 /* 2026-09-22 使用者指示：每區第6期(最後一列)改用底色標示(比外框明顯)，用「線色組1」(--mark-line-color色系PALETTE_GREEN最淺那格#E6F7EC)填底色，見render()裡的zp-sc-last-row。
@@ -4184,8 +4191,8 @@ const PALETTE_GRAY=["#F2F2F2","#E0E0E0","#CCCCCC","#B3B3B3","#999999","#7A7A7A",
 const PALETTE_RED=["#FDE3E3","#FBC0C0","#F79595","#F26A6A","#EE4444","#E02424","#B81C1C","#8C1515","#5E0E0E"];
 const PALETTE_BLUE=["#E4EFFD","#C2DBFA","#93BFF5","#64A2F0","#3B82F6","#2563EB","#1D4FD1","#16389B","#0E2263"];
 const PALETTE_YELLOW=["#FFF8DB","#FFEFAF","#FFE47F","#FFD84D","#FFCC1A","#E6B200","#BF9400","#997600","#2B1F00"];
-const PALETTE_ATTRS=[{key:"--mark-frame-color",label:"框色",def:"#16389B",colors:PALETTE_BLUE},{key:"--mark-bg-color",label:"底色",def:"#FBC0C0",colors:PALETTE_RED},/* 2026-08-30：框色與底色的色系互換(框色→藍系、底色→紅系)，預設值也跟著換 */{key:"--mark-text-color",label:"字色",def:"#2B1F00",colors:PALETTE_YELLOW},{key:"--mark-line-color",label:"線色",def:"#2ECC71",colors:PALETTE_GREEN},{key:"--mark-predict-color",label:"拖曳",def:"#999999",colors:PALETTE_GRAY}]/* 2026-08-30：字色與拖曳的色系互換(字色→黃系、拖曳→綠系)。2026-09-06：使用者指示——線色與拖曳的色系再互換(線色→綠系、拖曳→灰系)，預設值也跟著換 */;
-const PALETTE_STORAGE_PREFIX="539_palette_";/* 2026-09-27 使用者指示「標定號碼底色太深，改淺但要最清楚」：亮色系預設改成淺粉底#FBC0C0＋深金字#6B5200(對比約4.5，字加粗)＋深藍框#16389B(淺底靠深框跟白格分開；暗色系本來就是淺粉底深金字)。每台手機只做一次：清掉以前存的底色/字色/框色改用新預設，之後自己在設定點選的顏色照常保留 */(function(){const FLAG="539_palette_reset_20260927b";try{if(localStorage.getItem(FLAG))return}catch(e){return}["--mark-bg-color","--mark-text-color","--mark-frame-color"].forEach(function(k){try{localStorage.removeItem("539_palette_"+k)}catch(e){}try{if(typeof saveSettingToDB==="function")saveSettingToDB("539_palette_"+k,"").catch(function(){})}catch(e){}});try{localStorage.setItem(FLAG,"1")}catch(e){}})();
+const PALETTE_ATTRS=[{key:"--mark-frame-color",label:"框色",def:"#93BFF5",colors:PALETTE_BLUE},{key:"--mark-bg-color",label:"底色",def:"#FBC0C0",colors:PALETTE_RED},/* 2026-08-30：框色與底色的色系互換(框色→藍系、底色→紅系)，預設值也跟著換 */{key:"--mark-text-color",label:"字色",def:"#2B1F00",colors:PALETTE_YELLOW},{key:"--mark-line-color",label:"線色",def:"#2ECC71",colors:PALETTE_GREEN},{key:"--mark-predict-color",label:"拖曳",def:"#999999",colors:PALETTE_GRAY}]/* 2026-08-30：字色與拖曳的色系互換(字色→黃系、拖曳→綠系)。2026-09-06：使用者指示——線色與拖曳的色系再互換(線色→綠系、拖曳→灰系)，預設值也跟著換 */;
+const PALETTE_STORAGE_PREFIX="539_palette_";/* 2026-09-27 使用者指示「標定號碼底色太深，改淺但要最清楚」：亮色系預設改成淺粉底#FBC0C0＋深金字#6B5200(對比約4.5，字加粗)＋深藍框#16389B(淺底靠深框跟白格分開；暗色系本來就是淺粉底深金字)。每台手機只做一次：清掉以前存的底色/字色/框色改用新預設，之後自己在設定點選的顏色照常保留 */(function(){const FLAG="539_palette_reset_20260927c";try{if(localStorage.getItem(FLAG))return}catch(e){return}["--mark-bg-color","--mark-text-color","--mark-frame-color"].forEach(function(k){try{localStorage.removeItem("539_palette_"+k)}catch(e){}try{if(typeof saveSettingToDB==="function")saveSettingToDB("539_palette_"+k,"").catch(function(){})}catch(e){}});try{localStorage.setItem(FLAG,"1")}catch(e){}})();
 /* 2026-09-23 使用者指示：新版配色要所有手機一致——每台手機只做一次，把以前在設定裡點選存下的底色/字色/框色清掉(本機儲存與本機資料庫兩份都清)，改用新預設；清完記一個標記，之後再手動點選的顏色照常保留 */
 (function(){const FLAG="539_palette_reset_20260923";try{if(localStorage.getItem(FLAG))return}catch(e){return}["--mark-bg-color","--mark-text-color","--mark-frame-color"].forEach(function(k){try{localStorage.removeItem(PALETTE_STORAGE_PREFIX+k)}catch(e){}try{saveSettingToDB(PALETTE_STORAGE_PREFIX+k,"").catch(function(){})}catch(e){}});try{localStorage.setItem(FLAG,"1")}catch(e){}})();
 function readSavedPaletteColor(attr){try{return localStorage.getItem(PALETTE_STORAGE_PREFIX+attr.key)}catch(e){return null}}
@@ -5510,7 +5517,7 @@ boot().catch(function(e){console.error("boot失敗",e)});
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",check);else check();
 })();</script>
 <script>/* 2026-09-24 23:29 標定號碼外框 1.5px 用：量每張開獎單(table.road)「CSS px ÷ 畫面 px」的橫、直比例，寫到 --fx／--fy(外框寬＝1.5px×比例＝畫面上 1.5px)。每 0.25 秒、視窗改變、畫面切換時量；數值沒變就不寫，避免多餘重繪 */(function(){
-  function upd(){try{document.querySelectorAll("table.road").forEach(function(t){const r=t.getBoundingClientRect();if(!(r.width>0&&r.height>0&&t.offsetWidth>0&&t.offsetHeight>0))return;const fx=t.offsetWidth/r.width,fy=t.offsetHeight/r.height;if(!isFinite(fx)||!isFinite(fy))return;
+  function upd(){try{document.querySelectorAll("table.road").forEach(function(t){const r=t.getBoundingClientRect();if(!(r.width>0&&r.height>0&&t.offsetWidth>0&&t.offsetHeight>0))return;let fx=t.offsetWidth/r.width,fy=t.offsetHeight/r.height;if(!isFinite(fx)||!isFinite(fy))return;/* 2026-09-27 使用者選「全頁外框照格子大小縮」：全頁格子比抓牌小，外框照「全頁格寬÷抓牌格寬」等比例變細(最細 0.4 倍，放大到跟抓牌一樣大就是 1.5px) */if(document.body.classList.contains("pinch-fullscreen-mode")){const c0=t.querySelector("td.num");const cw=c0?c0.getBoundingClientRect().width:0;const ref=Math.min(window.innerWidth,window.innerHeight)*0.1376;if(cw>0&&ref>0){const k=Math.max(0.4,Math.min(1,cw/ref));fx*=k;fy*=k}}
     const ox=parseFloat(t.style.getPropertyValue("--fx"))||0,oy=parseFloat(t.style.getPropertyValue("--fy"))||0;if(Math.abs(ox-fx)>0.0005*fx||Math.abs(oy-fy)>0.0005*fy){t.style.setProperty("--fx",fx.toFixed(4));t.style.setProperty("--fy",fy.toFixed(4))}})}catch(e){}}
   let q=0;function sch(){if(q)return;q=requestAnimationFrame(function(){q=0;upd()})}
   window.__frame15Update=upd;setInterval(sch,250);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
