@@ -2,11 +2,28 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* 2026-09-27 使用者指示「(自動調整)都只在手機上執行」：手機/平板＝Android、iPhone、iPad(含偽裝成 Mac 的 iPad)、UA 帶 Mobile；電腦不算 */window.__isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));if(window.__isMobile)document.documentElement.classList.add("is-mobile");</script>
+<script>/* 2026-09-27 使用者指示「(自動調整)都只在手機上執行」：手機/平板＝Android、iPhone、iPad(含偽裝成 Mac 的 iPad)、UA 帶 Mobile；電腦不算 */window.__isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));if(window.__isMobile)document.documentElement.classList.add("is-mobile");
+/* 2026-09-27 使用者指示「電腦/筆電照方式1：把程式當成一支 18高:9寬 的直立手機放在畫面中間；左右空白以後可以出租廣告」：
+   電腦開啟時，外層只留一個「中間欄」(寬＝視窗高÷2，高＝視窗高；視窗太窄時寬＝視窗寬)，程式本體在中間欄裡以手機直立的方式執行(網址加 dt=1)，
+   跟手機上看到的完全一樣、不捲動；左右兩塊空白(#dt-left、#dt-right)預留給廣告。外層不執行程式本體(不重複連線、不重複檢查版本) */
+(function(){try{
+  if(/[?&]dt=1(&|$)/.test(location.search)){window.__isMobile=true;window.__dtEmbed=true;document.documentElement.classList.add("is-mobile","dt-embed");return}
+  if(window.__isMobile||window.top!==window.self)return;
+  document.write('<plaintext style="display:none">');/* 外層後面的程式碼一律當成文字，不執行(外層只當畫框) */
+  document.addEventListener("DOMContentLoaded",function(){
+  var src=location.href.replace(/#.*$/,"");src+=(src.indexOf("?")>=0?"&":"?")+"dt=1";var dark=false;try{dark=localStorage.getItem("539_theme")==="dark"}catch(e){}
+  var bg=dark?"#121212":"#e9e9e9",side=dark?"#1a1a1a":"#f3f3f3";
+  document.documentElement.innerHTML='<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>抓539</title><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><style>html,body{margin:0;height:100%;background:'+bg+';overflow:hidden}#dt-app{position:absolute;top:0;border:0;height:100%;background:#fff;box-shadow:0 0 14px rgba(0,0,0,.25)}#dt-left,#dt-right{position:absolute;top:0;bottom:0;background:'+side+';overflow:hidden}</style></head><body><div id="dt-left"></div><iframe id="dt-app" allow="clipboard-write" title="抓539"></iframe><div id="dt-right"></div></body>';
+  var fr=document.getElementById("dt-app"),L=document.getElementById("dt-left"),R=document.getElementById("dt-right");
+  function lay(){var H=window.innerHeight,W=window.innerWidth;var w=Math.min(W,Math.round(H/2));var x=Math.round((W-w)/2);fr.style.width=w+"px";fr.style.left=x+"px";L.style.left="0";L.style.width=x+"px";R.style.left=(x+w)+"px";R.style.width=Math.max(0,W-x-w)+"px"}
+  lay();window.addEventListener("resize",lay);fr.src=src;
+  });
+}catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 16:32";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 16:42";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 16:42  電腦/筆電改成方式1(使用者指示「照這樣做，以後電腦左右空白或許可以出租廣告使用」)：電腦開啟時畫面中間放一欄 18高:9寬 的「直立手機」(寬＝視窗高÷2，高＝視窗高)，程式本體在這一欄裡以手機直立方式執行，跟手機看到的完全一樣、不捲動；左右兩塊空白(#dt-left、#dt-right)預留給廣告。外層只當畫框，不執行程式本體(不重複連線、不重複檢查版本)。手機/平板不受影響。
    2026-09-27 16:32  手機以 18高:9寬 為準、平板不壓縮(使用者指示)：直立時螢幕高÷寬 ≥ 1.7(手機 16:9～20:9)照舊塞滿一個畫面；高÷寬 < 1.7(平板約 13:9)時，抓牌/三層/單桿照 18:9 的高度(寬×2)排，格子形狀同 18:9 手機，不足的部分往下捲；首頁也不壓縮，改用捲動(底部留白讓最後一列捲到按鍵上方)。
    2026-09-27 16:23  手機/平板直立盡可能不捲動(使用者指示「把持程式畫面的完整性」)：①首頁開獎單寬度照舊填滿，高度自動壓縮到剛好塞進一個畫面(最後一列在抓牌/結束按鍵上方)，取消首頁底部捲動留白；進抓牌/全頁/印單時先還原、回首頁再套用，壓縮比例記在手機裡；②抓牌/三層/單桿直立時鎖住整頁捲動(原本多出十幾 px 可輕微捲動)。橫放、電腦(方式2)照舊可捲動。
    2026-09-27 16:13  排版規則統一(使用者指示「所有設備與系統都以寬度優先；手機/平板直立時方式1(塞滿一個畫面、不捲動)，手機/平板橫放與電腦/筆電採方式2」)：方式2＝寬度填滿畫面，高度照固定格子比例 寬1.5：高1(使用者認定最佳，實量149.6×99.4)，放不下就整頁往下捲(排版完成後再量實際格子校正比例與捲動高度)；手機/平板橫放不再蓋「請轉為直向」提示；另修正電腦/寬螢幕進抓牌時第一顆鍵(三層)停在首頁位置、跟截圖鍵重疊。
