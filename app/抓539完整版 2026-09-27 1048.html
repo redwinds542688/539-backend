@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 09:59";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 10:48";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 10:48  ①標定號碼預設改淺色(使用者：底色太深，改淺但要最清楚)：亮色系淺粉底#FBC0C0＋深金字#6B5200＋深藍框#16389B(同暗色系配色)，每台手機自動換一次新預設，之後自己在設定點選的顏色照常保留；亮色系三層命中格(深藍底)字改淺粉才看得清楚。②新版檢查加上：程式一直開在前面時每 30 分鐘自動檢查一次。
    2026-09-27 09:59  更新流程再補強：下載新程式最多等 8 秒(網路卡住時不會停在「正在下載新程式…」)，之後照樣進入重新開啟／卡住時顯示「重新開啟程式」鍵。
    2026-09-27 09:50  更新流程修正(使用者回報「按立即更新後畫面停在『正在安裝新程式…』不會消失，也不知道有沒有更新完畢」)：①先把新程式下載好並顯示下載到的版本，再重新開啟；②8 秒後畫面還沒換＝手機沒自動重新開啟，按鍵改成「重新開啟程式」並說明可把程式完全關閉再打開；③更新完成改成跳出「更新完成＋版本」視窗(原本只有 3.5 秒小提示)。
    2026-09-27 01:34  全部連線(第三招、三層十字差綠線、三層第6期紅線、C式/E式各種連線，含存圖)由 2px 改為 3px(使用者指示)；標定號碼外框維持 1.5px。
@@ -1975,6 +1976,8 @@ body.zp-sanceng table.road td.num.zp-sc-key{ box-shadow:inset calc(1.5px * var(-
 /* 2026-09-22 使用者指示：08(起始標的)用一般配色的定點方框(zp-sc-key，上面那條)；搜尋邏輯找出的號碼要顯示相反色，
    跟c-mode-cha-echo-cell同一套反轉配色(框色當底、底色當框)，一眼分得出哪個是標的、哪個是搜尋結果 */
 table.road td.num.num-marked.num-marked-click.zp-sc-triple-hit::before{ background:var(--mark-frame-color, #2ECC71) !important; border:1.4px solid var(--mark-bg-color, #FF3B3B) !important; }
+/* 2026-09-27 標定底色改淺粉、字改深金後：亮色系三層命中格(框色深藍當底)字改用底色(淺粉)，深藍底配淺粉字才看得清楚；暗色系框色本來是淺藍，維持原本字色 */
+body:not(.theme-dark) table.road td.num.num-marked.num-marked-click.zp-sc-triple-hit, body:not(.theme-dark) table.road td.num.num-marked.num-marked-click.zp-sc-triple-hit .cell-shift{ color:var(--mark-bg-color, #FBC0C0) !important; -webkit-text-fill-color:var(--mark-bg-color, #FBC0C0) !important; }
 #zp-sc-frames{ position:fixed; inset:0; z-index:0; pointer-events:none; }
 .zp-sc-frame{ position:absolute; box-sizing:border-box; border:1px solid #c62828; pointer-events:none; }/* 2026-09-22 使用者回報「外框呢」：底色框在亮色系看不見，改紅框；粗細1px */
 /* 2026-09-22 使用者指示：每區第6期(最後一列)改用底色標示(比外框明顯)，用「線色組1」(--mark-line-color色系PALETTE_GREEN最淺那格#E6F7EC)填底色，見render()裡的zp-sc-last-row。
@@ -4178,8 +4181,8 @@ const PALETTE_GRAY=["#F2F2F2","#E0E0E0","#CCCCCC","#B3B3B3","#999999","#7A7A7A",
 const PALETTE_RED=["#FDE3E3","#FBC0C0","#F79595","#F26A6A","#EE4444","#E02424","#B81C1C","#8C1515","#5E0E0E"];
 const PALETTE_BLUE=["#E4EFFD","#C2DBFA","#93BFF5","#64A2F0","#3B82F6","#2563EB","#1D4FD1","#16389B","#0E2263"];
 const PALETTE_YELLOW=["#FFF8DB","#FFEFAF","#FFE47F","#FFD84D","#FFCC1A","#E6B200","#BF9400","#997600","#6B5200"];
-const PALETTE_ATTRS=[{key:"--mark-frame-color",label:"框色",def:"#16389B",colors:PALETTE_BLUE},{key:"--mark-bg-color",label:"底色",def:"#8C1515",colors:PALETTE_RED},/* 2026-08-30：框色與底色的色系互換(框色→藍系、底色→紅系)，預設值也跟著換 */{key:"--mark-text-color",label:"字色",def:"#FFF8DB",colors:PALETTE_YELLOW},{key:"--mark-line-color",label:"線色",def:"#2ECC71",colors:PALETTE_GREEN},{key:"--mark-predict-color",label:"拖曳",def:"#999999",colors:PALETTE_GRAY}]/* 2026-08-30：字色與拖曳的色系互換(字色→黃系、拖曳→綠系)。2026-09-06：使用者指示——線色與拖曳的色系再互換(線色→綠系、拖曳→灰系)，預設值也跟著換 */;
-const PALETTE_STORAGE_PREFIX="539_palette_";
+const PALETTE_ATTRS=[{key:"--mark-frame-color",label:"框色",def:"#16389B",colors:PALETTE_BLUE},{key:"--mark-bg-color",label:"底色",def:"#FBC0C0",colors:PALETTE_RED},/* 2026-08-30：框色與底色的色系互換(框色→藍系、底色→紅系)，預設值也跟著換 */{key:"--mark-text-color",label:"字色",def:"#6B5200",colors:PALETTE_YELLOW},{key:"--mark-line-color",label:"線色",def:"#2ECC71",colors:PALETTE_GREEN},{key:"--mark-predict-color",label:"拖曳",def:"#999999",colors:PALETTE_GRAY}]/* 2026-08-30：字色與拖曳的色系互換(字色→黃系、拖曳→綠系)。2026-09-06：使用者指示——線色與拖曳的色系再互換(線色→綠系、拖曳→灰系)，預設值也跟著換 */;
+const PALETTE_STORAGE_PREFIX="539_palette_";/* 2026-09-27 使用者指示「標定號碼底色太深，改淺但要最清楚」：亮色系預設改成淺粉底#FBC0C0＋深金字#6B5200(對比約4.5，字加粗)＋深藍框#16389B(淺底靠深框跟白格分開；暗色系本來就是淺粉底深金字)。每台手機只做一次：清掉以前存的底色/字色/框色改用新預設，之後自己在設定點選的顏色照常保留 */(function(){const FLAG="539_palette_reset_20260927";try{if(localStorage.getItem(FLAG))return}catch(e){return}["--mark-bg-color","--mark-text-color","--mark-frame-color"].forEach(function(k){try{localStorage.removeItem("539_palette_"+k)}catch(e){}try{if(typeof saveSettingToDB==="function")saveSettingToDB("539_palette_"+k,"").catch(function(){})}catch(e){}});try{localStorage.setItem(FLAG,"1")}catch(e){}})();
 /* 2026-09-23 使用者指示：新版配色要所有手機一致——每台手機只做一次，把以前在設定裡點選存下的底色/字色/框色清掉(本機儲存與本機資料庫兩份都清)，改用新預設；清完記一個標記，之後再手動點選的顏色照常保留 */
 (function(){const FLAG="539_palette_reset_20260923";try{if(localStorage.getItem(FLAG))return}catch(e){return}["--mark-bg-color","--mark-text-color","--mark-frame-color"].forEach(function(k){try{localStorage.removeItem(PALETTE_STORAGE_PREFIX+k)}catch(e){}try{saveSettingToDB(PALETTE_STORAGE_PREFIX+k,"").catch(function(){})}catch(e){}});try{localStorage.setItem(FLAG,"1")}catch(e){}})();
 function readSavedPaletteColor(attr){try{return localStorage.getItem(PALETTE_STORAGE_PREFIX+attr.key)}catch(e){return null}}
@@ -5824,6 +5827,8 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
       if(typeof logEvent==="function")try{logEvent("版本檢查","目前 "+LOCAL+"，GitHub 最新 "+remote+"，要求更新")}catch(e){}
     }catch(e){}finally{busy=false}}
   window.__appUpdateCheck=check;
+  /* 2026-09-27 使用者指示「更新檢查可以一起附上」：程式一直開在前面時，每 30 分鐘也自動檢查一次(背景中不查，切回來照原本規則) */
+  setInterval(function(){if(document.visibilityState==="visible")check()},1800000);
   window.addEventListener("load",function(){setTimeout(check,3000)});
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&Date.now()-lastCheck>600000)setTimeout(check,1500)});
 })();</script>
