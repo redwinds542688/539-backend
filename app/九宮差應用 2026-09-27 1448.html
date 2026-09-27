@@ -5,12 +5,13 @@
 <script>/* 2026-09-27 使用者指示「(自動調整)都只在手機上執行」：手機/平板＝Android、iPhone、iPad(含偽裝成 Mac 的 iPad)、UA 帶 Mobile；電腦不算 */window.__isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));</script>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 14:41";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 14:48";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-27 14:48  第 19 格自動調整(使用者三星手機回報「抓牌第十九格顯示在底下五顆按鍵的下面」，指示格子也要自動調整；只在手機執行)：抓牌/回看/三層排好後量畫面第 19 格(三層為標題下第 18 列號碼列)的下緣與底部按鍵上緣，被按鍵蓋到就把開獎單直向倍率等比例壓縮到剛好露出；空間夠了再放回，最多回到原本大小；手指按著時不調整。一般手機(沒被蓋到)完全不動。
    2026-09-27 14:41  自動調整都只在手機上執行(使用者指示)：號碼破格保護、號碼大小自動算(--num-scale)、按鍵文字自動放大、全頁高度自動校正，電腦上一律不執行(Android、iPhone、iPad 照常)。
    2026-09-27 14:38  號碼破格自動保護(使用者 iPhone 回報「全頁正常，進入抓牌號碼破格」，指示「進入任何畫面都自動調整，不會讓號碼破格」)：每張開獎單量號碼實際大小跟格子大小(同一套畫面量法，蘋果縮放量測誤差互相抵消)，寬超過格寬 86% 或高超過格高 90% 就自動等比例縮小，空間夠了再恢復到原本大小；切換畫面、換彩種、尺寸改變、字型載入時與每 1 秒檢查。正常畫面不受影響。
    2026-09-27 11:57  印單不畫任何標記(使用者指示「印單所有標記都不需要畫上去，全頁裡的截圖才需要」)：標定/衍生/中獎/預測格不補塗底色、不畫外框、字一律黑色，註記(第四招)選的號碼也不畫，只存乾淨開獎單(一律亮色系)；取消 11:40 印單補畫外框。全頁截圖照畫面(含標記)不變。
@@ -9415,5 +9416,35 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();</script>
 <style>/* 號碼破格保護用：--num-fit 只在需要時設在該張開獎單上(平常沒有＝1 倍) */table.road td.num > .cell-shift{ font-size:calc(100% * var(--num-fit, 1)); }</style>
+<script>/* 2026-09-27 使用者回報(三星手機)「抓牌第十九格顯示在底下五顆按鍵的下面」並要求「格子也改為自動調整」(只在手機上執行)：
+   抓牌／三層畫面排好後量「第 19 列(最後一期空白期)的下緣」跟「底部按鍵的上緣」，第 19 列被按鍵蓋到就把開獎單的直向倍率等比例壓縮，讓第 19 列剛好完整露在按鍵上方(第 20 列本來就藏在按鍵下面，不動)。
+   時機：開獎單排版一改變就在畫面畫出來前校正(不會先看到被蓋再跳)，另外每 0.4 秒、轉向、網址列/工具列伸縮時檢查。 */
+(function(){
+  if(!window.__isMobile)return;
+  const BTN_IDS=["zhuapai-btn","float-back-btn","float-save-btn","fullpage-btn","period-btn"];
+  function btnTop(){let t=Infinity;BTN_IDS.forEach(function(id){const e=document.getElementById(id);if(!e)return;const r=e.getBoundingClientRect();if(r.width>0&&r.height>0)t=Math.min(t,r.top)});return t}
+  let base=null,lastSet=null,down=false;
+  function fix(){try{const b=document.body.classList;if(down||!b.contains("zhuapai-mode")||!b.contains("recent-only-mode")||b.contains("zp-land-scroll")||b.contains("pinch-fullscreen-mode"))return;
+    const P=document.getElementById("panels");if(!P)return;const tf=P.style.transform||"";const m=/scale\(\s*([-\d.e]+)\s*,\s*([-\d.e]+)\s*\)/.exec(tf);if(!m)return;const sy=parseFloat(m[2]);if(!(sy>0))return;
+    if(lastSet===null||Math.abs(sy-lastSet)>1e-4*sy)base=sy;/* 倍率被別的程式重算過(換畫面、換彩種…)＝新的原始倍率 */
+    const top=btnTop();if(!isFinite(top))return;
+    /* 第 19 格＝畫面上由上往下第 19 列(回看捲動時也一樣是這個位置) */
+    const rows=Array.prototype.filter.call(P.querySelectorAll("table.road tr"),function(r){if(!r.querySelector("td.num")||r.style.display==="none")return false;const pn=r.closest(".panel");if(pn&&pn.style.display==="none")return false;const q=r.getBoundingClientRect();return q.height>0&&q.top>=-1&&q.top<window.innerHeight});
+    rows.sort(function(a,b){return a.getBoundingClientRect().top-b.getBoundingClientRect().top});const idx=b.contains("zp-sanceng")?17:18;/* 三層第 1 格是「三層段落」標題列(沒有號碼格)，號碼列從第 2 格開始 */if(rows.length<idx+1)return;
+    const rb=rows[idx].getBoundingClientRect().bottom;const pt=P.getBoundingClientRect().top;if(rb-pt<=0)return;
+    let k=(top-pt)/(rb-pt);let ns=Math.min(base,sy*k);/* 最多回到原本大小，不會放得比原本大 */
+    if(Math.abs(ns-sy)<5e-4*sy||!(ns>base*0.6))return;
+    P.style.transform=tf.replace(m[0],"scale("+m[1]+", "+ns.toFixed(5)+")");lastSet=parseFloat(ns.toFixed(5));
+    window.__row19Fix={t:new Date().toLocaleTimeString("zh-TW",{hour12:false}),btnTop:Math.round(top),row19Bottom:Math.round(rb),scaleY:+ns.toFixed(4),base:+base.toFixed(4)};
+    if(typeof logEvent==="function")try{logEvent("第19列校正","第19列下緣 "+rb.toFixed(1)+"，按鍵上緣 "+top.toFixed(1)+"，直向倍率 "+sy.toFixed(4)+" → "+ns.toFixed(4))}catch(e){}
+  }catch(e){}}
+  document.addEventListener("pointerdown",function(){down=true},true);["pointerup","pointercancel"].forEach(function(n){document.addEventListener(n,function(){down=false;setTimeout(fix,600)},true)});
+  window.__row19FixNow=fix;
+  function start(){setInterval(fix,400);window.addEventListener("resize",function(){setTimeout(fix,50);setTimeout(fix,400)});window.addEventListener("orientationchange",function(){setTimeout(fix,400)});
+    if(window.visualViewport)window.visualViewport.addEventListener("resize",function(){setTimeout(fix,50)});
+    (function watch(){const P=document.getElementById("panels");if(!P){setTimeout(watch,500);return}let busy=false;
+      new MutationObserver(function(){if(busy)return;busy=true;try{fix()}finally{busy=false}}).observe(P,{attributes:true,attributeFilter:["style"]})})()}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
+})();</script>
 </body>
 </html>
