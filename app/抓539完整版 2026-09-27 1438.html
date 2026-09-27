@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 11:57";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 14:38";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 14:38  號碼破格自動保護(使用者 iPhone 回報「全頁正常，進入抓牌號碼破格」，指示「進入任何畫面都自動調整，不會讓號碼破格」)：每張開獎單量號碼實際大小跟格子大小(同一套畫面量法，蘋果縮放量測誤差互相抵消)，寬超過格寬 86% 或高超過格高 90% 就自動等比例縮小，空間夠了再恢復到原本大小；切換畫面、換彩種、尺寸改變、字型載入時與每 1 秒檢查。正常畫面不受影響。
    2026-09-27 11:57  印單不畫任何標記(使用者指示「印單所有標記都不需要畫上去，全頁裡的截圖才需要」)：標定/衍生/中獎/預測格不補塗底色、不畫外框、字一律黑色，註記(第四招)選的號碼也不畫，只存乾淨開獎單(一律亮色系)；取消 11:40 印單補畫外框。全頁截圖照畫面(含標記)不變。
    2026-09-27 11:43  印單一律存亮色系圖檔(使用者指示「只有印單，不管明暗色系一律存明亮色系」)：暗色系時存印單先暫時切成亮色系再擷取，存完(或中途結束)立刻切回暗色系；抓牌/三層/單桿/全頁截圖照畫面色系不變。
    2026-09-27 11:40  印單存圖補畫標定外框：印單有補塗標定格底色(9/25 螢幕與存圖一致)，但沒畫外框；改成記下畫面上的外框顏色，印單補畫 1px 外框，跟畫面一致(全頁截圖、抓牌/三層/單桿截圖原本就有)。
@@ -5853,5 +5854,29 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&Date.now()-lastCheck>600000)setTimeout(check,1500)});
 })();</script>
 
+<script>/* 2026-09-27 使用者回報(iPhone)「全頁顯示正常，進入抓牌號碼破格」並指示「進入任何畫面都自動調整一次，不會讓號碼破格出去，自動調整」：
+   號碼破格保護——每張開獎單(首頁、全頁、抓牌、三層、單桿)量「號碼實際畫出來的大小」跟「格子大小」(兩者都用畫面上的實際框，同一套量法，蘋果縮放量測誤差會互相抵消)，
+   號碼寬超過格寬 86%、或高超過格高 90% 就把該張開獎單的號碼等比例縮小(--num-fit)；之後空間夠了(例如換回大格子)就慢慢恢復，最大回到原本大小(1 倍)。
+   時機：切換畫面(抓牌/三層/全頁/單桿/返回)、換彩種、畫面尺寸改變、字型載入完成，另外每 1 秒檢查一次(很輕，只抽樣量)。 */
+(function(){
+  const W_MAX=0.86,H_MAX=0.90,W_OK=0.72,H_OK=0.76;
+  function measure(tb){const tds=tb.querySelectorAll("td.num");const n=tds.length;if(!n)return null;const step=Math.max(1,Math.floor(n/40));let kw=0,kh=0,cnt=0;
+    for(let i=0;i<n;i+=step){const td=tds[i];const sp=td.querySelector(".cell-shift");if(!sp||td.querySelector(".ding-top-badge,.zp-sb-pred"))continue;const t=(sp.textContent||"").trim();if(!/^\d{1,2}$/.test(t))continue;
+      const r=td.getBoundingClientRect();if(!(r.width>2&&r.height>2))continue;let q;try{const rg=document.createRange();rg.selectNodeContents(sp);q=rg.getBoundingClientRect()}catch(e){continue}if(!(q.width>0&&q.height>0))continue;
+      kw=Math.max(kw,q.width/r.width);kh=Math.max(kh,(q.height*0.72)/r.height);/* 字框高含上下留白，數字筆畫約佔 72% */cnt++}
+    return cnt?{kw:kw,kh:kh}:null}
+  function fitTable(tb){const m=measure(tb);if(!m)return;const cur=parseFloat(tb.style.getPropertyValue("--num-fit"))||1;let f=cur;
+    const over=Math.max(m.kw/W_MAX,m.kh/H_MAX);if(over>1.001)f=cur/over;else if(cur<1){const room=Math.min(W_OK/m.kw,H_OK/m.kh);if(room>1.02)f=Math.min(1,cur*room)}
+    f=Math.max(0.3,Math.min(1,f));if(Math.abs(f-cur)>0.01){if(f>=0.999)tb.style.removeProperty("--num-fit");else tb.style.setProperty("--num-fit",f.toFixed(3));window.__numFit=window.__numFit||{};window.__numFit[(tb.closest(".panel")?"p":"")+Array.prototype.indexOf.call(document.querySelectorAll("table.road"),tb)]=+f.toFixed(3)}}
+  function run(){try{document.querySelectorAll("table.road").forEach(function(tb){const r=tb.getBoundingClientRect();if(r.width>0&&r.height>0)fitTable(tb)})}catch(e){}}
+  let q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;run();requestAnimationFrame(run)},80)}
+  window.__numFitRun=run;
+  function start(){sch();setInterval(run,1000);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
+    try{new MutationObserver(sch).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
+    try{const pn=document.getElementById("panels");if(pn)new MutationObserver(sch).observe(pn,{childList:true,subtree:true})}catch(e){}
+    if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sch)}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
+})();</script>
+<style>/* 號碼破格保護用：--num-fit 只在需要時設在該張開獎單上(平常沒有＝1 倍) */table.road td.num > .cell-shift{ font-size:calc(100% * var(--num-fit, 1)); }</style>
 </body>
 </html>
