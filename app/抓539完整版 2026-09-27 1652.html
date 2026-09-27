@@ -22,9 +22,10 @@
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 16:45";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 16:52";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 16:52  觸控與滑鼠融合(使用者指示)：①首頁在開獎單上雙擊滑鼠或 Ctrl＋滾輪往上(觸控板兩指張開)＝進入全頁(手機是兩指碰)；②全頁 Ctrl＋滾輪(觸控板兩指捏合/張開)＝以滑鼠位置為中心放大縮小，縮回最小自動對齊；③抓牌滾輪＝回看前後期(往上看更早、往下回較新)，三層/單桿中不動作。其餘一二三四招、長按(按住滑鼠)、雙擊、拖曳，滑鼠原本就能用(已實測)。觸控裝置不受影響。
    2026-09-27 16:45  平板橫放比照電腦(使用者指示)：平板(螢幕短邊 ≥ 600)也用畫框——橫放時畫面中間一欄 18高:9寬、左右空白(預留廣告)，直立時畫框＝整個畫面(跟原本一樣：18:9 高度、不足捲動)；轉向時自動切換。手機不受影響(直立塞滿一畫面、橫放寬度優先可捲動)。
    2026-09-27 16:42  電腦/筆電改成方式1(使用者指示「照這樣做，以後電腦左右空白或許可以出租廣告使用」)：電腦開啟時畫面中間放一欄 18高:9寬 的「直立手機」(寬＝視窗高÷2，高＝視窗高)，程式本體在這一欄裡以手機直立方式執行，跟手機看到的完全一樣、不捲動；左右兩塊空白(#dt-left、#dt-right)預留給廣告。外層只當畫框，不執行程式本體(不重複連線、不重複檢查版本)。手機/平板不受影響。
    2026-09-27 16:32  手機以 18高:9寬 為準、平板不壓縮(使用者指示)：直立時螢幕高÷寬 ≥ 1.7(手機 16:9～20:9)照舊塞滿一個畫面；高÷寬 < 1.7(平板約 13:9)時，抓牌/三層/單桿照 18:9 的高度(寬×2)排，格子形狀同 18:9 手機，不足的部分往下捲；首頁也不壓縮，改用捲動(底部留白讓最後一列捲到按鍵上方)。
@@ -6066,6 +6067,35 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     try{new MutationObserver(function(){applyStored();sch()}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
     try{const P=document.getElementById("panels");if(P)new MutationObserver(function(recs){if(recs.some(function(r){return r.type==="childList"}))sch()}).observe(P,{childList:true})}catch(e){}}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
+})();</script>
+<script>/* 2026-09-27 使用者指示「觸控與滑鼠的融合」：電腦/筆電用滑鼠(或觸控板)也能做到手機上雙指才能做的事；觸控裝置完全不受影響(只認滑鼠/觸控板送來的事件)
+   ①首頁：在開獎單上「雙擊滑鼠左鍵」或「Ctrl＋滾輪往上(觸控板兩指張開)」＝進入全頁(手機上是兩指碰開獎單)
+   ②全頁：「Ctrl＋滾輪(觸控板兩指捏合/張開)」＝放大縮小，以滑鼠所在位置為中心；縮回最小時自動重新對齊；一般滾輪＝上下捲動(放大時)
+   ③抓牌：一般滾輪＝回看前後期(往上滾＝看更早一期、往下滾＝回到較新一期)，同手指往下/往上拖；三層、單桿中不動作
+   ※其他一二三四招、長按、雙擊、拖曳，滑鼠原本就能用(按住＝長按、拖曳＝滑動) */
+(function(){
+  let lastPtr="";document.addEventListener("pointerdown",function(e){lastPtr=e.pointerType||""},true);
+  const B=function(){return document.body.classList};
+  function onSheet(t){return !!(t&&t.closest&&t.closest("#panels, .scroller"))}
+  function isHome(){const b=B();return !b.contains("zhuapai-mode")&&!b.contains("pinch-fullscreen-mode")&&!b.contains("magnifier-mode")}
+  /* ① 首頁雙擊進全頁(只認滑鼠) */
+  document.addEventListener("dblclick",function(e){if(lastPtr!=="mouse"||!isHome()||!onSheet(e.target))return;if(typeof window.enterFullPageFromHome==="function"){e.preventDefault();window.enterFullPageFromHome()}},true);
+  let wheelT=0,zoomEndT=0;
+  window.addEventListener("wheel",function(e){try{const b=B();
+    /* ① 首頁 Ctrl＋滾輪往上＝進全頁 */
+    if(e.ctrlKey&&isHome()&&onSheet(e.target)){e.preventDefault();if(e.deltaY<0&&typeof window.enterFullPageFromHome==="function")window.enterFullPageFromHome();return}
+    /* ② 全頁 Ctrl＋滾輪＝縮放 */
+    if(e.ctrlKey&&b.contains("pinch-fullscreen-mode")&&typeof pageZoom!=="undefined"&&typeof applyPageZoom==="function"){e.preventDefault();
+      const MIN=(typeof PAGE_ZOOM_MIN!=="undefined")?PAGE_ZOOM_MIN:1,MAX=(typeof PAGE_ZOOM_MAX!=="undefined")?PAGE_ZOOM_MAX:4;
+      const old=pageZoom;let nz=old*Math.exp(-e.deltaY*0.0012);nz=Math.max(MIN,Math.min(MAX,nz));if(Math.abs(nz-old)<1e-4)return;
+      const cx=(window.scrollX+e.clientX)/old,cy=(window.scrollY+e.clientY)/old;pageZoom=nz;applyPageZoom();
+      let tx=cx*nz-e.clientX,ty=cy*nz-e.clientY;if(typeof window.clampFullPageScrollX==="function")tx=window.clampFullPageScrollX(tx);if(typeof window.clampFullPageScrollY==="function")ty=window.clampFullPageScrollY(ty);window.scrollTo(Math.max(0,tx),Math.max(0,ty));
+      clearTimeout(zoomEndT);zoomEndT=setTimeout(function(){if(pageZoom<=MIN+1e-3){pageZoom=MIN;applyPageZoom();window.scrollTo(0,0);if(typeof window.refitFullPageSheet==="function")window.refitFullPageSheet()}},250);return}
+    /* ③ 抓牌滾輪＝回看 */
+    if(!e.ctrlKey&&b.contains("zhuapai-mode")&&!b.contains("zp-sanceng")&&!b.contains("zp-single-bar")&&!b.contains("zp-land-scroll")&&typeof window.__zpScrollTo==="function"&&typeof window.__zpScrollInfo==="function"&&onSheet(e.target)){e.preventDefault();
+      const now=Date.now();if(now-wheelT<110||Math.abs(e.deltaY)<4)return;wheelT=now;const inf=window.__zpScrollInfo();if(!inf)return;
+      const k=Math.max(0,Math.min(inf.maxK||0,(inf.k||0)+(e.deltaY<0?1:-1)));if(k!==inf.k)window.__zpScrollTo(k);return}
+  }catch(x){}},{passive:false,capture:true});
 })();</script>
 </body>
 </html>
