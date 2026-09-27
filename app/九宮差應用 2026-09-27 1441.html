@@ -2,14 +2,16 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
+<script>/* 2026-09-27 使用者指示「(自動調整)都只在手機上執行」：手機/平板＝Android、iPhone、iPad(含偽裝成 Mac 的 iPad)、UA 帶 Mobile；電腦不算 */window.__isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));</script>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 14:38";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 14:41";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-27 14:41  自動調整都只在手機上執行(使用者指示)：號碼破格保護、號碼大小自動算(--num-scale)、按鍵文字自動放大、全頁高度自動校正，電腦上一律不執行(Android、iPhone、iPad 照常)。
    2026-09-27 14:38  號碼破格自動保護(使用者 iPhone 回報「全頁正常，進入抓牌號碼破格」，指示「進入任何畫面都自動調整，不會讓號碼破格」)：每張開獎單量號碼實際大小跟格子大小(同一套畫面量法，蘋果縮放量測誤差互相抵消)，寬超過格寬 86% 或高超過格高 90% 就自動等比例縮小，空間夠了再恢復到原本大小；切換畫面、換彩種、尺寸改變、字型載入時與每 1 秒檢查。正常畫面不受影響。
    2026-09-27 11:57  印單不畫任何標記(使用者指示「印單所有標記都不需要畫上去，全頁裡的截圖才需要」)：標定/衍生/中獎/預測格不補塗底色、不畫外框、字一律黑色，註記(第四招)選的號碼也不畫，只存乾淨開獎單(一律亮色系)；取消 11:40 印單補畫外框。全頁截圖照畫面(含標記)不變。
    2026-09-27 11:43  印單一律存亮色系圖檔(使用者指示「只有印單，不管明暗色系一律存明亮色系」)：暗色系時存印單先暫時切成亮色系再擷取，存完(或中途結束)立刻切回暗色系；抓牌/三層/單桿/全頁截圖照畫面色系不變。
@@ -9248,7 +9250,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   function run(){q=0;try{const list=[...document.querySelectorAll(SEL)];list.forEach(prep);list.forEach(b=>fit(b,0));list.forEach(b=>fit(b,1))}catch(e){}if(obs)obs.takeRecords()}
   function sch(){if(q)return;q=requestAnimationFrame(run)}
   window.__btnFit=run;
-  function start(){sch();window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
+  function start(){if(!window.__isMobile)return;/* 只在手機上執行 */sch();window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
     try{obs=new MutationObserver(function(recs){for(const r of recs){const t=r.target;if(r.type==="attributes"&&t&&t.closest&&(t.closest(SEL)||t.matches&&t.matches("table, td, tr, tbody, svg, line, path")))continue;if(t&&t.closest&&t.closest("table.road"))continue;sch();return}});
       obs.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["class","style","hidden"]})}catch(e){}
     if(document.fonts){if(document.fonts.ready)document.fonts.ready.then(sch);if(document.fonts.addEventListener)document.fonts.addEventListener("loadingdone",sch)}
@@ -9262,7 +9264,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
    字體設定改變、字型載入完成、畫面尺寸改變時重算；計算結果放在 window.__numScaleAuto 方便檢查。 */(function(){
   var REF={"mono-bold":{h:0.75,w:1.079},"mono-light":{h:0.74,w:0.981},"sans-bold":{h:0.72,w:1.0562},"sans-light":{h:0.71,w:1.0362},"serif-bold":{h:0.67,w:1.002},"serif-light":{h:0.68,w:0.92}};
   var cv=null;function ctx(){if(!cv)cv=document.createElement("canvas");return cv.getContext("2d")}
-  function run(){try{var H=document.documentElement;if(H.classList.contains("is-preview"))return;var b=document.body;if(!b)return;
+  function run(){try{var H=document.documentElement;if(H.classList.contains("is-preview"))return;if(!window.__isMobile)return;/* 只在手機上執行 */var b=document.body;if(!b)return;
     var key=((b.className||"").match(/sheet-font-([a-z]+-[a-z]+)/)||[])[1];var ref=REF[key];
     var sp=Array.prototype.find.call(document.querySelectorAll("table.road td.num .cell-shift"),function(e){return e.getBoundingClientRect().width>0});if(!sp)return;
     var cs=getComputedStyle(sp);var c=ctx();c.font=cs.fontWeight+" 100px "+cs.fontFamily;var m=c.measureText("0123456789"),w=c.measureText("88");if(typeof m.actualBoundingBoxAscent!=="number")return;
@@ -9292,7 +9294,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   function natH(S,pad){const h0=S.style.height;S.style.height="auto";const h=S.getBoundingClientRect().height-pad;S.style.height=h0;return h}
   /* 開獎單(含拉伸、含放大)實際底邊，給捲動範圍用(不量有 zoom 的 #panels) */
   window.__fpPanelsBottom=function(){try{const P=document.getElementById("panels"),S=document.querySelector(".scroller");if(!P||!S)return null;const m=/^scaleY\(([\d.eE+-]+)\)$/.exec((P.style.transform||"").trim());const cur=m?parseFloat(m[1]):1;const pad=parseFloat(getComputedStyle(S).paddingBottom)||0;const sr=S.getBoundingClientRect();return sr.top+natH(S,pad*((typeof pageZoom==="number")?pageZoom:1))*cur}catch(e){return null}};
-  function fix(force){try{const b=document.body.classList;if(!b.contains("pinch-fullscreen-mode"))return;if(!force&&(Date.now()-lastTouch<500||window.__fullPageDisplayReady===false))return;
+  function fix(force){try{if(!window.__isMobile)return;/* 全頁自動校正只在手機上執行 */const b=document.body.classList;if(!b.contains("pinch-fullscreen-mode"))return;if(!force&&(Date.now()-lastTouch<500||window.__fullPageDisplayReady===false))return;
     if(typeof pageZoom==="undefined"||pageZoom!==1)return;
     const P=document.getElementById("panels"),S=document.querySelector(".scroller"),red=document.getElementById("bottom-frame-line-wrap");if(!P||!S||!red)return;
     const tf=(P.style.transform||"").trim();const m=/^scaleY\(([\d.eE+-]+)\)$/.exec(tf);if(!m&&tf!==""&&tf!=="none")return;const cur=m?parseFloat(m[1]):1;if(!(cur>0))return;/* 沒有拉伸(transform 被清掉)也一樣校正 */
@@ -9406,7 +9408,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   function run(){try{document.querySelectorAll("table.road").forEach(function(tb){const r=tb.getBoundingClientRect();if(r.width>0&&r.height>0)fitTable(tb)})}catch(e){}}
   let q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;run();requestAnimationFrame(run)},80)}
   window.__numFitRun=run;
-  function start(){sch();setInterval(run,1000);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
+  function start(){if(!window.__isMobile)return;/* 只在手機上執行 */sch();setInterval(run,1000);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
     try{new MutationObserver(sch).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
     try{const pn=document.getElementById("panels");if(pn)new MutationObserver(sch).observe(pn,{childList:true,subtree:true})}catch(e){}
     if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sch)}
