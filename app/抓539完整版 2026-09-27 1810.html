@@ -22,9 +22,10 @@
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 17:54";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 18:10";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 18:10  全頁左右滑的極限各留 2px(使用者指示)：放大後往左滑到底開獎單右邊留 2px、往右滑到底左邊留 2px(螢幕 px，放大幾倍都一樣)；首頁不套用，開獎單左右恢復原本 0.22px。實測 1.5/3/5 倍：左 2px、右 1.5~2.4px(捲動位置取整數)。
    2026-09-27 17:54  修正實機首頁往上拉到底開獎單下面空一大截(使用者截圖約 49px)：手機裡記到一筆歪掉的全頁紀錄(網址列伸縮或捲動中量到)，下緣位置被一直沿用。改成下緣永遠用當下量到的按鍵上緣−2px；全頁紀錄只在沒捲動且下緣剛好在按鍵上方 2px 時才記，舊的歪紀錄自動不採用。模擬歪紀錄：舊版空 51px，新版 2px。
    2026-09-27 17:49  關掉整頁的彈性回彈(使用者截圖「手沒放開往上拉」開獎單下面多出空白)：html 的 overscroll-behavior 由 contain 改成 none，拉到開獎單下緣離按鍵 2px 就停住。副作用：頁面最上方往下拉不會觸發瀏覽器重新整理(原本 contain 就已經擋掉)。
    2026-09-27 17:43  首頁與全頁開獎單左右各留 2px(使用者指示「左右極限各 2px」，原 0.22px)；下方維持開獎單下緣到按鍵 2px。寬度演算法讀實際外距自動縮，實測 360/375/412/430 寬左 2px、右 1.7~2px(裝置像素進位)，無橫向捲動。
@@ -808,7 +809,7 @@ body.theme-dark #c-ding-ai-box .ai-box-rank.ai-opened{ border-color:#FF3D00 !imp
   /* 2026-09-20 第 90／91 條：左右各 0.22px，整體 transform:scale(pageZoom) 之後放大 5 倍＝各 1.1px。
      只作用在「首頁」(body 沒有任何模式 class)與「全頁」(下面那條)；其他模式維持基底的 0.5%。 */
   body:not(.magnifier-mode):not(.recent-only-mode):not(.c-mode-active):not(.pinch-fullscreen-mode) .scroller{
-    margin-left:2px; margin-right:2px;/* 2026-09-27 使用者指示「左右極限各 2px」：首頁開獎單左右各留 2px(原 0.22px)；寬度演算法讀的是這裡的實際外距，自動跟著縮 */
+    margin-left:0.22px; margin-right:0.22px;/* 2026-09-27 使用者更正「左右各 2px 是全頁左右滑的極限，首頁不套用」：首頁恢復原本 0.22px */
   }
   /* 2026-09-20 第 94 條(第二步)：倍率改成「可用寬/設計寬」之後，實際描繪寬度會比可用寬少約 0.3 設計 px(次像素進位)，
      那點殘差原本全部跑到右邊(放大 5 倍變成左 1.09px、右 2.66px)。讓開獎單在 .scroller 裡置中，殘差左右平分。
@@ -3131,8 +3132,10 @@ function clampFullPageScrollX(desiredX){
   const pr=panelsElForX.getBoundingClientRect();
   if(pr.width<=0)return Math.max(0,desiredX);
   const vw=window.innerWidth;
-  const minX=window.scrollX+pr.left;
-  const maxX=window.scrollX+pr.right-vw;
+  /* 2026-09-27 使用者指示「全頁：往左滑到底看到開獎單右邊 2px 空白為極限，往右滑到底看到最左邊 2px 空白為極限」：左右各多留 2px(螢幕 px，放大多少倍都一樣 2px) */
+  const EDGE=2;
+  const minX=window.scrollX+pr.left-EDGE;
+  const maxX=window.scrollX+pr.right-vw+EDGE;
   let x=desiredX;
   if(maxX<minX)x=0;else x=Math.max(minX,Math.min(maxX,x));
   return Math.max(0,x);
