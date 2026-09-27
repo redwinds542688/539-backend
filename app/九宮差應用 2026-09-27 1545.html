@@ -5,12 +5,13 @@
 <script>/* 2026-09-27 使用者指示「(自動調整)都只在手機上執行」：手機/平板＝Android、iPhone、iPad(含偽裝成 Mac 的 iPad)、UA 帶 Mobile；電腦不算 */window.__isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));</script>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 15:37";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 15:45";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-27 15:45  自動調整與記錄全部補上(使用者指示，只在手機)：①首頁開獎單最下面幾列被「抓牌／結束」按鍵蓋住時，頁面底部自動加留白，捲到底就能看到；②註記欄號碼比照「字 60%：格 100%」自動調整；③首頁開獎球號碼、日期超出時自動縮小；④按鍵文字調好的字級記住。以上與號碼比例、第 19 格(抓牌/三層/單桿)一樣依畫面記在手機裡，下次直接套用再確認。
    2026-09-27 15:37  自動調整改成記住調好的數值(使用者指示)：號碼比例倍率依「彩種＋畫面(首頁/抓牌/三層/單桿/全頁)＋直橫＋畫面寬」、第 19 格壓縮比例依「彩種＋抓牌/三層＋畫面寬高」存在手機裡(localStorage：539_numfit_v1、539_row19_v1)；下次進入同一畫面時在畫面畫出來之前直接套用，之後照樣量一次確認，條件變了才重新調整並更新記錄。
    2026-09-27 14:56  號碼大小自動對準比例(使用者指定「字 60%、格子 100%」為最佳，太大或太小都要自動調整；依使用者手機截圖實量：號碼筆畫寬＝格寬 60%、筆畫高＝格高 59%)：原本只在破格時縮小，改成每張開獎單量號碼實際筆畫寬高(取中間值)，縮放到筆畫寬 60%、筆畫高不超過 59%，偏差 3% 以內不動；首頁、全頁、抓牌、三層、單桿都適用，只在手機執行；印單存檔版面不套用。
    2026-09-27 14:48  第 19 格自動調整(使用者三星手機回報「抓牌第十九格顯示在底下五顆按鍵的下面」，指示格子也要自動調整；只在手機執行)：抓牌/回看/三層排好後量畫面第 19 格(三層為標題下第 18 列號碼列)的下緣與底部按鍵上緣，被按鍵蓋到就把開獎單直向倍率等比例壓縮到剛好露出；空間夠了再放回，最多回到原本大小；手指按著時不調整。一般手機(沒被蓋到)完全不動。
@@ -9225,7 +9226,12 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   function textHolder(b){if([...b.querySelectorAll("svg,img,canvas,input")].some(x=>{const q=x.getBoundingClientRect();return q.width>0&&q.height>0}))return null;/* 看得見的圖示才跳過；藏起來的圖示(尺寸 0)不算 */const t=(b.textContent||"").trim();if(!t||t.length>10)return null;
     let el=b;for(;;){const kids=[...el.children].filter(k=>{if(!(k.textContent||"").trim())return false;const q=k.getBoundingClientRect();return q.width>0&&q.height>0});/* 藏起來的字(例：E式按鍵裡隱藏的「E」)不算 */if(kids.length===1&&!([...el.childNodes].some(n=>n.nodeType===3&&n.nodeValue.trim())))el=kids[0];else break}return el}
   function visible(b){const r=b.getBoundingClientRect();if(!(r.width>4&&r.height>4))return null;let o=b;while(o&&o!==document.documentElement){const s=getComputedStyle(o);if(s.display==="none"||s.visibility==="hidden")return null;o=o.parentElement}return r}
+  /* 2026-09-27 使用者指示「全部都補上(記住調好的數值)」：每顆按鍵調好的字級依「按鍵＋文字＋畫面寬高」記在手機裡，下次一出現就直接套用，再量一次確認 */
+  const BKEY="539_btnfit_v1";let bstore={};try{bstore=JSON.parse(localStorage.getItem(BKEY)||"{}")||{}}catch(e){bstore={}}let bT=0;
+  function bkey(b,text){return (b.id||b.className||"")+"|"+text+"|"+Math.round(window.innerWidth)+"x"+Math.round(window.innerHeight)}
+  function bsave(){if(bT)return;bT=setTimeout(function(){bT=0;try{localStorage.setItem(BKEY,JSON.stringify(bstore))}catch(e){}},500)}
   function fit(b,pass){const el=textHolder(b);if(!el)return;const r=visible(b);if(!r)return;const text=(el.textContent||"").trim();
+    const __bk=bkey(b,text);if(pass===0&&!el.style.getPropertyValue("font-size")&&bstore[__bk]>0){el.style.setProperty("font-size",bstore[__bk]+"px","important");el.style.setProperty("line-height","1","important")}
     const bs=getComputedStyle(b),cs=getComputedStyle(el);const fs=parseFloat(cs.fontSize);if(!(fs>0))return;
     const sx=b.offsetWidth?r.width/b.offsetWidth:1,sy=b.offsetHeight?r.height/b.offsetHeight:1;
     const iw=r.width-(parseFloat(bs.borderLeftWidth)+parseFloat(bs.borderRightWidth))*sx,ih=r.height-(parseFloat(bs.borderTopWidth)+parseFloat(bs.borderBottomWidth))*sy;if(!(iw>2&&ih>2))return;
@@ -9241,6 +9247,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     if(el!==b){el.style.setProperty("white-space","nowrap","important")}else{b.style.setProperty("white-space","nowrap","important")}
     /* 保護(蘋果 Safari 等)：放大後直接量畫面上實際的字框，若比按鍵內寬/內高還大就等比例縮回，保證字一定在按鍵裡 */
     try{const rg2=document.createRange();rg2.selectNodeContents(el);const q2=rg2.getBoundingClientRect();const inkR=(m.actualBoundingBoxAscent+m.actualBoundingBoxDescent)/100;/* 字框高＝字級(行高 1)，乘上筆畫佔字級的比例＝筆畫高 */const inkWR=(m.width>0)?(m.actualBoundingBoxLeft+m.actualBoundingBoxRight)/m.width:1;/* 筆畫寬佔字框寬的比例(全形＋－左右留白很多) */const over=Math.max(q2.width*inkWR/(iw*0.97),q2.height*inkR/(ih*0.97));if(over>1){el.style.setProperty("font-size",(nf/over).toFixed(2)+"px","important")}}catch(e){}
+    try{const __ff=parseFloat(el.style.getPropertyValue("font-size"));if(__ff>0&&bstore[__bk]!==+__ff.toFixed(2)){bstore[__bk]=+__ff.toFixed(2);bsave()}}catch(e){}
     const r2=b.getBoundingClientRect();const w0=parseFloat(b.dataset.fitW)||r.width;if(!(b.style.width&&!/important/.test(b.getAttribute("style")||"")&&false)&&r2.width>w0+0.5&&!b.style.getPropertyValue("width")){b.style.setProperty("width",(w0/sx).toFixed(2)+"px","important")}}
   /* 第一次處理時：把按鍵原本的高度固定住(寬度若被撐大也固定回去)，再拿掉內距、讓字在按鍵正中央；按鍵外觀大小不變 */
   function prep(b){if(b.dataset.fitPrep)return;const el=textHolder(b);if(!el)return;const r=visible(b);if(!r)return;const sx=b.offsetWidth?r.width/b.offsetWidth:1,sy=b.offsetHeight?r.height/b.offsetHeight:1;
@@ -9468,6 +9475,61 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     if(window.visualViewport)window.visualViewport.addEventListener("resize",function(){setTimeout(fix,50)});
     (function watch(){const P=document.getElementById("panels");if(!P){setTimeout(watch,500);return}let busy=false;
       new MutationObserver(function(){if(busy)return;busy=true;try{fix()}finally{busy=false}}).observe(P,{attributes:true,attributeFilter:["style"]})})()}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
+})();</script>
+<script>/* 2026-09-27 使用者指示「(自動調整與記錄)全部都補上」：補齊其餘畫面的自動調整，並記住調好的數值(只在手機上執行)
+   ①首頁：開獎單最下面幾列被「抓牌／結束」按鍵蓋住時，頁面底部自動加留白，捲到底就能把最後一列捲到按鍵上方(留白高度記住)
+   ②註記欄號碼：比照開獎單「字 60%：格 100%」(筆畫寬＝格寬 60%、筆畫高不超過格高 59%)，太大太小都調
+   ③首頁開獎球號碼、日期：超出球/欄位時自動縮小(球號碼筆畫寬不超過球寬 78%、高不超過 60%；日期不超出畫面)
+   以上數值依「項目＋彩種＋畫面＋畫面寬高」記在手機裡，下次直接套用，再量一次確認。 */
+(function(){
+  if(!window.__isMobile)return;
+  const SKEY="539_autofit_more_v1";let store={};try{store=JSON.parse(localStorage.getItem(SKEY)||"{}")||{}}catch(e){store={}}
+  function save(){try{localStorage.setItem(SKEY,JSON.stringify(store))}catch(e){}}
+  function mode(){const b=document.body.classList;return b.contains("pinch-fullscreen-mode")?"full":b.contains("zp-sanceng")?"sc":b.contains("zp-single-bar")?"sb":b.contains("zhuapai-mode")?"zp":"home"}
+  function key(item){let g="";try{g=(typeof currentGameKey!=="undefined")?currentGameKey:""}catch(e){}return item+"|"+g+"|"+mode()+"|"+Math.round(window.innerWidth)+"x"+Math.round(window.innerHeight)}
+  function remember(item,v){const k=key(item);v=+(+v).toFixed(4);if(store[k]===v)return;store[k]=v;save()}
+  let cv=null;function inkOf(el,text){const cs=getComputedStyle(el);if(!cv)cv=document.createElement("canvas");const c=cv.getContext("2d");c.font=cs.fontStyle+" "+cs.fontWeight+" 100px "+cs.fontFamily;const m=c.measureText(text);if(!(m.width>0)||typeof m.actualBoundingBoxAscent!=="number")return null;
+    let q;try{const rg=document.createRange();rg.selectNodeContents(el);q=rg.getBoundingClientRect()}catch(e){return null}if(!(q.width>0))return null;const px=q.width/(m.width/100);return {w:px*(m.actualBoundingBoxLeft+m.actualBoundingBoxRight)/100,h:px*(m.actualBoundingBoxAscent+m.actualBoundingBoxDescent)/100}}
+  function btnRects(){return ["zhuapai-btn","home-exit-btn"].map(function(id){const e=document.getElementById(id);if(!e)return null;const r=e.getBoundingClientRect();return (r.width>0&&r.height>0)?r:null}).filter(Boolean)}
+  /* ① 首頁底部留白 */
+  function spacer(){let s=document.getElementById("zp-home-bottom-space");if(!s){s=document.createElement("div");s.id="zp-home-bottom-space";s.style.cssText="width:1px;height:0;pointer-events:none;";document.body.appendChild(s)}return s}
+  function homeSpace(apply){const b=document.body.classList;const s=spacer();if(b.contains("magnifier-mode")||b.contains("pinch-fullscreen-mode")||b.contains("zhuapai-mode")){if(s.style.height!=="0px")s.style.height="0px";return}
+    const k=key("homeSpace");if(apply){const v=store[k];if(v>=0&&s.style.height!==v+"px")s.style.height=v+"px";return}
+    const btn=btnRects();if(!btn.length)return;const btnTop=Math.min.apply(null,btn.map(function(r){return r.top}));
+    let maxB=0;document.querySelectorAll("#panels table.road td.num").forEach(function(td){if(!/\d/.test(td.textContent||""))return;const r=td.getBoundingClientRect();if(!(r.width>0))return;if(btn.some(function(q){return r.left<q.right&&r.right>q.left}))maxB=Math.max(maxB,r.bottom+window.scrollY)});
+    if(!maxB)return;const docH=document.documentElement.scrollHeight-(parseFloat(s.style.height)||0);/* 不含留白的頁面高 */
+    const lastTopAtBottom=Math.max(docH,window.innerHeight);/* 捲到底時頁面底＝畫面底 */const need=Math.max(0,Math.ceil(maxB-(lastTopAtBottom-window.innerHeight)-btnTop+4));
+    if(Math.abs((parseFloat(s.style.height)||0)-need)>1)s.style.height=need+"px";remember("homeSpace",need)}
+  /* 共用：字級倍率(相對於 CSS 原本字級)，存在元素上 */
+  function setFit(el,f,rel){if(rel){el.style.fontSize=f>=0.999&&f<=1.001?"":(f*100).toFixed(2)+"%";return}
+    if(!el.dataset.afBase){const prev=el.style.fontSize;el.style.fontSize="";el.dataset.afBase=String(parseFloat(getComputedStyle(el).fontSize)||0);el.style.fontSize=prev}const base=parseFloat(el.dataset.afBase)||0;if(!(base>0))return;el.style.fontSize=(f>=0.999&&f<=1.001)?"":(base*f).toFixed(2)+"px"}
+  function curFit(el,rel){if(rel){const v=el.style.fontSize;return v&&/%$/.test(v)?parseFloat(v)/100:1}const base=parseFloat(el.dataset.afBase)||0;const v=parseFloat(el.style.fontSize)||0;return base>0&&v>0?v/base:1}
+  /* ② 註記欄號碼 60% */
+  function pickFit(apply){const list=document.querySelectorAll("#zp-pick-col .zp-pick-cell .zp-pick-num");if(!list.length)return;const k="pick";
+    if(apply){const v=store[key(k)];if(v>0)list.forEach(function(sp){if(Math.abs(curFit(sp,true)-v)>0.005)setFit(sp,v,true)});return}
+    const rw=[],rh=[];list.forEach(function(sp){const t=(sp.textContent||"").trim();if(!/^\d{2}$/.test(t))return;const cell=sp.closest(".zp-pick-cell");const r=cell.getBoundingClientRect();if(!(r.width>2&&r.height>2))return;const i=inkOf(sp,t);if(!i)return;rw.push(i.w/r.width);rh.push(i.h/r.height)});
+    if(!rw.length)return;rw.sort();rh.sort();const mw=rw[rw.length>>1],mh=rh[rh.length>>1];const cur=curFit(list[0],true);const need=Math.min(0.60/mw,0.59/mh);
+    if(Math.abs(need-1)<=0.03){remember(k,cur);return}const f=Math.max(0.3,Math.min(3,cur*need));list.forEach(function(sp){setFit(sp,f,true)});remember(k,f)}
+  /* ③ 開獎球、日期：超出才縮 */
+  function ballFit(apply){const list=document.querySelectorAll("#hero-balls .ball");if(!list.length)return;const k="ball";
+    if(apply){const v=store[key(k)];if(v>0)list.forEach(function(el){if(Math.abs(curFit(el,false)-v)>0.005)setFit(el,v,false)});return}
+    let over=0;list.forEach(function(el){const t=(el.textContent||"").trim();if(!t)return;const r=el.getBoundingClientRect();if(!(r.width>2))return;const i=inkOf(el,t);if(!i)return;over=Math.max(over,i.w/(r.width*0.78),i.h/(r.height*0.60))});if(!over)return;
+    const cur=curFit(list[0],false);let f=cur;if(over>1.02)f=cur/over;else if(cur<1&&over<0.95)f=Math.min(1,cur/over*0.98);if(Math.abs(f-cur)<0.005){remember(k,cur);return}list.forEach(function(el){setFit(el,f,false)});remember(k,f)}
+  function dateFit(apply){const el=document.getElementById("hero-date");if(!el)return;const k="date";
+    if(apply){const v=store[key(k)];if(v>0&&Math.abs(curFit(el,false)-v)>0.005)setFit(el,v,false);return}
+    const r=el.getBoundingClientRect();if(!(r.width>2))return;let q;try{const rg=document.createRange();rg.selectNodeContents(el);q=rg.getBoundingClientRect()}catch(e){return}
+    const avail=Math.min(r.right,window.innerWidth-4)-r.left;const over=q.width/Math.max(1,avail);const cur=curFit(el,false);let f=cur;if(over>1.01)f=cur/over*0.98;else if(cur<1&&over<0.9)f=Math.min(1,cur/over*0.98);
+    if(Math.abs(f-cur)<0.005){remember(k,cur);return}setFit(el,f,false);remember(k,f)}
+  function applyAll(){try{homeSpace(true);pickFit(true);ballFit(true);dateFit(true)}catch(e){}}
+  function run(){try{homeSpace(false);pickFit(false);ballFit(false);dateFit(false)}catch(e){}}
+  let q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;run()},80)}
+  window.__autoFitMore={run:run,store:function(){return store}};
+  function start(){applyAll();sch();setInterval(run,1000);
+    window.addEventListener("resize",function(){document.querySelectorAll("[data-af-base]").forEach(function(el){delete el.dataset.afBase});applyAll();sch()});window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
+    try{new MutationObserver(function(){applyAll();sch()}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
+    ["hero-balls","zp-pick-col","hero-date"].forEach(function(id){const e=document.getElementById(id);if(e)try{new MutationObserver(function(){applyAll();sch()}).observe(e,{childList:true,characterData:true,subtree:true})}catch(x){}});
+    if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sch)}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();</script>
 </body>
