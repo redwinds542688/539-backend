@@ -22,9 +22,10 @@
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-28 00:48";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-28 00:51";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-28 00:51  所有「定期十六」改成「抓牌十八」(使用者指示「把所有的定期16通通改成抓牌18」)：程式裡剩下的顯示文字、按鍵名稱、紀錄文字一律改名(主程式的按鍵 09-23 已改接新抓牌系統 18+2)；完整版九宮格裡殘留的舊按鍵也改名，並由 16+4 改成 18+2；交接文件同步改名。修改紀錄裡的歷史條目保留原文。
    2026-09-28 00:48  使用者更正「符合尺寸只限全頁裡的截圖、首頁的印(主程式)、印單，其他照原設定不改變」：抓牌/三層/單桿截圖與主程式定期十六/C式截圖還原成 00:33 前的手機畫面大小(不放紙張、不加框)；全頁截圖、印、印單維持 A3/A4、外框貼紙緣、上下左右不留白(取消 0.1% 內縮)。實測：印單/印/全頁 A3 3508×4961、A4 2480×3508 外框貼緣；抓牌/三層 1236×2745 同原本。
    2026-09-28 00:45  存檔圖一律符合設定尺寸、有外框、上下左右不留白(使用者指示)：①印單/全頁截圖取消 0.1% 內縮(原 A3 約 5px、A4 約 4px 白邊)，外框直接貼紙緣；②抓牌/三層/單桿截圖只取開獎單＋註記欄範圍(不含下面按鍵)，拉伸填滿 A3/A4 整張紙，四邊畫 6px 外框(亮色系黑、暗色系白)；主程式定期十六/C式截圖同樣填滿加框。實測 A3/A4、亮暗色系，四種存檔四邊外框都貼齊紙緣、外面無白邊。
    2026-09-28 00:33  截圖依設定 A3/A4 自動適配(使用者指示)：抓牌/三層/單桿截圖(主程式另含定期十六/C式截圖)原本是手機畫面大小(例 1236×2745)，改成放到設定的 A3(3508×4961)/A4(2480×3508) 紙張上，畫面等比例放到最大置中、不拉伸，旁邊留白(暗色系用畫面底色)，檔名加 _A3/_A4；記憶體不足退回 150dpi。印單與全頁截圖本來就照設定，不變。
@@ -2197,11 +2198,11 @@ body:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet)
         <span class="icon-frame" style="font-weight:800; font-size:14px; line-height:1;" aria-hidden="true">E</span>
         <span class="btn-label">E式概率</span>
       </button>
-      <button type="button" id="draw-period16" class="draw-blank-btn" aria-label="定期十六">
+      <button type="button" id="draw-period16" class="draw-blank-btn" aria-label="抓牌十八">
         <span class="icon-frame"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/>
         </svg></span>
-        <span class="blank-btn-label">定期十六</span>
+        <span class="blank-btn-label">抓牌十八</span>
       </button>
     </div>
     <div class="draw-row draw-row-extra">
@@ -4202,7 +4203,7 @@ function togglePeriodMode(e){/* 全頁系統(2026-08-30)：第五顆改成「關
 
 let cModeRecentRealCount=16,cModeRecentBlankExtra=4;
 periodBtn.addEventListener("click",togglePeriodMode);
-if(period16Btn){period16Btn.addEventListener("click",function(){cModeDingPositionMode=false;cModeRecentRealCount=16;cModeRecentBlankExtra=4});period16Btn.addEventListener("click",function(){requestAnimationFrame(function(){requestAnimationFrame(compactDayCellsForPeriod16)})});period16Btn.addEventListener("click",togglePeriodMode)}
+if(period16Btn){period16Btn.addEventListener("click",function(){cModeDingPositionMode=false;cModeRecentRealCount=18;cModeRecentBlankExtra=2/* 2026-09-28 使用者指示「所有的定期16通通改成抓牌18」：18期已開獎＋2期空白 */});period16Btn.addEventListener("click",function(){requestAnimationFrame(function(){requestAnimationFrame(compactDayCellsForPeriod16)})});period16Btn.addEventListener("click",togglePeriodMode)}
 if(broadBtn){/* 2026-09-03：使用者指示——把「C式定位」整套功能完整複製給「E式等距」(#draw-broad)：四個click監聽逐字照抄C式定位入口(#draw-dist-prob)，
    進入的同樣是C式定位位置模式(cModeDingPositionMode=true、c-ding-position-mode、定搜索期固定5、16+4、向右壓縮布局)，
    所有子功能(單擊九宮偏移選單/雙擊統計表/長按掃描展示/標定號碼/連線/上下桿拖曳)完全一致。
