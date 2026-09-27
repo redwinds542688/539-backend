@@ -2,10 +2,12 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* 2026-09-27 使用者指示「(自動調整)都只在手機上執行」：手機/平板＝Android、iPhone、iPad(含偽裝成 Mac 的 iPad)、UA 帶 Mobile；電腦不算 */window.__isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));</script>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 16:13";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* 2026-09-27 使用者指示「(自動調整)都只在手機上執行」：手機/平板＝Android、iPhone、iPad(含偽裝成 Mac 的 iPad)、UA 帶 Mobile；電腦不算 */window.__isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));if(window.__isMobile)document.documentElement.classList.add("is-mobile");</script>
+<style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 16:23";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 16:23  手機/平板直立盡可能不捲動(使用者指示「把持程式畫面的完整性」)：①首頁開獎單寬度照舊填滿，高度自動壓縮到剛好塞進一個畫面(最後一列在抓牌/結束按鍵上方)，取消首頁底部捲動留白；進抓牌/全頁/印單時先還原、回首頁再套用，壓縮比例記在手機裡；②抓牌/三層/單桿直立時鎖住整頁捲動(原本多出十幾 px 可輕微捲動)。橫放、電腦(方式2)照舊可捲動。
    2026-09-27 16:13  排版規則統一(使用者指示「所有設備與系統都以寬度優先；手機/平板直立時方式1(塞滿一個畫面、不捲動)，手機/平板橫放與電腦/筆電採方式2」)：方式2＝寬度填滿畫面，高度照固定格子比例 寬1.5：高1(使用者認定最佳，實量149.6×99.4)，放不下就整頁往下捲(排版完成後再量實際格子校正比例與捲動高度)；手機/平板橫放不再蓋「請轉為直向」提示；另修正電腦/寬螢幕進抓牌時第一顆鍵(三層)停在首頁位置、跟截圖鍵重疊。
    2026-09-27 15:45  自動調整與記錄全部補上(使用者指示，只在手機)：①首頁開獎單最下面幾列被「抓牌／結束」按鍵蓋住時，頁面底部自動加留白，捲到底就能看到；②註記欄號碼比照「字 60%：格 100%」自動調整；③首頁開獎球號碼、日期超出時自動縮小；④按鍵文字調好的字級記住。以上與號碼比例、第 19 格(抓牌/三層/單桿)一樣依畫面記在手機裡，下次直接套用再確認。
    2026-09-27 15:37  自動調整改成記住調好的數值(使用者指示)：號碼比例倍率依「彩種＋畫面(首頁/抓牌/三層/單桿/全頁)＋直橫＋畫面寬」、第 19 格壓縮比例依「彩種＋抓牌/三層＋畫面寬高」存在手機裡(localStorage：539_numfit_v1、539_row19_v1)；下次進入同一畫面時在畫面畫出來之前直接套用，之後照樣量一次確認，條件變了才重新調整並更新記錄。
@@ -5962,7 +5964,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   function btnRects(){return ["zhuapai-btn","home-exit-btn"].map(function(id){const e=document.getElementById(id);if(!e)return null;const r=e.getBoundingClientRect();return (r.width>0&&r.height>0)?r:null}).filter(Boolean)}
   /* ① 首頁底部留白 */
   function spacer(){let s=document.getElementById("zp-home-bottom-space");if(!s){s=document.createElement("div");s.id="zp-home-bottom-space";s.style.cssText="width:1px;height:0;pointer-events:none;";document.body.appendChild(s)}return s}
-  function homeSpace(apply){const b=document.body.classList;const s=spacer();if(b.contains("magnifier-mode")||b.contains("pinch-fullscreen-mode")||b.contains("zhuapai-mode")){if(s.style.height!=="0px")s.style.height="0px";return}
+  function homeSpace(apply){const b=document.body.classList;const s=spacer();if(b.contains("magnifier-mode")||b.contains("pinch-fullscreen-mode")||b.contains("zhuapai-mode")||window.innerHeight>=window.innerWidth/* 直立改由首頁高度壓縮塞進一個畫面，不加捲動留白 */){if(s.style.height!=="0px")s.style.height="0px";return}
     const k=key("homeSpace");if(apply){const v=store[k];if(v>=0&&s.style.height!==v+"px")s.style.height=v+"px";return}
     const btn=btnRects();if(!btn.length)return;const btnTop=Math.min.apply(null,btn.map(function(r){return r.top}));
     let maxB=0;document.querySelectorAll("#panels table.road td.num").forEach(function(td){if(!/\d/.test(td.textContent||""))return;const r=td.getBoundingClientRect();if(!(r.width>0))return;if(btn.some(function(q){return r.left<q.right&&r.right>q.left}))maxB=Math.max(maxB,r.bottom+window.scrollY)});
@@ -6014,6 +6016,34 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   document.addEventListener("pointerdown",function(){down=true},true);["pointerup","pointercancel"].forEach(function(n){document.addEventListener(n,function(){down=false;setTimeout(fix,300)},true)});
   function start(){setInterval(fix,500);window.addEventListener("resize",function(){setTimeout(fix,300);setTimeout(fix,900)});
     try{new MutationObserver(function(){setTimeout(fix,60)}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
+})();</script>
+<script>/* 2026-09-27 使用者指示「手機/平板直屏裡盡可能不捲動，把持程式畫面的完整性」：首頁開獎單寬度照舊填滿，高度自動壓縮到剛好塞進一個畫面(最後一列在「抓牌/結束」按鍵上方)，不用捲動。
+   只在手機/平板直立、首頁時執行；進抓牌/全頁/存圖(印單)時先還原，回首頁再套用；壓縮比例依彩種＋畫面大小記在手機裡，下次直接套用。 */
+(function(){
+  if(!window.__isMobile)return;
+  const SKEY="539_homefit_v1";let store={};try{store=JSON.parse(localStorage.getItem(SKEY)||"{}")||{}}catch(e){store={}}
+  let myTf=null,myH=null;
+  function key(){let g="";try{g=(typeof currentGameKey!=="undefined")?currentGameKey:""}catch(e){}return g+"|"+Math.round(window.innerWidth)+"x"+Math.round(window.innerHeight)}
+  function active(){const b=document.body.classList;if(window.innerWidth>window.innerHeight)return false;return !["magnifier-mode","pinch-fullscreen-mode","zhuapai-mode","capturing-save-only","capturing-plain","capturing-clean-sheet","recent-only-mode"].some(function(c){return b.contains(c)})}
+  function els(){return {P:document.getElementById("panels"),S:document.querySelector(".scroller")}}
+  function restore(){const e=els();if(!e.P||!e.S)return;if(myTf!==null&&e.P.style.transform===myTf){e.P.style.transform="";e.P.style.transformOrigin=""}if(myH!==null&&e.S.style.height===myH)e.S.style.height="";myTf=null;myH=null}
+  function setK(k){const e=els();const tf="scaleY("+k.toFixed(5)+")";e.P.style.transformOrigin="top left";e.P.style.transform=tf;myTf=e.P.style.transform}
+  function btnTop(){let t=window.innerHeight;["zhuapai-btn","home-exit-btn"].forEach(function(id){const b=document.getElementById(id);if(!b)return;const r=b.getBoundingClientRect();if(r.width>0&&r.height>0)t=Math.min(t,r.top)});return t}
+  function applyStored(){try{if(!active()){restore();return}const e=els();if(!e.P||!e.S)return;if(e.P.style.transform&&e.P.style.transform!==myTf)return;const k=store[key()];if(k>0&&k<1){setK(k)}}catch(x){}}
+  function fit(){try{if(!active()){restore();return}const e=els();if(!e.P||!e.S)return;if(e.P.style.transform&&e.P.style.transform!==myTf)return;/* 別的程式在用，不搶 */
+    const keepTf=e.P.style.transform,keepH=e.S.style.height;e.P.style.transform="";if(myH!==null&&e.S.style.height===myH)e.S.style.height="";
+    const pr=e.P.getBoundingClientRect();const h0=pr.height;const target=btnTop()-3-pr.top;
+    if(!(h0>0&&target>40)){e.P.style.transform=keepTf;return}
+    if(h0<=target+0.5){restore();store[key()]=1;save();return}
+    const k=target/h0;setK(k);e.S.style.height=Math.floor(target)+"px";myH=e.S.style.height;if(window.scrollY)window.scrollTo(0,0);
+    if(store[key()]!==+k.toFixed(4)){store[key()]=+k.toFixed(4);save()}window.__homeFit={k:+k.toFixed(4),h0:Math.round(h0),target:Math.round(target)}}catch(x){}}
+  function save(){try{localStorage.setItem(SKEY,JSON.stringify(store))}catch(e){}}
+  let q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;fit()},80)}
+  window.__homeFitNow=fit;
+  function start(){applyStored();sch();setInterval(fit,1000);window.addEventListener("resize",function(){restore();sch()});window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
+    try{new MutationObserver(function(){applyStored();sch()}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
+    try{const P=document.getElementById("panels");if(P)new MutationObserver(function(recs){if(recs.some(function(r){return r.type==="childList"}))sch()}).observe(P,{childList:true})}catch(e){}}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();</script>
 </body>
