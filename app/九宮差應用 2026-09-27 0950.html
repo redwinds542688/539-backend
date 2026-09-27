@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 01:34";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 09:50";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-27 09:50  更新流程修正(使用者回報「按立即更新後畫面停在『正在安裝新程式…』不會消失，也不知道有沒有更新完畢」)：①先把新程式下載好並顯示下載到的版本，再重新開啟；②8 秒後畫面還沒換＝手機沒自動重新開啟，按鍵改成「重新開啟程式」並說明可把程式完全關閉再打開；③更新完成改成跳出「更新完成＋版本」視窗(原本只有 3.5 秒小提示)。
    2026-09-27 01:34  全部連線(第三招、三層十字差綠線、三層第6期紅線、C式/E式各種連線，含存圖)由 2px 改為 3px(使用者指示)；標定號碼外框維持 1.5px。
    2026-09-27 01:23  全部連線(第三招、三層十字差綠線、三層第6期紅線、C式/E式各種連線，含存圖)由 1.5px 改為 2px(使用者指示)；標定號碼外框維持 1.5px。
    2026-09-27 01:07  三層第三區預測號碼：①修正截圖重影(空白期填號的字色規則權重較高，擷取時沒被藏起來又被補畫一次，變成疊字)；②預測號碼格改用第一、二區第6期命中格的樣式(底色、框線、字色一致)。
@@ -9329,8 +9330,15 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     say("正在刪除原來的程式…");
     try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(function(r){return r.unregister()}))}}catch(e){}
     try{if(window.caches&&caches.keys){const ks=await caches.keys();await Promise.all(ks.map(function(k){return caches.delete(k)}))}}catch(e){}
-    say("正在安裝新程式…");
-    setTimeout(function(){location.replace(location.pathname+"?u="+Date.now()+location.hash)},400)}
+    /* 2026-09-27 使用者回報「按立即更新後畫面停在『正在安裝新程式…』不會消失，也不知道有沒有更新完畢」：
+       ①先把新程式整個下載好(確認拿到的版本)再重新開啟；②8 秒後畫面還在＝手機沒有自動重新開啟，改顯示「重新開啟程式」鍵與關閉再開的說明，不會一直卡著；
+       ③重新開啟後到了新版，跳出「更新完成」視窗(原本只有 3.5 秒小提示，容易沒看到) */
+    say("正在下載新程式…");const url=location.pathname+"?u="+Date.now();let got="";
+    try{const r=await fetch(url,{cache:"reload"});const t=await r.text();const m=/window\.APP_BUILD="([^"]+)"/.exec(t);got=m?m[1]:""}catch(e){}
+    say(got?("新程式 "+got+" 下載完成，正在重新開啟…"):"正在重新開啟程式…");
+    setTimeout(function(){location.replace(url+location.hash)},400);
+    setTimeout(function(){if(!ov||!ov.isConnected)return;ov.__busy=false;const go=ov.querySelector("#app-update-go,#app-update-again");if(go){go.textContent="重新開啟程式";const g2=go.cloneNode(true);go.parentNode.replaceChild(g2,go);g2.addEventListener("click",function(){try{location.reload()}catch(e){}setTimeout(function(){location.href=url},300)})}
+      say("");if(msg)msg.innerHTML='<div style="text-align:left;line-height:1.6;">'+(got?"新程式已下載好，":"")+'但畫面沒有自動重新開啟。<br>請按上面「重新開啟程式」；<br>如果還是這個畫面，請把程式完全關閉(從最近使用的程式清單滑掉)，再重新打開。</div>'},8000)}
   function manual(remote){const ios=isIOS();
     const steps=ios?'<ol style="font-size:16px;line-height:1.7;padding-left:22px;margin:4px 0 8px;"><li>回到手機桌面，長按這個 App 的圖示 →「移除 App」→「刪除 App」。</li><li>打開 Safari，輸入原本的網址打開本程式。</li><li>按下方「分享」鍵 →「加入主畫面」。</li></ol>'
       :'<ol style="font-size:16px;line-height:1.7;padding-left:22px;margin:4px 0 8px;"><li>回到手機桌面，長按這個 App 的圖示 →「解除安裝」或「移除」。</li><li>打開 Chrome，輸入原本的網址打開本程式。</li><li>按右上角「⋮」→「加到主畫面」或「安裝應用程式」。</li></ol>';
@@ -9341,7 +9349,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   let laterUntil=0,lastCheck=0,busy=false;
   /* 更新回來後：到了新版就報「已更新」；還是舊版且已經自動試過，就改顯示手動重裝步驟 */
   const target=ls(TKEY);
-  if(target){if(LOCAL>=target){ls(TKEY,null);ls(AKEY,null);window.addEventListener("load",function(){setTimeout(function(){toast("已更新到最新版 "+LOCAL)},800)})}}
+  if(target){if(LOCAL>=target){ls(TKEY,null);ls(AKEY,null);window.addEventListener("load",function(){setTimeout(function(){const ov=box(H+'更新完成</div>'+P+'已經更新到最新版本：<b>'+LOCAL+'</b></div><div id="app-update-ok" '+BTN+'>好</div>');ov.querySelector("#app-update-ok").addEventListener("click",function(){ov.remove()})},800)})}}
   async function check(){if(busy||Date.now()<laterUntil)return;busy=true;lastCheck=Date.now();
     try{const remote=await remoteBuild();if(!remote||!(remote>LOCAL))return;
       if(document.getElementById("app-update-overlay"))return;
