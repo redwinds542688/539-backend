@@ -4,12 +4,13 @@
 <meta charset="UTF-8" />
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 11:00";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-27 11:01";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
    規則：每次修改程式，都在最上面新增一筆「修改時間(台灣時間，到分鐘)＋改了什麼」，
    並把上面的 APP_BUILD 改成同一個時間；交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」也用同一個時間。
    最新的寫在最上面。
+   2026-09-27 11:01  版本檢查改成一啟動程式立刻檢查(原本等畫面載完再過 3 秒)；切回程式(超過 10 分鐘)與開著每 30 分鐘的檢查不變。
    2026-09-27 11:00  修正「第二招標最後一期→下捲一期→按三層，第三區倒數第二期(最後開獎那期)沒有號碼」：手指拖動回看時進入第 19 格的號碼會淡出(透明度 0)，放手後第 19 列蓋成空白期時把「透明的號碼」存起來，之後還原、三層複製都變成看不見的號碼(離開三層回抓牌也一樣)。改成存號碼時拿掉透明度、還原時與三層複製時也一律拿掉。
    2026-09-27 10:49  標定號碼字色再加深(使用者：淺底色且數字要清楚，不可用光暈)：字色由深金#6B5200(對比4.7)改成深棕近黑#2B1F00(對比10.3)，底色維持淺粉#FBC0C0、深藍框#16389B，不加光暈；亮色系、暗色系一致；每台手機再自動換一次新預設(之後自己點選的顏色照常保留)。
    2026-09-27 10:48  ①標定號碼預設改淺色(使用者：底色太深，改淺但要最清楚)：亮色系淺粉底#FBC0C0＋深棕近黑字#2B1F00(10:48 原為深金#6B5200，對比4.7不夠清楚，改成對比10.3；不用光暈)＋深藍框#16389B(同暗色系配色)，每台手機自動換一次新預設，之後自己在設定點選的顏色照常保留；亮色系三層命中格(深藍底)字改淺粉才看得清楚。②新版檢查加上：程式一直開在前面時每 30 分鐘自動檢查一次。
@@ -9368,7 +9369,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   window.__appUpdateCheck=check;
   /* 2026-09-27 使用者指示「更新檢查可以一起附上」：程式一直開在前面時，每 30 分鐘也自動檢查一次(背景中不查，切回來照原本規則) */
   setInterval(function(){if(document.visibilityState==="visible")check()},1800000);
-  window.addEventListener("load",function(){setTimeout(check,3000)});
+  /* 2026-09-27 使用者指示「一啟動程式立刻檢查版本」：不再等畫面載完＋3 秒，程式一開就查(這段在頁面最後，畫面元素都已經在了) */check();
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&Date.now()-lastCheck>600000)setTimeout(check,1500)});
 })();</script>
 
