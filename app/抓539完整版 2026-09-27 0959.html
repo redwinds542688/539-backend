@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 09:50";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-27 09:59";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-27 09:59  更新流程再補強：下載新程式最多等 8 秒(網路卡住時不會停在「正在下載新程式…」)，之後照樣進入重新開啟／卡住時顯示「重新開啟程式」鍵。
    2026-09-27 09:50  更新流程修正(使用者回報「按立即更新後畫面停在『正在安裝新程式…』不會消失，也不知道有沒有更新完畢」)：①先把新程式下載好並顯示下載到的版本，再重新開啟；②8 秒後畫面還沒換＝手機沒自動重新開啟，按鍵改成「重新開啟程式」並說明可把程式完全關閉再打開；③更新完成改成跳出「更新完成＋版本」視窗(原本只有 3.5 秒小提示)。
    2026-09-27 01:34  全部連線(第三招、三層十字差綠線、三層第6期紅線、C式/E式各種連線，含存圖)由 2px 改為 3px(使用者指示)；標定號碼外框維持 1.5px。
    2026-09-27 01:23  全部連線(第三招、三層十字差綠線、三層第6期紅線、C式/E式各種連線，含存圖)由 1.5px 改為 2px(使用者指示)；標定號碼外框維持 1.5px。
@@ -5799,7 +5800,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
        ①先把新程式整個下載好(確認拿到的版本)再重新開啟；②8 秒後畫面還在＝手機沒有自動重新開啟，改顯示「重新開啟程式」鍵與關閉再開的說明，不會一直卡著；
        ③重新開啟後到了新版，跳出「更新完成」視窗(原本只有 3.5 秒小提示，容易沒看到) */
     say("正在下載新程式…");const url=location.pathname+"?u="+Date.now();let got="";
-    try{const r=await fetch(url,{cache:"reload"});const t=await r.text();const m=/window\.APP_BUILD="([^"]+)"/.exec(t);got=m?m[1]:""}catch(e){}
+    try{const ac=window.AbortController?new AbortController():null;const tm=setTimeout(function(){try{ac&&ac.abort()}catch(e){}},8000);/* 網路卡住最多等 8 秒，不會停在「正在下載」 */const r=await fetch(url,{cache:"reload",signal:ac?ac.signal:undefined});const t=await r.text();clearTimeout(tm);const m=/window\.APP_BUILD="([^"]+)"/.exec(t);got=m?m[1]:""}catch(e){}
     say(got?("新程式 "+got+" 下載完成，正在重新開啟…"):"正在重新開啟程式…");
     setTimeout(function(){location.replace(url+location.hash)},400);
     setTimeout(function(){if(!ov||!ov.isConnected)return;ov.__busy=false;const go=ov.querySelector("#app-update-go,#app-update-again");if(go){go.textContent="重新開啟程式";const g2=go.cloneNode(true);go.parentNode.replaceChild(g2,go);g2.addEventListener("click",function(){try{location.reload()}catch(e){}setTimeout(function(){location.href=url},300)})}
