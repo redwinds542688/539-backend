@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-28 11:20";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-28 11:24";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-28 11:24  修正「會先看到連線再看到畫面出現」(使用者三層截圖)：畫面切換時藏起開獎單的範圍擴大到浮在開獎單上的圖層——三層紅框/綠線/紅線、單桿把手/標籤、C式E式連線與框。實測進三層：開獎單藏著但線/框已出現 13 幀 → 0；離開三層 16 幀 → 0。
    2026-09-28 11:20  所有畫面切換都不再看到排版中間過程(使用者指示「進入所有系統都要排除這種狀況」)：換畫面(首頁/全頁/抓牌/三層/單桿/主程式九宮格・抓牌十八・C式・E式)、換彩種或資料更新、轉向時，先藏起開獎單，排版連續 4 幀不變才一次顯示(換畫面至少 0.3 秒、轉向至少 0.8 秒)；主程式九宮格排除首頁拉伸(原本兩邊互相調整)。逐一量測：舊版 首頁→全頁 1、換彩種 1、轉直 3、主程式抓牌十八返回 2 個中間畫面 → 新版全部 0(三層號碼閃爍是原本設計)。
    2026-09-28 11:12  進入抓牌號碼不再「先小後大」(使用者回報)：抓牌進場原本分三步排好開獎單(約 0.18 秒放大但比例未調→號碼偏小、0.24 秒調成正確比例、0.34 秒格子收窄)，中間狀態都看得到。改成進抓牌時先藏起開獎單，排版連續 4 幀不再變動才一次顯示(最多 0.7 秒)。實測中間三個狀態都在隱藏中，約 0.4 秒顯示最終大小；抓牌捲動、單桿結果不變。
    2026-09-28 11:06  調整期數的「－」「＋」上下置中(使用者截圖「－」偏下)：原本用文字符號，高低跟著手機字型走；改成直接畫藍色橫條/十字，固定在按鍵正中央(顏色/陰影同原本，按下變黑、停用變淡)。實測亮暗色系都置中，按鍵功能正常(15→14→15)。
@@ -9715,7 +9716,7 @@ html body.theme-dark table.road tr td.num.num.num.num.num.num.num.num.c-ding-top
 <style>/* 2026-09-28 使用者回報「進入抓牌，號碼感覺原本小然後變大」，再指示「進入所有系統都要排除這種狀況」：
    換畫面(首頁/全頁/抓牌/三層/單桿/主程式抓牌十八・C式・E式)、換彩種或資料更新(開獎單重建)、轉向或視窗寬度改變時，開獎單會分好幾步排好，中間狀態被看到(號碼先小後大、先寬後窄)。
    改成：這些時候先把開獎單藏起來，排版連續 4 幀不再變動才一次顯示(換畫面至少 0.3 秒、轉向至少 0.8 秒)。 */
-html.zp-entering #panels, html.zp-entering .scroller, html.zp-entering #connect-svg{ visibility:hidden !important; }
+html.zp-entering #panels, html.zp-entering .scroller, html.zp-entering #connect-svg, html.zp-entering [id^="zp-sc-"], html.zp-entering [id^="zp-sb-"], html.zp-entering svg[id$="-svg"], html.zp-entering [id$="-lines-clip"], html.zp-entering #c-ding-left-blank-frame, html.zp-entering #blank-period-right-line-overlay{ visibility:hidden !important; }/* 2026-09-28 使用者回報「會先看到連線再看到畫面出現」：三層的紅框/綠線/紅線、單桿把手/標籤、C式E式連線等浮在開獎單上的圖層一起藏 */
 </style>
 <script>(function(){var raf=0,t0=0,last="",same=0,guard=0,lastScreen="",lastW=0,minMs=300;
 var SCREEN=["catch-card-fit-mode"/* 主程式九宮格(抓牌首頁) */,"zhuapai-mode","pinch-fullscreen-mode","zp-sanceng","zp-single-bar","recent-only-mode","magnifier-mode","c-mode-active","game-wide","game-mark6","game-lotto"];
