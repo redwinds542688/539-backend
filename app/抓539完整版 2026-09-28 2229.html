@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-28 22:27";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-28 22:29";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-28 22:29  單桿九宮：次數等於 2 的號碼改為也在 18 期裡標定(使用者指示「等於 2 的也要標定，空白期不用放」)；註記欄照舊列出，空白期不填。
    2026-09-28 22:27  單桿九宮：改成「次數剛好等於 2 才算式子成立」(使用者指示)，≥3 的不再算；結果只列在註記欄(右上次數 2)，不標定、不填空白期；沒有等於 2 的顯示「無」。
    2026-09-28 22:23  單桿九宮：沒有 3 次、改用 2 次的號碼時，只列在註記欄(使用者指示「2 次的才標註記欄，其他的不用」)，不在 18 期標定、不填空白期；有 3 次時照舊。
    2026-09-28 22:14  單桿九宮：這桿沒有出現 3 次(含以上)的號碼時，改顯示出現剛好 2 次的號碼(使用者指示)——同樣在 18 期裡標定、註記欄列出(右上次數 2)、空白期放第一名；連 2 次都沒有才顯示「無」。
@@ -4796,8 +4797,8 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     const cnt={};barNums.forEach(function(n){SB_OFFS.forEach(function(o){const t=wrapNum(n,o,max);cnt[t]=(cnt[t]||0)+1})});
     /* 2026-09-28 使用者指示「在這桿沒有 3 次的，顯示等於 2 次的給我看」：先找 ≥3；一個都沒有才改用 =2(標定、註記、空白期都照同樣方式顯示)；連 2 次都沒有才顯示「無」 *//* 2026-09-28 22:30 使用者指示「現在改次數等於 2 才算式子成立」：只有剛好出現 2 次的號碼算結果(≥3 的不算)；顯示照上一版「2 次的只標註記欄」 */let thr=2;let res=Object.keys(cnt).map(Number).filter(function(v){return cnt[v]===2});res.sort(function(a,b){return cnt[b]-cnt[a]||a-b});SB.thr=thr;
     SB.none=!res.length;SB.res=res;placeTagText();SB.stats={cnt:cnt,list:res.map(function(v){return {v:v,c:cnt[v]}})};try{renderStats()}catch(e){}
-    /* 2026-09-28 使用者指示「2 次的才標註記欄，其他的不用」：用 =2 補上時只列在註記欄，不在 18 期標定、不填空白期 */if(res.length&&thr===3){g.forEach(function(row){row.forEach(function(cl){if(cl.v!==null&&res.indexOf(cl.v)>=0)markHit(cl.td)})});
-      const cols=(typeof cModeColCount==="function")?cModeColCount():5;const top=cnt[res[0]];/* 2026-09-28 使用者指示「改顯示在註記欄位，空白期只顯示第一名」：≥3 的全部列在註記欄(含次數)；空白期只放次數最多的號碼(同次數並列第一名都放，由小到大) */fillBlank(res.filter(function(v){return cnt[v]===top}).slice(0,cols).sort(function(a,b){return a-b}))}
+    /* 2026-09-28 使用者指示「2 次的才標註記欄，其他的不用」：用 =2 補上時只列在註記欄，不在 18 期標定、不填空白期 *//* 2026-09-28 使用者指示「等於 2 的也要標定，空白期不用放」：18 期照樣標定；空白期(第 19 列)不填 */if(res.length){g.forEach(function(row){row.forEach(function(cl){if(cl.v!==null&&res.indexOf(cl.v)>=0)markHit(cl.td)})});
+      const cols=(typeof cModeColCount==="function")?cModeColCount():5;const top=cnt[res[0]];/* 2026-09-28 使用者指示「改顯示在註記欄位，空白期只顯示第一名」：≥3 的全部列在註記欄(含次數)；空白期只放次數最多的號碼(同次數並列第一名都放，由小到大) */if(false)fillBlank(res.filter(function(v){return cnt[v]===top}).slice(0,cols).sort(function(a,b){return a-b}))}
     if(typeof logEvent==="function")try{logEvent("單桿九宮","第 "+SB.period+" 期 桿上 "+barNums.map(function(v){return String(v).padStart(2,"0")}).join(" ")+" → "+(thr===3?"≥3":"=2")+"："+(res.map(function(v){return String(v).padStart(2,"0")+"×"+cnt[v]}).join("、")||"無"))}catch(e){}}
   function nextOffset(){runSearch((SB.oi+1)%SB_OFFS.length)}
   /* 拖曳鍵上方的小標籤：顯示目前的九宮差 */
