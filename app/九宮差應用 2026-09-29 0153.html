@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-28 23:43";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 01:53";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-29 01:53  全面檢查修正(使用者指示「跑程式所有功能，排除畫面跳動、字體由小變大、星期日期號碼置中」)：①號碼置中原本在切換畫面時被「先藏起來」跳過，完全沒做(抓牌號碼偏上約 3px、首頁偏下)，改成藏著也照常置中；②星期欄徽章裡的字改用量字形墨跡置中(原本中文字比徽章中心高)，批次量測避免卡頓；③切換畫面藏著的期間主動把號碼比例/置中做完才顯示，顯示後不再變大變小；④抓牌/三層/單桿截圖：格線與星期字照畫面位置補畫(原本格線變雙框、星期字偏下)。
    2026-09-28 23:43  單桿九宮原算法版(長按註記)：取消「九宮鍵／註記鍵單擊切換」，改成單擊單桿下面藍底的九宮差欄位(例 -11)切換到下一個成立的九宮差；同一桿成立的九宮差不只一個時，欄位的字閃爍提示(使用者指示)。
    2026-09-28 23:16  單桿九宮原算法版：同一桿有兩個以上成立的九宮差時，單擊「註記」按鍵＝切換到下一個成立的九宮差(使用者指示)，到最後一個再按回到第一個；剛長按進入放開手指那一下不算。
    2026-09-28 23:10  抓牌左欄「註記」改成按鍵外觀；長按「註記」＝單桿九宮原算法版(使用者指示)：只算單桿上 5(6) 個號碼，九宮差從 -11 開始依序找，畫面第 17 期與第 18 期都至少中 1 個目標號碼＝成立，停在第一個成立的九宮差(欄位顯示九宮差)，18 期標定目標號碼，空白期顯示 17/18 期沒中的目標號碼；單擊九宮鍵＝下一個成立的九宮差；都不成立＝「無」。取代上一版長按註記的「等於 2」邏輯；長按「定顯」照舊(≥3)。
@@ -386,13 +387,13 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
     if(document.body.classList.contains("c-drag-scroll")||__inkHold){ __inkSkipped=true; return; }
     if(!els)els=Array.prototype.slice.call(document.querySelectorAll(SEL));
     if(!els.length)return;
-    if(inCapture()||supported===false){ clearInline(els); return; }
+    if(inCapture()||supported===false){ clearInline(els); try{ centerBadges(); }catch(e){} return; }
     clearInline(els);
     var jobs=[];
     els.forEach(function(el){
       var td=el.closest("td"); if(!td)return;
       var text=(el.textContent||"").trim(); if(!text)return;
-      var cs=getComputedStyle(el); if(cs.display==="none"||cs.visibility==="hidden")return;
+      var cs=getComputedStyle(el); if(cs.display==="none"||(cs.visibility==="hidden"&&!document.documentElement.classList.contains("zp-entering")))return;/* 2026-09-28 修正：切換畫面時開獎單先藏起來(html.zp-entering，visibility:hidden)等穩定再顯示，原本這裡把藏起來的號碼全部跳過，結果號碼置中完全沒做(抓牌號碼偏上約 3px、首頁偏下)；藏起來只是看不見、位置照算，所以照常置中 */
       var r=el.getBoundingClientRect(); if(r.width<=0||r.height<=0)return;
       var box=cellInnerBox(td); if(!box)return;
       var font=(cs.fontStyle&&cs.fontStyle!=="normal"?cs.fontStyle+" ":"")+cs.fontWeight+" "+cs.fontSize+" "+cs.fontFamily;
@@ -414,7 +415,41 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
     jobs.forEach(function(j){
       j.el.style.transform="translate("+j.tx.toFixed(2)+"px,"+j.ty.toFixed(2)+"px)"+(Math.abs(j.s-1)>0.001?" scale("+j.s.toFixed(4)+")":"");
       j.el.setAttribute("data-ink-centered","1");
+    });    try{ centerBadges(); }catch(e){}
+  }
+  /* 2026-09-28 使用者指示「星期、日期、號碼有沒有置中」：星期欄徽章(td.wd .badge)裡的字，原本只靠 flex 置中「文字行」，
+     中文字形在行框裡的位置由各手機字型決定(實測 Noto Sans CJK 字比徽章中心高約 1/4 格)，換手機就偏。
+     改成跟號碼一樣「量字形墨跡」：把字包進 span.wd-g，量墨跡中心對到徽章中心，用 translate 修正(只動字，不動徽章底色)。截圖時清掉(截圖由 drawWdBadges 自己畫) */
+  function centerBadges(){
+    var bs=document.querySelectorAll("#panels table.road td.wd .badge"); if(!bs.length)return;
+    var cap=inCapture(), list=[];
+    /* 第一輪(只寫)：必要時把字包進 span.wd-g，並清掉舊的修正——全部寫完才開始量，避免每格都強迫瀏覽器重排(200 格會卡 1 秒以上) */
+    Array.prototype.forEach.call(bs,function(b){
+      var g=b.querySelector(".wd-g");
+      if(!g){ if(cap)return; var tn=null,ok=true; for(var c=b.firstChild;c;c=c.nextSibling){ if(c.nodeType===3){ if(c.nodeValue.trim()){ if(tn)ok=false; tn=c; } } else ok=false; } if(!ok||!tn)return;
+        g=document.createElement("span"); g.className="wd-g"; g.style.display="inline-block"; b.insertBefore(g,tn); g.appendChild(tn); }
+      if(g.style.transform)g.style.transform="";
+      list.push({b:b,g:g});
     });
+    if(cap||supported===false||!list.length)return;
+    /* 第二輪(只量) */
+    var jobs=[];
+    list.forEach(function(it){
+      var b=it.b,g=it.g; var text=(g.textContent||"").trim(); if(!text)return;
+      var br=b.getBoundingClientRect(); if(br.width<=0||br.height<=0||br.bottom<-200||br.top>window.innerHeight+200)return;/* 畫面外的先不算(捲進來時會再觸發) */
+      var cs=getComputedStyle(g); if(cs.display==="none")return;
+      var r=g.getBoundingClientRect(); if(r.width<=0||r.height<=0)return;
+      var font=(cs.fontStyle&&cs.fontStyle!=="normal"?cs.fontStyle+" ":"")+cs.fontWeight+" "+cs.fontSize+" "+cs.fontFamily;
+      var m=inkMetrics(font,text); if(!m)return;
+      var sc=ancestorScale(b); var bm=parseMatrix(getComputedStyle(b).transform); var sx=sc.x*bm.s, sy=sc.y*bm.s;
+      var inkCx=perCharInkCenter(g,text,font,sx); if(inkCx===null)inkCx=r.left+(m.right-m.left)/2*sx;
+      var inkCy=r.top+baselineOffset(g,cs,sy)*sy+(m.desc-m.asc)/2*sy;
+      var dx=(br.left+br.width/2-inkCx)/(sx||1), dy=(br.top+br.height/2-inkCy)/(sy||1);
+      if(!isFinite(dx)||!isFinite(dy))return;
+      jobs.push({g:g,t:"translate("+dx.toFixed(2)+"px,"+dy.toFixed(2)+"px)"});
+    });
+    /* 第三輪(只寫) */
+    jobs.forEach(function(j){ j.g.style.transform=j.t; });
   }
   var pending=null,pendingAll=false,pendingSet=null;
   var __inkHold=false,__inkSkipped=false;
@@ -428,7 +463,13 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
       try{ recenter(all||!set?null:Array.from(set)); }catch(e){ if(typeof console!=="undefined")console.warn("號碼置中失敗",e); }
     });
   }
-  function isOwnWrite(rec){ return rec.type==="attributes"&&rec.target&&rec.target.classList&&rec.target.classList.contains("cell-shift"); }
+  function isOwnWrite(rec){
+    var t=rec.target; if(!t||!t.classList)return false;
+    if(rec.type==="attributes")return t.classList.contains("cell-shift")||t.classList.contains("wd-g");
+    /* 星期字包進 span.wd-g 時的 DOM 變動也是自己造成的，不要再觸發重算 */
+    if(rec.type==="childList"){ if(t.classList.contains("wd-g"))return true; if(t.classList.contains("badge")){ var only=function(list){ return Array.prototype.every.call(list,function(n){ return n.nodeType===3||(n.classList&&n.classList.contains("wd-g")); }); }; return only(rec.addedNodes)&&only(rec.removedNodes); } }
+    return false;
+  }
   function onPanelsMutations(recs){
     if(inCapture()){ schedule(null); return; }
     var full=false,els=[];
@@ -7985,11 +8026,11 @@ if(__zhuaBtn){__zhuaBtn.addEventListener("click",function(e){/* 同格換鍵防�
     const scale=Math.min(3,Math.max(2,window.devicePixelRatio||2));
     /* html2canvas 不支援 CSS zoom(.panels 在抓牌畫面是 zoom 0.59 再加 transform 縮放)，擷取期間把 zoom 換算進 transform(T·scale(z)，視覺位置不變)，擷取完還原 */
     const __zoomFix=[];Array.prototype.forEach.call(document.querySelectorAll("#panels, .scroller, #page-zoom-wrap"),function(el){const cs=getComputedStyle(el);const z=parseFloat(cs.zoom);if(!(z>0)||Math.abs(z-1)<1e-6)return;__zoomFix.push({el:el,zoom:el.style.zoom,tr:el.style.transform,to:el.style.transformOrigin});const base=(cs.transform&&cs.transform!=="none")?cs.transform+" ":"";el.style.transformOrigin=cs.transformOrigin;el.style.transform=base+"scale("+z+")";el.style.zoom="1"});
-    let canvas;try{canvas=await html2canvas(document.body,{backgroundColor:bg,scale:scale,x:sx,y:sy,width:W,height:H,scrollX:sx,scrollY:sy,windowWidth:W,windowHeight:H,useCORS:true,logging:false,onclone:function(d){try{const st=d.createElement("style");st.textContent="table.road td.num .cell-shift, table.road td.day:not(.first-of-month) .cell-shift, table.road td.num .zp-sb-pred, html body table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3 .cell-shift, html body table.road tr td.num.num.num.num.num.num.num.num.zp-sc-pred3 .cell-shift{color:transparent !important;-webkit-text-fill-color:transparent !important;text-shadow:none !important}";/* 01:06 空白期填號(c-ding-top3)的字色規則權重較高，原本擷取時沒被藏起來、又被補畫一次＝重影；這裡用更高權重藏起來 */(d.head||d.documentElement).appendChild(st)}catch(e){}try{/* 2026-09-25 14:07 使用者回報截圖存下來的按鍵「跑掉」：html2canvas 畫不好按鍵的內側亮邊(box-shadow inset)，整顆按鍵被蓋成一層白霧、只剩字後面一塊原色。截圖時只把複製頁面裡按鍵的 inset 陰影拿掉(畫面本身不動)，外側陰影保留 */d.querySelectorAll("button").forEach(function(el){const sh=d.defaultView.getComputedStyle(el).boxShadow;if(!sh||sh==="none"||sh.indexOf("inset")<0)return;const parts=sh.split(/,(?![^(]*\))/).map(function(x){return x.trim()}).filter(function(x){return x.indexOf("inset")<0});el.style.setProperty("box-shadow",parts.length?parts.join(", "):"none","important")})}catch(e){}},/* 2026-09-25 00:04 號碼置中：截圖程式放號碼的位置跟瀏覽器不同(存出來偏下約7px)，所以截圖時先不畫號碼，截完由 __drawNums15 照畫面上的位置補畫 */
+    let canvas;try{canvas=await html2canvas(document.body,{backgroundColor:bg,scale:scale,x:sx,y:sy,width:W,height:H,scrollX:sx,scrollY:sy,windowWidth:W,windowHeight:H,useCORS:true,logging:false,onclone:function(d){try{const st=d.createElement("style");st.textContent="table.road td.num .cell-shift, table.road td.day:not(.first-of-month) .cell-shift, table.road td.num .zp-sb-pred, html body table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3 .cell-shift, html body table.road tr td.num.num.num.num.num.num.num.num.zp-sc-pred3 .cell-shift{color:transparent !important;-webkit-text-fill-color:transparent !important;text-shadow:none !important}";/* 01:06 空白期填號(c-ding-top3)的字色規則權重較高，原本擷取時沒被藏起來、又被補畫一次＝重影；這裡用更高權重藏起來 */(d.head||d.documentElement).appendChild(st)}catch(e){}try{/* 2026-09-28 截圖程式把格子的內陰影格線畫成雙框、星期字位置也跟畫面不同：複製頁面裡先不畫格線與星期字，截完由 __drawGrid15 照畫面位置補畫 */const st2=d.createElement("style");st2.textContent='html body.magnifier-mode table.road tr td:not(#zp-no-id):not(#zp-no-id2):not(.num-marked):not(.zp-sc-hit):not(.zp-sc-key):not(.zp-sb-blank):not(:has(.zp-sb-pred)):not(.blank-period-frame-cell):not([style*="box-shadow"]){box-shadow:none !important} table.road td.wd .badge .wd-g{color:transparent !important;-webkit-text-fill-color:transparent !important}';(d.head||d.documentElement).appendChild(st2)}catch(e){}try{/* 2026-09-25 14:07 使用者回報截圖存下來的按鍵「跑掉」：html2canvas 畫不好按鍵的內側亮邊(box-shadow inset)，整顆按鍵被蓋成一層白霧、只剩字後面一塊原色。截圖時只把複製頁面裡按鍵的 inset 陰影拿掉(畫面本身不動)，外側陰影保留 */d.querySelectorAll("button").forEach(function(el){const sh=d.defaultView.getComputedStyle(el).boxShadow;if(!sh||sh==="none"||sh.indexOf("inset")<0)return;const parts=sh.split(/,(?![^(]*\))/).map(function(x){return x.trim()}).filter(function(x){return x.indexOf("inset")<0});el.style.setProperty("box-shadow",parts.length?parts.join(", "):"none","important")})}catch(e){}},/* 2026-09-25 00:04 號碼置中：截圖程式放號碼的位置跟瀏覽器不同(存出來偏下約7px)，所以截圖時先不畫號碼，截完由 __drawNums15 照畫面上的位置補畫 */
       ignoreElements:function(el){return el.id==="capture-mask"||el.id==="bug-log-fab"||el.id==="save-toast"||el.id==="num-picker-overlay"||el.id==="fullpage-mode-menu"}})}finally{__zoomFix.forEach(function(f){f.el.style.zoom=f.zoom;f.el.style.transform=f.tr;f.el.style.transformOrigin=f.to})}
     const d=new Date(),p=function(n){return String(n).padStart(2,"0")};const ts=d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"_"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());
     const gameLabel=(typeof currentGameKey!=="undefined"&&currentGameKey)?String(currentGameKey):"";
-    if(window.__drawFrames15)window.__drawFrames15(canvas,scale);if(window.__drawNums15)window.__drawNums15(canvas,scale);/* 2026-09-24 23:38 補畫 1.5px 標定外框 */canvas.__dpi=Math.round(160*scale/2);downloadComposedCanvas(canvas,gameLabel+"抓牌_"+ts+".png");
+    if(window.__drawGrid15)window.__drawGrid15(canvas,scale);if(window.__drawFrames15)window.__drawFrames15(canvas,scale);if(window.__drawNums15)window.__drawNums15(canvas,scale);/* 2026-09-24 23:38 補畫 1.5px 標定外框 */canvas.__dpi=Math.round(160*scale/2);downloadComposedCanvas(canvas,gameLabel+"抓牌_"+ts+".png");
     if(typeof logEvent==="function")logEvent("存檔","抓牌畫面整頁擷取 "+canvas.width+"x"+canvas.height);
   }catch(e){console.warn("抓牌截圖失敗",e);if(typeof logEvent==="function")logEvent("存檔","抓牌畫面擷取失敗 "+(e&&e.message))}
   finally{try{if(__rePrewarm){window.__cModePrewarmSuppressUntil=0;if(typeof window.cModeSchedulePrewarm==="function")window.cModeSchedulePrewarm()}}catch(e){}if(btnEl)setTimeout(function(){btnEl.classList.remove("shot-lit")},250);window.__zpBlinkHold=false;__busy=false}}
@@ -9282,7 +9323,7 @@ setInterval(function(){
 })();</script>
 <script>/* 2026-09-24 23:38 抓牌／三層「整個畫面截圖」(html2canvas)畫不出標定外框用的 inset box-shadow(存出來的圖外框不見)：截完圖後照每一格在畫面上的位置，把 1.5px 外框補畫到圖上(顏色取該格外框的顏色)；被按鍵蓋住的格子不畫 */
 window.__drawFrames15=function(canvas,scale){try{const ctx=canvas.getContext("2d");if(!ctx)return;const W=window.innerWidth,H=window.innerHeight;const btns=Array.prototype.map.call(document.querySelectorAll(".pin-btn, #bug-log-fab"),function(e){const s=getComputedStyle(e);return (s.display==="none"||s.visibility==="hidden")?null:e.getBoundingClientRect()}).filter(function(q){return q&&q.width>0});
-  document.querySelectorAll("table.road td.num").forEach(function(td){const cs=getComputedStyle(td);const bs=cs.boxShadow;if(!bs||bs==="none"||bs.indexOf("inset")<0)return;const m=bs.match(/rgba?\([^)]*\)/);if(!m)return;
+  document.querySelectorAll("table.road td.num").forEach(function(td){try{if(td.matches('html body.magnifier-mode table.road tr td:not(#zp-no-id):not(.num-marked):not(.zp-sc-hit):not(.zp-sc-key):not(.zp-sb-blank):not(:has(.zp-sb-pred)):not(.blank-period-frame-cell):not([style*="box-shadow"])'))return}catch(e){}/* 2026-09-28 格線改用內陰影後，一般格子也有 inset 陰影：只有格線、沒有標定外框的格子不畫框(格線由 __drawGrid15 畫) */const cs=getComputedStyle(td);const bs=cs.boxShadow;if(!bs||bs==="none"||bs.indexOf("inset")<0)return;const m=bs.match(/rgba?\([^)]*\)/);if(!m)return;
     const r=td.getBoundingClientRect();if(!(r.width>1&&r.height>1))return;if(r.bottom<=0||r.top>=H||r.right<=0||r.left>=W)return;
     const cx=Math.min(W-1,Math.max(0,r.left+r.width/2)),cy=Math.min(H-1,Math.max(0,r.top+r.height/2));if(btns.some(function(q){return cx>=q.left&&cx<=q.right&&cy>=q.top&&cy<=q.bottom}))return;/* 被底部按鍵蓋住的格子不畫(不能用 elementFromPoint：截圖時畫面上有遮罩) */
     const t=td.closest("table");const fx=t?(parseFloat(t.style.getPropertyValue("--fx"))||1):1,fy=t?(parseFloat(t.style.getPropertyValue("--fy"))||1):1;
@@ -9293,6 +9334,28 @@ window.__drawFrames15=function(canvas,scale){try{const ctx=canvas.getContext("2d
 <script>/* 2026-09-25 00:04 使用者指示「號碼置中是重中之重」：抓牌／三層整畫面截圖(html2canvas)畫號碼的位置比畫面偏下約 7px。
    做法：截圖時號碼先透明(onclone)，截完後逐格補畫——位置＝該格格線內側的正中心(跟畫面置中用的同一個 cellInnerBox)，字體/粗細/字級/顏色取畫面上的實際值，
    橫直縮放取該號碼在畫面上的實際大小(含整張表的放大與壓縮)，用 fillTextInkCentered 以「字形墨跡」置中。只畫在開獎單可見範圍內，被底部按鍵蓋住的部分不畫。 */
+/* 2026-09-28 抓牌/三層/單桿截圖：格線(一般 1px、週/月線 1.5px、星期欄右側與特別號左側 1.5px，亮黑暗白)與星期字，照畫面上每一格的實際位置補畫在截圖上(截圖程式畫內陰影格線會變雙框) */
+window.__drawGrid15=function(canvas,scale){try{const ctx=canvas.getContext("2d");if(!ctx||!document.body.classList.contains("magnifier-mode"))return;const W=window.innerWidth,H=window.innerHeight;
+  const btns=Array.prototype.map.call(document.querySelectorAll(".pin-btn, #bug-log-fab, #zp-sb-handle, #zp-sb-offset-tag"),function(e){const s=getComputedStyle(e);return (s.display==="none"||s.visibility==="hidden")?null:e.getBoundingClientRect()}).filter(function(q){return q&&q.width>0});
+  const scr=document.querySelector(".scroller");const cr0=scr?scr.getBoundingClientRect():{left:0,top:0,width:W,height:H};
+  const __mk=document.getElementById("zp-bottom-mask");const __mt=(__mk&&__mk.style.display!=="none"&&document.body.classList.contains("zhuapai-mode"))?__mk.getBoundingClientRect().top:Infinity;
+  const cr={left:cr0.left,top:cr0.top,width:cr0.width,height:Math.max(0,Math.min(cr0.top+cr0.height,__mt)-cr0.top)};
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.beginPath();ctx.rect(Math.max(0,cr.left)*scale,Math.max(0,cr.top)*scale,Math.min(W,cr.left+cr.width)*scale-Math.max(0,cr.left)*scale,Math.min(H,cr.top+cr.height)*scale-Math.max(0,cr.top)*scale);ctx.clip();
+  ctx.beginPath();ctx.rect(0,0,canvas.width,canvas.height);btns.forEach(function(q){ctx.rect(q.left*scale,q.top*scale,q.width*scale,q.height*scale)});ctx.clip("evenodd");
+  const col=(getComputedStyle(document.body).getPropertyValue("--zpL")||"").trim()||(document.body.classList.contains("theme-dark")?"#fff":"#000");ctx.fillStyle=col;
+  const SEL='html body.magnifier-mode table.road tr td:not(#zp-no-id):not(.num-marked):not(.zp-sc-hit):not(.zp-sc-key):not(.zp-sb-blank):not(:has(.zp-sb-pred)):not(.blank-period-frame-cell):not([style*="box-shadow"])';
+  document.querySelectorAll("#panels table.road tr").forEach(function(tr){const rr=tr.getBoundingClientRect();if(rr.height<=0||rr.bottom<cr.top||rr.top>cr.top+cr.height)return;const cs0=getComputedStyle(tr);if(cs0.display==="none"||cs0.visibility==="hidden")return;
+    const week=!!(tr.nextElementSibling&&tr.nextElementSibling.classList&&tr.nextElementSibling.classList.contains("month-start"));
+    Array.prototype.forEach.call(tr.children,function(td){if(!td.matches||!td.matches(SEL))return;const r=td.getBoundingClientRect();if(r.width<=0||r.height<=0)return;
+      const wR=(td.classList.contains("wd")||(td.nextElementSibling&&td.nextElementSibling.classList.contains("special")))?1.5:1,wB=week?1.5:1;
+      ctx.fillRect((r.right-wR)*scale,r.top*scale,wR*scale,r.height*scale);ctx.fillRect(r.left*scale,(r.bottom-wB)*scale,r.width*scale,wB*scale);
+      if(td.classList.contains("day"))ctx.fillRect(r.left*scale,r.top*scale,1*scale,r.height*scale)})});
+  /* 星期字：畫在徽章正中(字形墨跡置中) */
+  if(typeof window.fillTextInkCentered==="function")document.querySelectorAll("#panels table.road td.wd .badge .wd-g").forEach(function(g){const t=(g.textContent||"").trim();if(!t)return;const b=g.parentNode;const br=b.getBoundingClientRect();if(br.width<=0||br.bottom<cr.top||br.top>cr.top+cr.height)return;
+    const cs=getComputedStyle(g);if(cs.visibility==="hidden")return;const gr=g.getBoundingClientRect();const k=g.offsetHeight?gr.height/g.offsetHeight:1;const fs=(parseFloat(cs.fontSize)||10)*k*scale;
+    ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=parseFloat(getComputedStyle(b).opacity)||1;ctx.fillStyle=cs.color;ctx.font=(cs.fontStyle&&cs.fontStyle!=="normal"?cs.fontStyle+" ":"")+cs.fontWeight+" "+fs.toFixed(2)+"px "+cs.fontFamily;
+    window.fillTextInkCentered(ctx,t,(br.left+br.width/2)*scale,(br.top+br.height/2)*scale);ctx.restore()});
+  ctx.restore()}catch(e){console.warn("補畫格線失敗",e)}};
 window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d");if(!ctx||typeof window.fillTextInkCentered!=="function")return;const W=window.innerWidth,H=window.innerHeight;
   /* 2026-09-26 09:49 單桿截圖修正：拖曳鍵(#zp-sb-handle)、九宮差欄位(#zp-sb-offset-tag)的範圍也不補畫(原本底下的日期被畫在它們上面) */
   const btns=Array.prototype.map.call(document.querySelectorAll(".pin-btn, #bug-log-fab, #zp-sb-handle, #zp-sb-offset-tag"),function(e){const s=getComputedStyle(e);return (s.display==="none"||s.visibility==="hidden")?null:e.getBoundingClientRect()}).filter(function(q){return q&&q.width>0});
@@ -9751,7 +9814,7 @@ function sig(){var td=null,list=document.querySelectorAll("#panels td.num");for(
   var sp=td?(td.querySelector(".cell-shift")||td):null;var fs=sp?getComputedStyle(sp).fontSize:"";
   return [Math.round(r.left*2),Math.round(r.top*2),Math.round(r.width*2),Math.round(r.height*2),fs,P?P.style.transform+"|"+P.style.zoom:"",S?S.style.transform+"|"+S.style.width:""].join(",")}
 function done(){document.documentElement.classList.remove("zp-entering");if(raf){cancelAnimationFrame(raf);raf=0}clearTimeout(guard)}
-function tick(){raf=0;var s=sig();if(s===last)same++;else{same=0;last=s}if((same>=4&&performance.now()-t0>minMs)||performance.now()-t0>minMs+600){done();return}raf=requestAnimationFrame(tick)}
+function tick(){raf=0;/* 2026-09-28：藏著的期間主動把「號碼比例」「號碼置中」做完(不等它們自己的計時器)，做完且穩定才顯示，縮短藏的時間、也不會顯示後才變大變小 */try{var tb=document.querySelector("#panels table.road"),f0=tb?tb.style.getPropertyValue("--num-fit"):"";if(window.__numFitRun)window.__numFitRun();var f1=tb?tb.style.getPropertyValue("--num-fit"):"";if(f1!==f0&&window.recenterCellNumbers)window.recenterCellNumbers()}catch(e){}var s=sig();if(s===last)same++;else{same=0;last=s}if((same>=4&&performance.now()-t0>minMs)||performance.now()-t0>minMs+600){done();return}raf=requestAnimationFrame(tick)}
 function hide(ms){minMs=Math.max(ms||300,(raf&&minMs)||0);var b=document.body.classList;if(b.contains("capturing-plain")||b.contains("capturing-save-only")||b.contains("capturing-clean-sheet"))return;/* 存圖中不動 */
   document.documentElement.classList.add("zp-entering");t0=performance.now();last="";same=0;clearTimeout(guard);guard=setTimeout(done,minMs+800);if(!raf)raf=requestAnimationFrame(tick)}
 window.__sheetHideUntilStable=hide;
