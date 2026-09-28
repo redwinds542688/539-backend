@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-28 22:57";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-28 23:10";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-28 23:10  抓牌左欄「註記」改成按鍵外觀；長按「註記」＝單桿九宮原算法版(使用者指示)：只算單桿上 5(6) 個號碼，九宮差從 -11 開始依序找，畫面第 17 期與第 18 期都至少中 1 個目標號碼＝成立，停在第一個成立的九宮差(欄位顯示九宮差)，18 期標定目標號碼，空白期顯示 17/18 期沒中的目標號碼；單擊九宮鍵＝下一個成立的九宮差；都不成立＝「無」。取代上一版長按註記的「等於 2」邏輯；長按「定顯」照舊(≥3)。
    2026-09-28 22:57  單桿九宮分成兩個入口(使用者指示)：長按「定顯」＝原邏輯(次數 ≥3 成立：18 期標定、註記欄、空白期放第一名)；長按左欄「註記」標題格＝次數剛好等於 2 成立(18 期標定、註記欄，空白期不放)。長按註記欄其他地方照舊開選號盤。
    2026-09-28 22:29  單桿九宮：次數等於 2 的號碼改為也在 18 期裡標定(使用者指示「等於 2 的也要標定，空白期不用放」)；註記欄照舊列出，空白期不填。
    2026-09-28 22:27  單桿九宮：改成「次數剛好等於 2 才算式子成立」(使用者指示)，≥3 的不再算；結果只列在註記欄(右上次數 2)，不標定、不填空白期；沒有等於 2 的顯示「無」。
@@ -8045,7 +8046,7 @@ let __zpSwallowRelease=false;
    const __hitCell=e.target&&e.target.closest?e.target.closest(".zp-pick-cell"):null;const __hitVal=__hitCell?parseInt(__hitCell.dataset.value,10):null;
    const __hitHead=e.target&&e.target.closest?e.target.closest(".zp-pick-head"):null;
    __zpT=setTimeout(function(){__zpT=null;
-     /* 2026-09-28 使用者指示：長按「註記」標題格＝進入單桿九宮(次數等於 2 的邏輯)；不開選號盤 */if(__hitHead){if(typeof window.__zpSingleBarOn==="function"&&window.__zpSingleBarOn())return;if(navigator.vibrate)try{navigator.vibrate(30)}catch(x){}__zpSwallowRelease=true;if(typeof window.__zpSingleBarStart==="function")window.__zpSingleBarStart("two");return}
+     /* 2026-09-28 使用者指示：長按「註記」標題格(按鍵)＝進入單桿九宮「原算法版」；不開選號盤 */if(__hitHead){if(typeof window.__zpSingleBarOn==="function"&&window.__zpSingleBarOn())return;if(navigator.vibrate)try{navigator.vibrate(30)}catch(x){}__zpSwallowRelease=true;if(typeof window.__zpSingleBarStart==="function")window.__zpSingleBarStart("orig");return}
      /* 累加(跟全頁同一條規則)：全頁是「再長按同一個已選號的格子、再選一次同一個號碼」＝次數+1；抓牌左欄就是「長按左欄裡那個號碼」——
         選號盤會只剩那一個號碼可選，再選一次＝+1，方塊右上角用紅色小字顯示次數(2~9)。長按左欄空白處＝選新的號碼。 */
      let td=null;
@@ -8351,7 +8352,11 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 2026-09-28 使用者指示算法改變：「進入九宮，將單桿上的五號格子的九宮拖牌放進同一個統計表裡，把大於等於 3 的放在空白欄裡，並且在畫面上這 18 期找尋相同的標定起來；單桿的初始期設為 18」：
      單桿上 5(6) 個號碼，每個號碼各做九宮拖牌(加 -11、-10、-9、-1、0、+1、+9、+10、+11，超出範圍繞回)，全部放進同一個統計表計次；
      次數 ≥ 3 的號碼＝結果：①填在第 19 列(空白欄，次數多的優先，最多 5(6) 格，由小到大排)；②畫面上 18 期裡相同的號碼全部標定；③註記欄顯示結果與次數(右上紅字)。沒有 ≥3 的＝欄位顯示「無」。拖動單桿換期就重算。 */
-  function runSearch(from){if(!SB.on)return;cancelRun();clearHits();const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const g=grid();const barNums=barNumsNow();
+  /* 2026-09-28 使用者指示「長按註記執行原算法版：只計算單桿裡的五個號碼，九宮差從 -11 開始，如果 17 期中大於 0 且 18 期中也大於 0，則空白期顯示其他沒中的」：
+     九宮差依 -11、-10、-9、-1、0、+1、+9、+10、+11 順序，桿上 5(6) 個號碼各加上九宮差＝目標號碼；畫面第 17 期至少中 1 個、第 18 期也至少中 1 個＝成立，停在第一個成立的九宮差：
+     18 期裡目標號碼全部標定、欄位顯示九宮差、空白期填「17/18 期沒中的目標號碼」；9 個都不成立＝「無」。單擊九宮鍵＝往下找下一個成立的九宮差 */
+  function isValidOrig(oi){const tg=targetsFor(oi);if(!tg.length)return false;const rs=checkRows();return [1,2].every(function(k){const row=rs[k];return !!row&&row.some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0})})}
+  function runSearch(from){if(!SB.on)return;if(SB.mode==="orig"){cancelRun();SB.stats=null;try{renderStats()}catch(e){}let oi=-1;const st=(typeof from==="number"&&from>=0)?from:0;for(let k=0;k<SB_OFFS.length;k++){const i=(st+k)%SB_OFFS.length;if(isValidOrig(i)){oi=i;break}}showOffset(oi);if(typeof logEvent==="function")try{logEvent("單桿原算法","第 "+SB.period+" 期 → "+(oi<0?"無":offLabel(SB_OFFS[oi])))}catch(e){}return}cancelRun();clearHits();const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const g=grid();const barNums=barNumsNow();
     const cnt={};barNums.forEach(function(n){SB_OFFS.forEach(function(o){const t=wrapNum(n,o,max);cnt[t]=(cnt[t]||0)+1})});
     /* 2026-09-28 使用者指示「在這桿沒有 3 次的，顯示等於 2 次的給我看」：先找 ≥3；一個都沒有才改用 =2(標定、註記、空白期都照同樣方式顯示)；連 2 次都沒有才顯示「無」 *//* 2026-09-28 使用者指示「把長按九宮等於 2 的邏輯改在長按註記，長按九宮改回原邏輯」：SB.mode="three"(長按定顯進入)＝次數 ≥3 成立：18 期標定、註記欄、空白期放第一名；SB.mode="two"(長按註記進入)＝次數剛好等於 2 成立：18 期標定、註記欄，空白期不放 */const thr=(SB.mode==="two")?2:3;let res=Object.keys(cnt).map(Number).filter(function(v){return thr===2?cnt[v]===2:cnt[v]>=3});res.sort(function(a,b){return cnt[b]-cnt[a]||a-b});SB.thr=thr;
     SB.none=!res.length;SB.res=res;placeTagText();SB.stats={cnt:cnt,list:res.map(function(v){return {v:v,c:cnt[v]}})};try{renderStats()}catch(e){}
@@ -8362,7 +8367,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 拖曳鍵上方的小標籤：顯示目前的九宮差 */
   /* 2026-09-25 22:49 使用者指示「九宮差顯示欄位是拖曳桿下面的日期星期欄位，藍底紅字，九宮差在欄位裡顯示最大化」：標籤蓋在單桿下一列的日期＋星期兩格(左到日期左邊格線、右到星期右邊格線)，藍底(#1E63D0)紅字(#e02020)，字級依格子大小最大化 */
   function buildTag(){if(SB.tag)return SB.tag;const g=document.createElement("div");g.id="zp-sb-offset-tag";Object.assign(g.style,{position:"fixed",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9601",background:"#1E63D0",color:"#e02020",border:"2px solid #fff",boxSizing:"border-box",boxShadow:"0 0 4px rgba(0,0,0,0.7)",pointerEvents:"none",overflow:"hidden",whiteSpace:"nowrap"});const sp=document.createElement("span");sp.className="zp-sb-offset-txt";Object.assign(sp.style,{font:"900 20px/1 Arial, Helvetica, sans-serif",color:"#e02020",display:"inline-block"});g.appendChild(sp);document.body.appendChild(g);SB.tag=g;return g}
-  function placeTagText(){const g=buildTag();const sp=g.firstChild;const t=SB.none?"無":"九宮";/* 2026-09-28 新算法：不再逐一換九宮差，欄位顯示「九宮」(有結果)或「無」 */if(sp.textContent!==t){sp.textContent=t;SB.tagFit=""}}
+  function placeTagText(){const g=buildTag();const sp=g.firstChild;const t=SB.none?"無":(SB.mode==="orig"?offLabel(SB_OFFS[SB.oi]):"九宮");/* 原算法版顯示目前的九宮差 *//* 2026-09-28 新算法：不再逐一換九宮差，欄位顯示「九宮」(有結果)或「無」 */if(sp.textContent!==t){sp.textContent=t;SB.tagFit=""}}
   function placeTag(tr){const g=buildTag();placeTagText();if(!tr){g.style.display="none";return}
     const side=Array.prototype.slice.call(tr.children).filter(function(td){return td.classList.contains("day")||td.classList.contains("wd")});
     let L=Infinity,T=Infinity,R=-Infinity,B=-Infinity;side.forEach(function(td){const r=td.getBoundingClientRect();if(r.width<=0)return;L=Math.min(L,r.left);T=Math.min(T,r.top);R=Math.max(R,r.right);B=Math.max(B,r.bottom)});
@@ -8374,7 +8379,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     if(force||key!==SB.lastKey||!SB.painted.length||!SB.painted[0].isConnected||!SB.painted[0].classList.contains("zp-sb-cell")){paint(tr);SB.lastKey=key}
     placeHandle(tr)}
   function loop(){SB.raf=0;if(!SB.on)return;try{update(false)}catch(e){}SB.raf=requestAnimationFrame(loop)}
-  function start(mode){if(SB.on)return false;const b=bc();if(!b.contains("zhuapai-mode")||b.contains("zp-sanceng"))return false;SB.mode=(mode==="two")?"two":"three";/* 2026-09-28 使用者指示：長按「定顯」＝原邏輯(≥3)；長按「註記」＝等於 2 的邏輯 */
+  function start(mode){if(SB.on)return false;const b=bc();if(!b.contains("zhuapai-mode")||b.contains("zp-sanceng"))return false;SB.mode=(mode==="orig")?"orig":"three";/* 2026-09-28 使用者指示：長按「定顯」＝統計表 ≥3；長按「註記」＝原算法版(逐一九宮差) */
     try{if(typeof window.__zpR19Uncover==="function")window.__zpR19Uncover()}catch(e){}/* 先還原一般抓牌的第 19 列(單桿有自己的處理) */
     SB.stash={pickedPaths:pickedPaths,connections:connections,broadened:broadened,historyStack:historyStack};
     pickedPaths=[];connections=[];broadened=false;historyStack=[];
@@ -9796,6 +9801,9 @@ html body.theme-dark:not(.capturing-plain):not(.capturing-save-only):not(.captur
 html body table.road tr td.wd, html body table.road tr td:has(+ td.special){ --zpRW:1.5px; }
 /* 2026-09-28 使用者回報「C式差數 02.03 沒有標示」：A/B 錨定列的格子本身是 num-marked-click(整列上色)，上面那條「num-marked-click 一律不畫圈」的規則把命中圓圈也關掉了；命中格(c-mode-auto-match-cell，且沒被指定不畫圈)照樣畫圈 */
 html body table.road tr td.num.num-marked.num-marked-click.c-mode-auto-match-cell:not(.c-mode-ab-suppress-circle)::before{ content:"" !important; }
+/* 2026-09-28 使用者指示「註記改成按鍵」：抓牌左欄最上面的「註記」做成跟下方按鍵同樣的立體灰色按鍵(長按＝單桿九宮原算法版) */
+html body #zp-pick-col .zp-pick-head{ background:#8a8a8a !important; color:#fff !important; border:1px solid rgba(0,0,0,.35) !important; border-radius:7px !important; box-shadow:0 2px 0 #4d4d4d, 0 3px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.45) !important; text-shadow:0 1px 1px rgba(0,0,0,.55); cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+html body.theme-dark #zp-pick-col .zp-pick-head{ box-shadow:0 2px 0 #2a2a2a, 0 3px 6px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.35) !important; }
 </style>
 </body>
 </html>
