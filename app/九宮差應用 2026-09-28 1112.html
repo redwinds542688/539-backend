@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-28 11:06";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-28 11:12";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-28 11:12  進入抓牌號碼不再「先小後大」(使用者回報)：抓牌進場原本分三步排好開獎單(約 0.18 秒放大但比例未調→號碼偏小、0.24 秒調成正確比例、0.34 秒格子收窄)，中間狀態都看得到。改成進抓牌時先藏起開獎單，排版連續 4 幀不再變動才一次顯示(最多 0.7 秒)。實測中間三個狀態都在隱藏中，約 0.4 秒顯示最終大小；抓牌捲動、單桿結果不變。
    2026-09-28 11:06  調整期數的「－」「＋」上下置中(使用者截圖「－」偏下)：原本用文字符號，高低跟著手機字型走；改成直接畫藍色橫條/十字，固定在按鍵正中央(顏色/陰影同原本，按下變黑、停用變淡)。實測亮暗色系都置中，按鍵功能正常(15→14→15)。
    2026-09-28 09:53  自動調整改成「有變化才量」(使用者指示)：8 個原本每 0.25～1 秒定時重量尺寸的自動調整(抓牌第19列、標記外框、全頁高度、字體放大縮回、號碼60%比例、開獎球/日期、橫屏格子比例、首頁=全頁高度)全部拿掉定時器，改由共用觸發器 __onLayout：轉向/視窗大小/網址列伸縮、換畫面、換彩種或資料更新、字型載入、手指放開/滾輪、切回程式時才在 0.06/0.25/0.7/1.5 秒各量一次後停止；進入時套用記住的數值。實測全頁靜置 6 秒樣式變動 7528 次 → 0 次；首頁、全頁、橫屏 11 機型、放大極限、轉向、單桿、抓牌捲動、主程式縮放結果與改前完全相同。
    2026-09-28 09:36  修正主程式首頁兩指縮放後畫面跑掉(使用者截圖)：首頁開獎單「等於全頁高度」的每秒校正在整頁放大(pageZoom≠1)時照樣量高度，把放大後的高度當原高而把開獎單壓扁(模擬 3.26 倍時壓成 0.39 倍)。改成放大中不校正、縮回 1 倍才校正。實測放大 3.26 倍維持原比例、縮回後恢復正常。
@@ -9710,5 +9711,18 @@ html body.theme-dark table.road tr td.num.num.num.num.num.num.num.num.c-ding-top
 .blank-stepper #blank-plus::after{ width:15%; height:66%; }
 .blank-stepper #blank-minus:active::before, .blank-stepper #blank-plus:active::before, .blank-stepper #blank-plus:active::after{ background:#000; }
 </style>
+<style>/* 2026-09-28 使用者回報「進入抓牌，號碼感覺原本小然後變大」：進抓牌時開獎單分三步排好(0.18 秒放大但比例未調→號碼偏小、0.24 秒調成正確比例、0.34 秒格子收窄)，中間狀態都被看到。
+   改成進抓牌時先把開獎單藏起來，排版連續 4 幀不再變動才一次顯示(最多 0.7 秒) */
+html.zp-entering #panels, html.zp-entering .scroller, html.zp-entering #connect-svg{ visibility:hidden !important; }
+</style>
+<script>(function(){var was=false,raf=0,t0=0,last="",same=0,guard=0;
+function sig(){var td=null,list=document.querySelectorAll("#panels td.num");for(var i=0;i<list.length&&i<400;i++){var r0=list[i].getBoundingClientRect();if(r0.height>0&&r0.bottom>0&&r0.top<innerHeight){td=list[i];break}}
+  var P=document.getElementById("panels"),S=document.querySelector(".scroller");var r=td?td.getBoundingClientRect():{left:0,top:0,width:0,height:0};
+  return [Math.round(r.left*2),Math.round(r.top*2),Math.round(r.width*2),Math.round(r.height*2),P?P.style.transform+"|"+P.style.zoom:"",S?S.style.transform:""].join(",")}
+function done(){document.documentElement.classList.remove("zp-entering");if(raf){cancelAnimationFrame(raf);raf=0}clearTimeout(guard)}
+function tick(){raf=0;var s=sig();if(s===last)same++;else{same=0;last=s}if((same>=4&&performance.now()-t0>150)||performance.now()-t0>700){done();return}raf=requestAnimationFrame(tick)}
+function start(){document.documentElement.classList.add("zp-entering");t0=performance.now();last="";same=0;clearTimeout(guard);guard=setTimeout(done,900);if(!raf)raf=requestAnimationFrame(tick)}
+function obs(){var b=document.body;try{new MutationObserver(function(){var now=b.classList.contains("zhuapai-mode");if(now&&!was)start();else if(!now&&was)done();was=now}).observe(b,{attributes:true,attributeFilter:["class"]})}catch(e){}was=b.classList.contains("zhuapai-mode")}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",obs);else obs()})();</script>
 </body>
 </html>
