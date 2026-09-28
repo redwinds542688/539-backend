@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+<script>/* 2026-09-28 使用者指示「不要一直重新量尺寸」：原本 8 個自動調整(抓牌第19列、標記外框、全頁高度、字體放大縮回、號碼60%比例、開獎球/日期、橫屏格子比例、首頁=全頁高度)各自每 0.25～1 秒定時重量。
+   改成「有變化才量」：進入時套用記住的數值；只有在 轉向/視窗大小改變/網址列伸縮、換畫面(body class 改變)、換彩種或資料更新(開獎單重建)、字型載入完成、手指放開/滾輪(捲動、放大縮回之後)、切回程式 時，
+   在 0.06/0.25/0.7/1.5 秒各量一次讓版面穩定，之後就停。量出來跟記住的一樣就不動作(各模組原本就是這樣)。 */
+(function(){var fns=[],timers=[],DELAYS=[60,250,700,1500];
+function runAll(){for(var i=0;i<fns.length;i++){try{fns[i]()}catch(e){}}}
+function kick(){for(var i=0;i<timers.length;i++)clearTimeout(timers[i]);timers=DELAYS.map(function(d){return setTimeout(runAll,d)})}
+window.__layoutKick=kick;
+window.__onLayout=function(fn){if(typeof fn!=="function")return;fns.push(fn);[100,400,1200,2500].forEach(function(d){setTimeout(function(){try{fn()}catch(e){}},d)})};
+function volatileFree(c){return String(c||"").split(/\s+/).filter(function(x){return x&&x!=="zp-blink-off"}).sort().join(" ")}
+function start(){var lastCls=volatileFree(document.body.className);
+  try{new MutationObserver(function(){var c=volatileFree(document.body.className);if(c!==lastCls){lastCls=c;kick()}}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
+  (function watchPanels(){var P=document.getElementById("panels");if(!P){setTimeout(watchPanels,300);return}try{new MutationObserver(function(){kick()}).observe(P,{childList:true})}catch(e){}})();
+  ["resize","orientationchange","pageshow"].forEach(function(ev){window.addEventListener(ev,kick)});
+  if(window.visualViewport)window.visualViewport.addEventListener("resize",kick);
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")kick()});
+  ["touchend","pointerup","wheel"].forEach(function(ev){window.addEventListener(ev,kick,{passive:true,capture:true})});
+  try{if(document.fonts){document.fonts.addEventListener("loadingdone",kick);document.fonts.ready.then(kick)}}catch(e){}}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start()})();
+</script>
+
 <meta charset="UTF-8" />
 <script>/* 2026-09-27 使用者指示「(自動調整)都只在手機上執行」：手機/平板＝Android、iPhone、iPad(含偽裝成 Mac 的 iPad)、UA 帶 Mobile；電腦不算 */window.__isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));if(window.__isMobile)document.documentElement.classList.add("is-mobile");
 /* 2026-09-27 使用者指示「電腦/筆電照方式1：把程式當成一支 18高:9寬 的直立手機放在畫面中間；左右空白以後可以出租廣告」：
@@ -22,9 +42,10 @@
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-28 09:36";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-28 09:53";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-28 09:53  自動調整改成「有變化才量」(使用者指示)：8 個原本每 0.25～1 秒定時重量尺寸的自動調整(抓牌第19列、標記外框、全頁高度、字體放大縮回、號碼60%比例、開獎球/日期、橫屏格子比例、首頁=全頁高度)全部拿掉定時器，改由共用觸發器 __onLayout：轉向/視窗大小/網址列伸縮、換畫面、換彩種或資料更新、字型載入、手指放開/滾輪、切回程式時才在 0.06/0.25/0.7/1.5 秒各量一次後停止；進入時套用記住的數值。實測全頁靜置 6 秒樣式變動 7528 次 → 0 次；首頁、全頁、橫屏 11 機型、放大極限、轉向、單桿、抓牌捲動、主程式縮放結果與改前完全相同。
    2026-09-28 09:36  修正主程式首頁兩指縮放後畫面跑掉(使用者截圖)：首頁開獎單「等於全頁高度」的每秒校正在整頁放大(pageZoom≠1)時照樣量高度，把放大後的高度當原高而把開獎單壓扁(模擬 3.26 倍時壓成 0.39 倍)。改成放大中不校正、縮回 1 倍才校正。實測放大 3.26 倍維持原比例、縮回後恢復正常。
    2026-09-28 01:52  單桿九宮空白期第一名改色(使用者指示「顏色與上面太相近，換一個有區別的顏色」)：原深紅字白底 → 藍字(#0050D0)淺藍底(#DCEBFF)加藍色細框；暗色系亮藍字(#7DB8FF)深藍底(#0D2B55)。與黑字號碼、粉紅底標定、灰底單桿都不同。
    2026-09-28 01:48  單桿九宮結果顯示調整(使用者指示「改顯示在註記欄位，空白期只顯示第一名」)：次數≥3 的號碼全部列在註記欄(右上紅字＝次數)；第 19 列空白期只放次數最多的號碼(同次數並列第一都放)。18 期裡≥3 的號碼照舊全部標定。實測第 18 期：註記欄 28×4、18/27/29/37/38×3，空白期只有 28。
@@ -4619,7 +4640,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   /* 捲動落定、標記重算之後同步；另每 0.3 秒檢查一次(平滑捲動、被動號碼保護等其他路徑) */
   if(typeof applyCModeScrollOffset==="function"){const __o=applyCModeScrollOffset;applyCModeScrollOffset=function(){const r=__o.apply(this,arguments);try{requestAnimationFrame(sync)}catch(e){}return r}}
   if(typeof applyMarksToClone==="function"){const __oam=applyMarksToClone;applyMarksToClone=function(){const r=__oam.apply(this,arguments);if(!__r19Busy&&R.row)strip(R.row);return r}}
-  setInterval(function(){if(bc().contains("zhuapai-mode")||R.row)sync()},300);
+  window.__onLayout(function(){if(bc().contains("zhuapai-mode")||R.row)sync()});
   new MutationObserver(function(){if(!active()&&R.row)uncover()}).observe(document.body,{attributes:true,attributeFilter:["class"]});
   /* 三層開啟前先還原(三層要讀畫面上的號碼與標記)；第 19 列上不接受第一招雙擊(看不到號碼) */
   (function wrapSC(){if(typeof window.__zpSanCengToggle==="function"&&!window.__zpSanCengToggle.__r19){const __ot=window.__zpSanCengToggle;const w=function(){uncover();const __r=__ot.apply(this,arguments);if(!__r){try{sync()}catch(e){}}/* 2026-09-27 00:19 三層沒有動作(沒有標記等)時，同一拍立刻把第 19 列蓋回空白期，畫面不會閃出真實號碼 */return __r};w.__r19=true;window.__zpSanCengToggle=w}else setTimeout(wrapSC,500)})();
@@ -5589,7 +5610,7 @@ boot().catch(function(e){console.error("boot失敗",e)});
   function upd(){try{document.querySelectorAll("table.road").forEach(function(t){const r=t.getBoundingClientRect();if(!(r.width>0&&r.height>0&&t.offsetWidth>0&&t.offsetHeight>0))return;let fx=t.offsetWidth/r.width,fy=t.offsetHeight/r.height;if(!isFinite(fx)||!isFinite(fy))return;/* 2026-09-27 使用者指示「這些的框皆為1px」：全頁也一律 1px，取消上一版的等比例變細 */
     const ox=parseFloat(t.style.getPropertyValue("--fx"))||0,oy=parseFloat(t.style.getPropertyValue("--fy"))||0;if(Math.abs(ox-fx)>0.0005*fx||Math.abs(oy-fy)>0.0005*fy){t.style.setProperty("--fx",fx.toFixed(4));t.style.setProperty("--fy",fy.toFixed(4))}})}catch(e){}}
   let q=0;function sch(){if(q)return;q=requestAnimationFrame(function(){q=0;upd()})}
-  window.__frame15Update=upd;setInterval(sch,250);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
+  window.__frame15Update=upd;window.__onLayout(sch);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
   function start(){sch();try{new MutationObserver(sch).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();</script>
@@ -5844,7 +5865,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     if(typeof applyPageZoom==="function")applyPageZoom();
     if(typeof logEvent==="function")try{logEvent("全頁高度校正","開獎單高 "+pr.height.toFixed(1)+" → 紅線間 "+target.toFixed(1)+"，scaleY "+cur.toFixed(4)+" → "+next.toFixed(4))}catch(e){}
   }catch(e){}}
-  setInterval(function(){fix(false)},300);
+  window.__onLayout(function(){fix(false)});
   /* 2026-09-26 使用者指示「自動修復很重要」：除了每 0.3 秒檢查，全頁每次排版(進入全頁、縮放放開、換彩券、網址列伸縮等都會呼叫 window.refitFullPageSheet)一做完就立刻校正，
      不等手指、不等 0.3 秒——進入全頁時在畫面顯示出來之前就已經校正好，蘋果上不會先看到壓扁再彈回。
      window.refitFullPageSheet 每次進入全頁都會被重新指定，所以用存取器攔：之後不管被指定成什麼，呼叫時都先跑原本的，再立刻校正。原本的全頁程式一字未動。 */
@@ -5952,7 +5973,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   function run(){try{document.querySelectorAll("table.road").forEach(function(tb){const r=tb.getBoundingClientRect();if(r.width>0&&r.height>0)fitTable(tb)})}catch(e){}}
   let q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;run();requestAnimationFrame(run)},80)}
   window.__numFitRun=run;
-  function start(){if(!window.__isMobile)return;/* 只在手機上執行 */sch();setInterval(run,1000);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
+  function start(){if(!window.__isMobile)return;/* 只在手機上執行 */sch();window.__onLayout(run);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
     /* 畫面切換、開獎單重畫時：先同步套用記住的倍率(在畫面畫出來之前)，再排程量測確認 */
     try{new MutationObserver(function(){applyStored();sch()}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
     try{const pn=document.getElementById("panels");if(pn)new MutationObserver(function(recs){if(recs.some(function(x){return x.type==="childList"&&Array.prototype.some.call(x.addedNodes,function(n){return n.nodeType===1&&(n.matches("table,tbody,tr,.panel")||n.querySelector&&n.querySelector("table.road"))})}))applyStored();sch()}).observe(pn,{childList:true,subtree:true})}catch(e){}
@@ -5990,7 +6011,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   }catch(e){}}
   document.addEventListener("pointerdown",function(){down=true},true);["pointerup","pointercancel"].forEach(function(n){document.addEventListener(n,function(){down=false;setTimeout(fix,600)},true)});
   window.__row19FixNow=fix;
-  function start(){setInterval(fix,400);window.addEventListener("resize",function(){setTimeout(fix,50);setTimeout(fix,400)});window.addEventListener("orientationchange",function(){setTimeout(fix,400)});
+  function start(){window.__onLayout(fix);window.addEventListener("resize",function(){setTimeout(fix,50);setTimeout(fix,400)});window.addEventListener("orientationchange",function(){setTimeout(fix,400)});
     if(window.visualViewport)window.visualViewport.addEventListener("resize",function(){setTimeout(fix,50)});
     (function watch(){const P=document.getElementById("panels");if(!P){setTimeout(watch,500);return}let busy=false;
       new MutationObserver(function(){if(busy)return;busy=true;try{fix()}finally{busy=false}}).observe(P,{attributes:true,attributeFilter:["style"]})})()}
@@ -6044,7 +6065,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   function run(){try{homeSpace(false);pickFit(false);ballFit(false);dateFit(false)}catch(e){}}
   let q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;run()},80)}
   window.__autoFitMore={run:run,store:function(){return store}};
-  function start(){applyAll();sch();setInterval(run,1000);
+  function start(){applyAll();sch();window.__onLayout(run);
     window.addEventListener("resize",function(){document.querySelectorAll("[data-af-base]").forEach(function(el){delete el.dataset.afBase});applyAll();sch()});window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
     try{new MutationObserver(function(){applyAll();sch()}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
     ["hero-balls","zp-pick-col","hero-date"].forEach(function(id){const e=document.getElementById(id);if(e)try{new MutationObserver(function(){applyAll();sch()}).observe(e,{childList:true,characterData:true,subtree:true})}catch(x){}});
@@ -6063,7 +6084,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     const h0=parseFloat(S.style.height)||S.getBoundingClientRect().height;const h=h0*sy/parseFloat(m[2]);/* 捲動高度照直向倍率等比例調整(開獎單上方還有回看用的期數，不能直接量整張表高) */S.style.height=Math.ceil(h)+"px";const ls=h>window.innerHeight+1;b.toggle("zp-land-scroll",ls);if(!ls&&window.scrollY)window.scrollTo(0,0);
     window.__wfFix={R:+R.toFixed(3),scaleY:+sy.toFixed(4),scroll:ls}}catch(e){}}
   document.addEventListener("pointerdown",function(){down=true},true);["pointerup","pointercancel"].forEach(function(n){document.addEventListener(n,function(){down=false;setTimeout(fix,300)},true)});
-  function start(){setInterval(fix,500);window.addEventListener("resize",function(){setTimeout(fix,300);setTimeout(fix,900)});
+  function start(){window.__onLayout(fix);window.addEventListener("resize",function(){setTimeout(fix,300);setTimeout(fix,900)});
     try{new MutationObserver(function(){setTimeout(fix,60)}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();</script>
@@ -6099,7 +6120,7 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
   function save(){try{localStorage.setItem(SKEY,JSON.stringify(store))}catch(e){}}
   let q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;fit()},80)}
   window.__homeFitNow=fit;
-  function start(){applyStored();sch();setInterval(fit,1000);window.addEventListener("resize",function(){if(!active())restore();sch()});/* 網址列伸縮也會發 resize：不先還原(還原會讓頁面瞬間變短、捲動被拉回)，直接重算 */if(window.visualViewport)window.visualViewport.addEventListener("resize",function(){setTimeout(fit,120)});/* 網址列伸縮(有些瀏覽器只改可見範圍、不發 resize) */window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
+  function start(){applyStored();sch();window.__onLayout(fit);window.addEventListener("resize",function(){if(!active())restore();sch()});/* 網址列伸縮也會發 resize：不先還原(還原會讓頁面瞬間變短、捲動被拉回)，直接重算 */if(window.visualViewport)window.visualViewport.addEventListener("resize",function(){setTimeout(fit,120)});/* 網址列伸縮(有些瀏覽器只改可見範圍、不發 resize) */window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
     try{new MutationObserver(function(){applyStored();sch()}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}
     try{const P=document.getElementById("panels");if(P)new MutationObserver(function(recs){if(recs.some(function(r){return r.type==="childList"}))sch()}).observe(P,{childList:true})}catch(e){}}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
