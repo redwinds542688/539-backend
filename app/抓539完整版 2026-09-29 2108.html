@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 19:14";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 21:08";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-29 21:08  修正「星期右邊格線破了」(使用者回報)：星期徽章放大後蓋住格子右邊 1.5px 線，只露出圓角處一小段；改在星期格上疊一層同一套內陰影畫的線(z-index 高於徽章)，截圖時不疊。
    2026-09-29 19:14  單桿九宮：註記欄改列目前九宮差的全部目標號碼(由小到大)，第 17/18 期已開出的用粉紅底另外標示；空白期只放沒開出的，最多 5(6) 號(使用者指示)。
    2026-09-29 19:00  單桿九宮：基礎號門檻改成「九宮＋414 相加次數 ≥3」(使用者指示，原前二名同名次並列太多)；沒有 ≥3 的期＝無，自動跳過。
    2026-09-29 18:35  單桿九宮(長按定顯/全顯)：空白期與註記欄都改顯示目前九宮差的預測號(目標號碼中 17/18 期沒中的)，點藍底欄位切換九宮差時跟著換(使用者指示)；空白期最多 5(6) 格(號碼小的優先)，註記欄全部列出；長按九宮回溯累加後註記欄改顯示累加結果。
@@ -6478,6 +6479,10 @@ html body.magnifier-mode:not(.capturing-plain):not(.capturing-save-only):not(.ca
 html body.theme-dark:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr:has(+ tr.month-start) td, html body.theme-dark:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr:has(+ tr.month-start) td.num.num-marked.num-marked.num-marked.num-marked.num-marked{ border-bottom-color:var(--zpL) !important; }
 /* 2026-09-28 使用者指示：星期欄與第一個號碼之間、六合/大樂最後一個號碼與特別號之間的豎線也是 1.5px(四種彩券都一樣)，顏色同其他線(亮黑暗白) */
 html body table.road tr td.wd, html body table.road tr td:has(+ td.special){ --zpRW:1.5px; }
+/* 2026-09-29 使用者回報「星期右邊格線破了」：星期徽章(.badge 放大 1.3 倍)幾乎填滿整格，蓋住格子內陰影畫的右邊 1.5px 線，只剩徽章圓角露出一點線(一段一段像沙漏)。
+   改在星期格上面疊一條同寬同色的線(::after，z-index 高於徽章)，徽章怎麼放大都蓋不到；截圖(capturing-*)時不疊，照原本截圖補畫 */
+html body:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr td.wd{ position:relative; }
+html body:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr td.wd::after{ content:""; position:absolute; top:0; right:0; bottom:0; left:0; box-shadow:inset calc(-1 * var(--zpRW, 1.5px) * var(--fx, 1)) 0 0 0 var(--zpL, #000); pointer-events:none; z-index:3; }/* 用跟格線同一套內陰影畫(放大畫面裡細寬度的元素會被撐成 1 個版面 px，變粗) */
 /* 2026-09-28 使用者回報「C式差數 02.03 沒有標示」：A/B 錨定列的格子本身是 num-marked-click(整列上色)，上面那條「num-marked-click 一律不畫圈」的規則把命中圓圈也關掉了；命中格(c-mode-auto-match-cell，且沒被指定不畫圈)照樣畫圈 */
 html body table.road tr td.num.num-marked.num-marked-click.c-mode-auto-match-cell:not(.c-mode-ab-suppress-circle)::before{ content:"" !important; }
 /* 2026-09-28 使用者指示「註記改成按鍵」：抓牌左欄最上面的「註記」做成跟下方按鍵同樣的立體灰色按鍵(長按＝單桿九宮原算法版) */
