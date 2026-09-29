@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 18:35";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 19:00";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-29 19:00  單桿九宮：基礎號門檻改成「九宮＋414 相加次數 ≥3」(使用者指示，原前二名同名次並列太多)；沒有 ≥3 的期＝無，自動跳過。
    2026-09-29 18:35  單桿九宮(長按定顯/全顯)：空白期與註記欄都改顯示目前九宮差的預測號(目標號碼中 17/18 期沒中的)，點藍底欄位切換九宮差時跟著換(使用者指示)；空白期最多 5(6) 格(號碼小的優先)，註記欄全部列出；長按九宮回溯累加後註記欄改顯示累加結果。
    2026-09-29 18:12  單桿(註記亮燈的原算法版、九宮亮燈的九宮模式)中第四招(長按註記欄開選號盤)一律失效(使用者指示)：選號盤函式本身與註記欄長按都加上單桿判斷；離開單桿恢復。
    2026-09-29 18:09  單桿九宮(長按定顯/全顯)：註記鍵單擊、雙擊、長按皆失效(使用者指示)；註記欄只由長按九宮回溯累加。
@@ -4868,7 +4869,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     const sum={};Object.keys(c1).forEach(function(k){if(c2[k]>0)sum[k]=c1[k]+c2[k]});
     const lv=[];Object.keys(sum).map(function(k){return sum[k]}).sort(function(a,b){return b-a}).forEach(function(c){if(lv.indexOf(c)<0)lv.push(c)});
     const cols=(typeof cModeColCount==="function")?cModeColCount():5;const nums=Object.keys(sum).map(Number);
-    SB.base=lv.length?nums.filter(function(v){return sum[v]>=lv[Math.min(1,lv.length-1)]}).sort(function(a,b){return sum[b]-sum[a]||a-b}):[];
+    SB.base=nums.filter(function(v){return sum[v]>=3}).sort(function(a,b){return sum[b]-sum[a]||a-b});/* 2026-09-29 使用者指示基礎號門檻改成「九宮＋414 相加次數 ≥3」(原前二名，並列太多) */
     SB.top1=lv.length?nums.filter(function(v){return sum[v]===lv[0]}).sort(function(a,b){return a-b}).slice(0,cols):[];
     SB.sum={c1:c1,c2:c2,sum:sum,top2:SB.base,top1:SB.top1};return SB.base}
   /* 2026-09-25 23:31 使用者更正「不是單桿的下三期，是畫面裡的 16/17/18 期皆有中號碼才算」：對照期固定＝畫面上第 16、17、18 期(最後 3 期)，不隨單桿移動 */
