@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 13:42";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 15:06";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-29 15:06  單桿九宮(長按定顯/全顯)空白期改算法(使用者指示)：統計1＝桿上號碼九宮拖牌 45 個號碼計次；統計2＝414 拖牌(每號 -14、-4、+4、+14，繞回)20 個號碼計次；兩個統計都大於 0 的號碼次數相加，取前 2 名(同次數同名次都放，最多 5(6) 格，由小到大)放進空白期。註記欄與 18 期標定仍是九宮 ≥3。
    2026-09-29 13:42  單桿九宮原算法版自動搜尋改(使用者指示)：每次註記欄滿 18 號就剔除最後一名(次數最少；同次數號碼最大；一次超過 18 號時剔除到剩 17 個)後顯示，再暫停回到第一次長按註記的狀態(註記燈照亮)；再長按註記從剛剛停的地方繼續往上找，又滿 18 號時再剔除、再暫停，直到第 1 期。
    2026-09-29 13:36  單桿九宮原算法版：在長按註記的狀態下再長按註記＝自動搜尋(使用者指示)——單桿從第 18 期往上一格一格移，每格把成立的九宮差預測號碼記進註記欄(同一桿同一九宮差只記一次)，註記欄滿 18 號就暫停、單桿回原位(回到第一次長按的狀態，註記欄只顯示次數最多的 18 個)；再長按註記＝繼續，一直算到第 1 期。自動搜尋中註記鍵閃爍，單桿不能拖、藍底欄位不能切換；按返回＝中止並清除。
    2026-09-29 10:49  單桿九宮原算法版(長按註記)(使用者指示)：註記鍵亮燈、其他鍵(九宮、返回)熄燈；單擊/雙擊/長按註記鍵＝把當下預測號碼(空白期那幾個)記進註記欄並累計次數，同一桿同一個九宮差只記一次(再按無效)；離開即清除；三層、九宮在這個模式裡不作用。
@@ -8467,7 +8468,17 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     /* 2026-09-28 使用者指示「在這桿沒有 3 次的，顯示等於 2 次的給我看」：先找 ≥3；一個都沒有才改用 =2(標定、註記、空白期都照同樣方式顯示)；連 2 次都沒有才顯示「無」 *//* 2026-09-28 使用者指示「把長按九宮等於 2 的邏輯改在長按註記，長按九宮改回原邏輯」：SB.mode="three"(長按定顯進入)＝次數 ≥3 成立：18 期標定、註記欄、空白期放第一名；SB.mode="two"(長按註記進入)＝次數剛好等於 2 成立：18 期標定、註記欄，空白期不放 */const thr=(SB.mode==="two")?2:3;let res=Object.keys(cnt).map(Number).filter(function(v){return thr===2?cnt[v]===2:cnt[v]>=3});res.sort(function(a,b){return cnt[b]-cnt[a]||a-b});SB.thr=thr;
     SB.none=!res.length;SB.res=res;placeTagText();SB.stats={cnt:cnt,list:res.map(function(v){return {v:v,c:cnt[v]}})};try{renderStats()}catch(e){}
     /* 2026-09-28 使用者指示「2 次的才標註記欄，其他的不用」：用 =2 補上時只列在註記欄，不在 18 期標定、不填空白期 */if(res.length){g.forEach(function(row){row.forEach(function(cl){if(cl.v!==null&&res.indexOf(cl.v)>=0)markHit(cl.td)})});
-      const cols=(typeof cModeColCount==="function")?cModeColCount():5;const top=cnt[res[0]];/* 2026-09-28 使用者指示「改顯示在註記欄位，空白期只顯示第一名」：≥3 的全部列在註記欄(含次數)；空白期只放次數最多的號碼(同次數並列第一名都放，由小到大) */if(thr===3)fillBlank(res.filter(function(v){return cnt[v]===top}).slice(0,cols).sort(function(a,b){return a-b}))}
+      const cols=(typeof cModeColCount==="function")?cModeColCount():5;const top=cnt[res[0]];/* 2026-09-28 使用者指示「改顯示在註記欄位，空白期只顯示第一名」：≥3 的全部列在註記欄(含次數)；空白期只放次數最多的號碼(同次數並列第一名都放，由小到大) */}
+    /* 2026-09-29 使用者指示「九宮有 45 個號碼＝統計1，再搭配 414 拖牌有 20 個號碼＝統計2，把統計1 跟 2 裡大於 0 的再相加，取出前 2 名放在空白欄位」：
+       414 拖牌＝桿上每個號碼各加 -14、-4、+4、+14(超出範圍照九宮一樣繞回)；兩個統計都有出現(都大於 0)的號碼才算，次數相加後排名，
+       取第 1、2 名(同次數同名次，同名次都放)，最多 5(6) 格，由小到大填進空白期。註記欄與 18 期標定仍是九宮 ≥3(大於等於 3 次) */
+    if(thr===3){const c2={};barNums.forEach(function(n){[-14,-4,4,14].forEach(function(o){const t=wrapNum(n,o,max);c2[t]=(c2[t]||0)+1})});
+      const sum={};Object.keys(cnt).forEach(function(k){if(c2[k]>0)sum[k]=cnt[k]+c2[k]});
+      const lv=[];Object.keys(sum).map(function(k){return sum[k]}).sort(function(a,b){return b-a}).forEach(function(c){if(lv.indexOf(c)<0)lv.push(c)});
+      const cols=(typeof cModeColCount==="function")?cModeColCount():5;
+      const top2=lv.length?Object.keys(sum).map(Number).filter(function(v){return sum[v]>=lv[Math.min(1,lv.length-1)]}).sort(function(a,b){return sum[b]-sum[a]||a-b}).slice(0,cols):[];
+      SB.sum={c1:cnt,c2:c2,sum:sum,top2:top2};fillBlank(top2.slice().sort(function(a,b){return a-b}));
+      if(typeof logEvent==="function")try{logEvent("單桿九宮+414","第 "+SB.period+" 期 前2名："+(top2.map(function(v){return String(v).padStart(2,"0")+"("+cnt[v]+"+"+c2[v]+")"}).join("、")||"無"))}catch(e){}}
     if(typeof logEvent==="function")try{logEvent("單桿九宮","第 "+SB.period+" 期 桿上 "+barNums.map(function(v){return String(v).padStart(2,"0")}).join(" ")+" → "+(thr===3?"≥3":"=2")+"："+(res.map(function(v){return String(v).padStart(2,"0")+"×"+cnt[v]}).join("、")||"無"))}catch(e){}}
   function nextOffset(){runSearch((SB.oi+1)%SB_OFFS.length)}
   /* 拖曳鍵上方的小標籤：顯示目前的九宮差 */
