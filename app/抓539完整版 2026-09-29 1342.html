@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 13:36";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 13:42";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-29 13:42  單桿九宮原算法版自動搜尋改(使用者指示)：每次註記欄滿 18 號就剔除最後一名(次數最少；同次數號碼最大；一次超過 18 號時剔除到剩 17 個)後顯示，再暫停回到第一次長按註記的狀態(註記燈照亮)；再長按註記從剛剛停的地方繼續往上找，又滿 18 號時再剔除、再暫停，直到第 1 期。
    2026-09-29 13:36  單桿九宮原算法版：在長按註記的狀態下再長按註記＝自動搜尋(使用者指示)——單桿從第 18 期往上一格一格移，每格把成立的九宮差預測號碼記進註記欄(同一桿同一九宮差只記一次)，註記欄滿 18 號就暫停、單桿回原位(回到第一次長按的狀態，註記欄只顯示次數最多的 18 個)；再長按註記＝繼續，一直算到第 1 期。自動搜尋中註記鍵閃爍，單桿不能拖、藍底欄位不能切換；按返回＝中止並清除。
    2026-09-29 10:49  單桿九宮原算法版(長按註記)(使用者指示)：註記鍵亮燈、其他鍵(九宮、返回)熄燈；單擊/雙擊/長按註記鍵＝把當下預測號碼(空白期那幾個)記進註記欄並累計次數，同一桿同一個九宮差只記一次(再按無效)；離開即清除；三層、九宮在這個模式裡不作用。
    2026-09-29 10:10  單桿九宮原算法版(長按註記)加兩條件(使用者指示)：第 16 期不可以中任何目標號碼；第 17、18 期中的號碼不能同號(兩期要能各挑一個不同的號碼；例 17 中 01、18 中 01＝不成立，17 中 01、18 中 01/05＝成立，17 中 01/05、18 中 05＝成立)。
@@ -4873,7 +4874,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     const key=SB.period+"|"+SB_OFFS[SB.oi];if(SB.notes.keys[key])return false;SB.notes.keys[key]=true;nums.forEach(function(v){SB.notes.cnt[v]=(SB.notes.cnt[v]||0)+1});
     SB.stats=notesStats();try{renderStats()}catch(e){}if(typeof logEvent==="function")try{logEvent("單桿原算法","註記 第 "+SB.period+" 期 九宮差 "+offLabel(SB_OFFS[SB.oi])+"："+nums.map(function(v){return String(v).padStart(2,"0")}).join(" "))}catch(e){}return true}
   window.__zpSbNote=noteNow;
-  /* 2026-09-29 使用者指示「第二次長按註記＝自動搜尋：單桿從第 18 期往上一格一格移，每一格照邏輯把成立的九宮差預測號碼記進註記欄，註記欄滿 18 號(放不下則次數最小的不顯示)就暫停、回到第一次長按時的狀態；再長按註記＝繼續，一直算到最上面(第 1 期)不再暫停」。
+  /* 2026-09-29 使用者指示「第二次長按註記＝自動搜尋：單桿從第 18 期往上一格一格移，每一格照邏輯把成立的九宮差預測號碼記進註記欄，註記欄滿 18 號(放不下則次數最小的不顯示)就暫停、回到第一次長按時的狀態；再長按註記＝繼續，一直算到最上面(第 1 期)不再暫停」。(2026-09-29 13:5x 改：每次滿 18 號都剔除最後一名、暫停；再長按從停的地方繼續，算到第 1 期為止)
      同一桿、同一個九宮差只記一次(跟手動註記共用記錄)；自動搜尋中單桿不能拖、藍底欄位不能切換；按返回＝中止並離開 */
   const OA_STEP_MS=180;
   function distinctNotes(){return SB.notes?Object.keys(SB.notes.cnt).length:0}
@@ -4881,7 +4882,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
     if(typeof logEvent==="function")try{logEvent("單桿原算法","自動搜尋"+why+"：註記 "+distinctNotes()+" 號")}catch(e){}}
   function autoOrig(){if(!SB.on||SB.mode!=="orig"||!SB.notes)return;let st=SB.oa;if(st&&st.running)return;
     if(!st||st.done){st=SB.oa={next:18,k:0,origPeriod:SB.period,noPause:false,done:false,running:false,paused:false}}
-    else{st.noPause=true;st.origPeriod=SB.period;st.paused=false}/* 暫停後再長按＝繼續，這次一直算到最上面 */
+    else{st.origPeriod=SB.period;st.paused=false}/* 暫停後再長按＝從剛剛停的地方繼續往上找 */
     st.running=true;SB.auto=true;bc().add("zp-sb-oa");const tok=(SB.oaTok=(SB.oaTok||0)+1);
     if(typeof logEvent==="function")try{logEvent("單桿原算法","自動搜尋"+(st.noPause?"繼續":"開始")+"：從第 "+st.next+" 期")}catch(e){}
     function step(){if(tok!==SB.oaTok||!SB.on||SB.mode!=="orig"){st.running=false;SB.auto=false;bc().remove("zp-sb-oa");return}
@@ -4893,7 +4894,11 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
       const key=SB.period+"|"+SB_OFFS[k];if(!SB.notes.keys[key]&&SB.lastShow.length){SB.notes.keys[key]=true;SB.lastShow.forEach(function(v){SB.notes.cnt[v]=(SB.notes.cnt[v]||0)+1})}
       SB.stats=notesStats();try{renderStats()}catch(e){}
       st.k=k+1;if(st.k>=SB_OFFS.length){st.next--;st.k=0}
-      if(!st.noPause&&distinctNotes()>=18){st.paused=true;setTimeout(function(){if(tok===SB.oaTok)oaFinish(st,"暫停(註記滿 18 號)")},OA_STEP_MS);return}
+      /* 2026-09-29 使用者指示「滿 18 號，剔除最後一名後顯示，才暫停回到第一次長按註記的狀態；再長按就繼續往上找，又滿 18 格時再剔除最後一名、再暫停」：
+         最後一名＝次數最少(同次數時號碼最大，也就是註記欄排在最下面那個)；一次加進多個號碼超過 18 號時，剔除到剩 17 個 */
+      if(distinctNotes()>=18){const order=Object.keys(SB.notes.cnt).map(Number).sort(function(a,b){return SB.notes.cnt[b]-SB.notes.cnt[a]||a-b});const cut=order.slice(17);cut.forEach(function(v){delete SB.notes.cnt[v]});
+        SB.stats=notesStats();try{renderStats()}catch(e){}if(typeof logEvent==="function")try{logEvent("單桿原算法","註記滿 18 號，剔除 "+cut.map(function(v){return String(v).padStart(2,"0")}).join(" "))}catch(e){}
+        st.paused=true;setTimeout(function(){if(tok===SB.oaTok)oaFinish(st,"暫停(剔除後 "+distinctNotes()+" 號)")},OA_STEP_MS);return}
       setTimeout(step,OA_STEP_MS)}
     step()}
   window.__zpSbAuto=autoOrig;window.__zpSbAutoState=function(){return SB.oa?{next:SB.oa.next,running:SB.oa.running,paused:SB.oa.paused,done:SB.oa.done,noPause:SB.oa.noPause}:null};
