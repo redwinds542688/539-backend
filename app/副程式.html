@@ -42,10 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 01:40";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 01:41";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
-   2026-09-30 01:40  檢查所有子系統切回程式(重建開獎單)後是否保留(使用者指示「看看其他子系統是否也有同樣問題一起修復」)：實測首頁、抓牌首頁、全頁、抓牌十八/抓牌(含往回捲動與標記)、E式、C式、C式定位、C式合匯、統計表都本來就會保留；只有三層跟單桿一樣會被關掉跳回抓牌。三層改成重建前記下標的、段落(三層段落/備用列)、捲動位置，重建完重開三層並切回同一個標的/段落/位置。(橫向時三層本來就開不起來，轉成橫向仍會回到抓牌，不在這次修改範圍)
+   2026-09-30 01:41  檢查所有子系統切回程式(重建開獎單)後是否保留(使用者指示「看看其他子系統是否也有同樣問題一起修復」)：實測首頁、抓牌首頁、全頁、抓牌十八/抓牌(含往回捲動與標記)、E式、C式、C式定位、C式合匯、統計表都本來就會保留；只有三層跟單桿一樣會被關掉跳回抓牌。三層改成重建前記下標的、段落(三層段落/備用列)、捲動位置，重建完重開三層並切回同一個標的/段落/位置。(橫向時三層本來就開不起來，轉成橫向仍會回到抓牌，不在這次修改範圍)
    2026-09-30 01:40  切回程式不再跳回抓牌(使用者回報)：按虛擬鍵或非正常離開、超過 1 分鐘再回來會重讀資料並重建開獎單，原本會順便關掉單桿，長按註記/九宮直接跳回抓牌。改成重建前記下單桿狀態(九宮或註記、期數、九宮差、註記累計)，重建完自動恢復；註記累加中會停在暫停狀態。
    2026-09-30 01:20  空白期預測號離框太近看不清楚(使用者回報)：預測號筆畫離左格線、下格線由 1px 改為格子大小的 8%(至少 3px)，不再貼著 1px 藍框；單桿空白期、三層第三區第 6 期共用同一套定位，截圖補畫位置同步。
    2026-09-30 00:00  所有「預測號格右上角的真實開獎號碼」一律紅色(使用者指示「其他類似的也要修改」)：單桿空白期、三層第三區第 6 期預測格(標記格/定顯格)原本都會被格子的藍字蓋成藍色。
@@ -5526,7 +5526,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
  /* 三層開著時：視窗重排(捲動)一律不做；返回主畫面／重畫開獎單前先還原 */
  if(typeof applyCModeScrollOffset==="function"){const __o=applyCModeScrollOffset;applyCModeScrollOffset=function(k){if(document.body.classList.contains("zp-sanceng"))return;return __o.apply(this,arguments)}}
  if(typeof window.__zpBorrowRows==="function"){const __ob=window.__zpBorrowRows;window.__zpBorrowRows=function(on){exit();return __ob.apply(this,arguments)}}
- if(typeof buildPanels==="function"){const __obp=buildPanels;buildPanels=function(){/* 2026-09-30 01:40 使用者指示「看看其他子系統是否也有同樣問題一起修復」：切回程式(超過 1 分鐘會重讀資料、重建開獎單)或轉向時，三層原本直接被關掉、跳回抓牌。
+ if(typeof buildPanels==="function"){const __obp=buildPanels;buildPanels=function(){/* 2026-09-30 01:41 使用者指示「看看其他子系統是否也有同樣問題一起修復」：切回程式(超過 1 分鐘會重讀資料、重建開獎單)或轉向時，三層原本直接被關掉、跳回抓牌。
    改成重建前記下三層狀態(標的、段落、捲動位置)，重建完還在抓牌就照原本的進入流程重開三層，再切回同一個標的/段落/位置(找不到同一個標的就用第一個成立的標的) */
    let __snap=null;if(ST.on){const cur=ST.info&&ST.info.cur;__snap={mode:ST.mode,off:ST.off,target:cur?cur.label:null}}
    exit();const __r=__obp.apply(this,arguments);if(__snap)restoreLater(__snap);return __r}}
