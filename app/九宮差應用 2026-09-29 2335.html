@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 23:04";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 23:35";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-29 23:35  空白期預測號框由 1.5px(放大後約 3px)改為畫面上 1px；註記欄預測號加 1px 藍框、已開出的粉紅格框改 1px(使用者指示)。
    2026-09-29 23:04  長按註記(原算法版)：註記欄也改成顯示目前九宮差的全部目標號碼(由小到大)，第 17/18 期已開出的粉紅底另外標記，切換九宮差跟著換(使用者指示)；按註記累加後改顯示累加結果。
    2026-09-29 21:34  修正「在長按註記或九宮裡按手機虛擬按鍵離開再回來，回到抓牌、單桿/標記/註記全消失，有時畫面閃一下」(使用者回報)：轉向自動重建表格原本連『高度改變 >120』也重建(回前景時網址列/導覽列造成)，重建會關掉單桿。改成只在直橫翻轉或寬度改變才重建、背景中不處理；真的重建時先保存單桿狀態(模式、期、九宮差、註記累加、回溯進度)，重建後自動恢復。
    2026-09-29 21:18  自動調整系統加星期徽章檢查(使用者指示「自動調整系統也要注意這部分」)：每次自動調整(__numFitRun)時量星期徽章，右緣蓋到右邊 1.5px 線的部分用 clip-path(--wd-clip)切掉，徽章與字的大小、位置不變；首頁/抓牌/單桿、各種畫面寬度都適用。
@@ -8608,7 +8609,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   function colEl(){return document.getElementById("zp-pick-col")}
   function renderStats(){const col=colEl();if(!col)return;col.querySelectorAll(".zp-sb-stat").forEach(function(x){x.remove()});if(!SB.on||!SB.stats)return;
     const head=col.querySelector(".zp-pick-head");const rowH=head?(parseFloat(head.style.height)||head.getBoundingClientRect().height):40;const colW=parseFloat(col.style.width)||col.getBoundingClientRect().width||70;
-    SB.stats.list.forEach(function(it){const cell=document.createElement("div");cell.className="zp-pick-cell zp-sb-stat"+(it.hit?" zp-sb-hitnum":"");cell.dataset.value=String(it.v);
+    SB.stats.list.forEach(function(it){const cell=document.createElement("div");cell.className="zp-pick-cell zp-sb-stat"+(it.hit?" zp-sb-hitnum":(it.hit===false?" zp-sb-prednum":""));cell.dataset.value=String(it.v);
       cell.style.height=rowH.toFixed(2)+"px";cell.style.lineHeight=rowH.toFixed(2)+"px";cell.style.fontSize=Math.max(14,Math.floor(Math.min(colW*0.6,rowH*0.8)))+"px";
       cell.innerHTML='<span class="zp-pick-num">'+String(it.v).padStart(2,"0")+'</span>'+(SB.stats.noCount?"":'<span class="zp-pick-dup">'+it.c+"</span>");col.appendChild(cell)})}
   /* 註記欄被原本的程式重畫(換畫面、轉向…)時，把統計結果補回去 */
@@ -9954,9 +9955,9 @@ window.__fpLandK=function(cur){try{if(!window.__isMobile||window.__dtEmbed)retur
   return (r.width/1.5)/hNat}catch(e){return 0}};
 </script>
 <style>/* 2026-09-28 使用者指示「空白期顯示第一名，這顏色與上面太相近，換一個有區別的顏色」：單桿九宮放在空白期的第一名改成藍字淺藍底(原深紅字白底，跟上面黑字號碼太像)；跟標定(粉紅底)、單桿(灰底綠框)都不同；暗色系用亮藍字深藍底 */
-html body table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3:has(.zp-sb-pred), html body table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3.zp-sb-blank{ background:#DCEBFF !important; color:#0050D0 !important; -webkit-text-fill-color:#0050D0 !important; font-weight:900 !important; box-shadow:inset 0 0 0 1.5px #0050D0 !important; }
+html body table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3:has(.zp-sb-pred), html body table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3.zp-sb-blank{ background:#DCEBFF !important; color:#0050D0 !important; -webkit-text-fill-color:#0050D0 !important; font-weight:900 !important; box-shadow:inset 0 0 0 calc(1px * var(--fx, 1)) #0050D0 !important; }/* 2026-09-29 使用者指示預測號框改 1px(畫面上 1px，放大畫面照 --fx 換算) */
 html body table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3 .zp-sb-pred{ color:#0050D0 !important; -webkit-text-fill-color:#0050D0 !important; }
-html body.theme-dark table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3:has(.zp-sb-pred), html body.theme-dark table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3.zp-sb-blank{ background:#0D2B55 !important; color:#7DB8FF !important; -webkit-text-fill-color:#7DB8FF !important; box-shadow:inset 0 0 0 1.5px #7DB8FF !important; }
+html body.theme-dark table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3:has(.zp-sb-pred), html body.theme-dark table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3.zp-sb-blank{ background:#0D2B55 !important; color:#7DB8FF !important; -webkit-text-fill-color:#7DB8FF !important; box-shadow:inset 0 0 0 calc(1px * var(--fx, 1)) #7DB8FF !important; }
 html body.theme-dark table.road tr td.num.num.num.num.num.num.num.num.c-ding-top3 .zp-sb-pred{ color:#7DB8FF !important; -webkit-text-fill-color:#7DB8FF !important; }
 </style>
 <style>/* 2026-09-28 使用者指示「調整期數的『－』沒有上下置中」：原本用文字符號(－／＋)，符號在按鍵裡的高低跟著每支手機的字型走(模擬器也偏下)。改成不用文字，直接畫藍色橫條/十字，固定在按鍵正中央；顏色、陰影同原本(藍 #3FA9FF、下方淡黑陰影)，停用時照原本變淡 */
@@ -10058,7 +10059,10 @@ html body.zp-sb-three #period-btn.armed{ background-color:#8a8a8a !important; co
 html body.theme-dark.zp-sb-three #period-btn.armed{ box-shadow:0 3px 0 #2a2a2a, 0 5px 8px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.35) !important; }
 html body.zp-sb-three.zp-sb-oa #float-save-btn{ animation:zpSbMultiBlink 0.8s steps(1,end) infinite; }
 /* 2026-09-29 九宮模式註記欄：第 17/18 期已開出的目標號碼另外標示(粉紅底，同 18 期標定) */
-html body #zp-pick-col .zp-pick-cell.zp-sb-stat.zp-sb-hitnum{ background:#F8C8C8 !important; color:#3a2200 !important; box-shadow:inset 0 0 0 2px #9fb4d8 !important; }
+html body #zp-pick-col .zp-pick-cell.zp-sb-stat.zp-sb-hitnum{ background:#F8C8C8 !important; color:#3a2200 !important; box-shadow:inset 0 0 0 1px #9fb4d8 !important; }
+/* 2026-09-29 使用者指示「空白欄位/註記欄 預測號框 1px」：註記欄裡還沒開出的預測號加 1px 藍框(同空白期預測號的框色) */
+html body.zp-single-bar #zp-pick-col .zp-pick-cell.zp-sb-stat.zp-sb-prednum{ box-shadow:inset 0 0 0 1px #0050D0 !important; }
+html body.theme-dark.zp-single-bar #zp-pick-col .zp-pick-cell.zp-sb-stat.zp-sb-prednum{ box-shadow:inset 0 0 0 1px #7DB8FF !important; }
 </style>
 <script>/* 2026-09-29 使用者指示「程式先跑、先量好、先存檔，之後正式開啟直接讀取設定」：預先校正。
    第一次開程式(或螢幕寬高、開獎單字體改變)時，蓋上「正在為這支手機調整畫面」提示，後面自動把四種彩券的各畫面(首頁、全頁、抓牌、單桿／九宮格、抓牌十八、C式)切換一遍，
