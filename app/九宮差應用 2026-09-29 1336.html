@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 10:49";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 13:36";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-29 13:36  單桿九宮原算法版：在長按註記的狀態下再長按註記＝自動搜尋(使用者指示)——單桿從第 18 期往上一格一格移，每格把成立的九宮差預測號碼記進註記欄(同一桿同一九宮差只記一次)，註記欄滿 18 號就暫停、單桿回原位(回到第一次長按的狀態，註記欄只顯示次數最多的 18 個)；再長按註記＝繼續，一直算到第 1 期。自動搜尋中註記鍵閃爍，單桿不能拖、藍底欄位不能切換；按返回＝中止並清除。
    2026-09-29 10:49  單桿九宮原算法版(長按註記)(使用者指示)：註記鍵亮燈、其他鍵(九宮、返回)熄燈；單擊/雙擊/長按註記鍵＝把當下預測號碼(空白期那幾個)記進註記欄並累計次數，同一桿同一個九宮差只記一次(再按無效)；離開即清除；三層、九宮在這個模式裡不作用。
    2026-09-29 10:10  單桿九宮原算法版(長按註記)加兩條件(使用者指示)：第 16 期不可以中任何目標號碼；第 17、18 期中的號碼不能同號(兩期要能各挑一個不同的號碼；例 17 中 01、18 中 01＝不成立，17 中 01、18 中 01/05＝成立，17 中 01/05、18 中 05＝成立)。
    2026-09-29 02:48  ①加快切換畫面(使用者指示)：號碼置中改成批次量基線(只重排一次)、同樣條件的號碼沿用同一個結果；開獎單設計寬量過就記住(套用後用實際寬度核對，差超過 1.5% 才重量)；畫面寬高改成只在視窗改變時讀取。實測首頁↔全頁、抓牌→首頁、換彩種約快 30～45%，版面尺寸跟改之前完全相同。②預先校正：第一次開程式(或螢幕尺寸、開獎單字體改變)時蓋上「正在為這支手機調整畫面」，自動把四種彩券的首頁、全頁、抓牌、單桿(九宮：首頁、九宮格、抓牌十八)各切一遍、量到穩定存檔，約 16～17 秒，完成後回到原本的首頁；設定選單新增「重新校正畫面」。
@@ -8334,7 +8335,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 2026-09-25 21:56 使用者指示：拖曳鍵改紅底(#e02020，同 C式紅底)、藍色箭頭(#1E63D0) */function buildHandle(){if(SB.handle)return SB.handle;const h=document.createElement("div");h.id="zp-sb-handle";
     try{const ns="http://www.w3.org/2000/svg";const svg=document.createElementNS(ns,"svg");svg.setAttribute("width","24");svg.setAttribute("height","24");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("fill","none");svg.setAttribute("stroke","#1E63D0");svg.setAttribute("stroke-width","2.2");svg.setAttribute("stroke-linecap","round");svg.setAttribute("stroke-linejoin","round");const path=document.createElementNS(ns,"path");path.setAttribute("d","M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4");svg.appendChild(path);h.appendChild(svg)}catch(e){h.textContent="↕"}
     Object.assign(h.style,{position:"fixed",width:"34px",height:"34px",borderRadius:"50%",background:"#e02020",color:"#fff",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9600",touchAction:"none",boxShadow:"0 0 4px rgba(0,0,0,0.7)",border:"2px solid #fff",boxSizing:"border-box",userSelect:"none",webkitUserSelect:"none"});
-    h.addEventListener("pointerdown",function(e){if(!SB.on)return;e.preventDefault();e.stopPropagation();SB.drag={id:e.pointerId,p0:SB.period};cancelRun();clearHits();try{h.setPointerCapture(e.pointerId)}catch(_){}},{passive:false});
+    h.addEventListener("pointerdown",function(e){if(!SB.on)return;e.preventDefault();e.stopPropagation();if(SB.oa&&SB.oa.running)return;/* 自動搜尋中單桿不能拖 */SB.drag={id:e.pointerId,p0:SB.period};cancelRun();clearHits();try{h.setPointerCapture(e.pointerId)}catch(_){}},{passive:false});
     h.addEventListener("pointermove",function(e){if(!SB.drag||e.pointerId!==SB.drag.id)return;e.preventDefault();e.stopPropagation();
       const rows=dataRows();if(!rows.length)return;let best=null,bd=Infinity;rows.forEach(function(tr,i){const r=tr.getBoundingClientRect();const d=Math.abs(e.clientY-(r.top+r.height/2));if(d<bd){bd=d;best=i}});
       const p=Math.max(1,Math.min(18,best+1+(18-rows.length)));/* 2026-09-26 02:41 使用者指示：移動範圍 1～15 改成 1～18 */if(p!==SB.period){SB.period=p;update(true)}},{passive:false});
@@ -8422,11 +8423,35 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 2026-09-29 使用者指示加兩條件：①第 16 期(畫面固定第 16 列)不可以中任何目標號碼；②第 17 期與第 18 期中的號碼不能同號——兩期各挑一個「不同」的號碼要挑得出來
      (例：17 中 01、18 中 01＝不成立；17 中 01、18 中 01 與 05＝成立；17 中 01 與 05、18 中 05＝成立) */
   /* 2026-09-29 使用者指示「單擊/雙擊/長按註記鍵，只是把當下預測號碼統計並顯示在註記欄位；同一組(同一桿、同一個九宮差)再按一次無效，不重複註記；離開長按註記則資料清除」 */
-  function notesStats(){const n=SB.notes;if(!n)return null;const list=Object.keys(n.cnt).map(Number).sort(function(a,b){return n.cnt[b]-n.cnt[a]||a-b}).map(function(v){return {v:v,c:n.cnt[v]}});return {cnt:n.cnt,list:list}}
+  function notesStats(){const n=SB.notes;if(!n)return null;const list=Object.keys(n.cnt).map(Number).sort(function(a,b){return n.cnt[b]-n.cnt[a]||a-b}).slice(0,18)/* 註記欄最多放 18 個：次數最少的不顯示 */.map(function(v){return {v:v,c:n.cnt[v]}});return {cnt:n.cnt,list:list}}
   function noteNow(){if(!SB.on||SB.mode!=="orig"||SB.none||!SB.notes)return false;const nums=(SB.lastShow||[]).slice();if(!nums.length)return false;
     const key=SB.period+"|"+SB_OFFS[SB.oi];if(SB.notes.keys[key])return false;SB.notes.keys[key]=true;nums.forEach(function(v){SB.notes.cnt[v]=(SB.notes.cnt[v]||0)+1});
     SB.stats=notesStats();try{renderStats()}catch(e){}if(typeof logEvent==="function")try{logEvent("單桿原算法","註記 第 "+SB.period+" 期 九宮差 "+offLabel(SB_OFFS[SB.oi])+"："+nums.map(function(v){return String(v).padStart(2,"0")}).join(" "))}catch(e){}return true}
   window.__zpSbNote=noteNow;
+  /* 2026-09-29 使用者指示「第二次長按註記＝自動搜尋：單桿從第 18 期往上一格一格移，每一格照邏輯把成立的九宮差預測號碼記進註記欄，註記欄滿 18 號(放不下則次數最小的不顯示)就暫停、回到第一次長按時的狀態；再長按註記＝繼續，一直算到最上面(第 1 期)不再暫停」。
+     同一桿、同一個九宮差只記一次(跟手動註記共用記錄)；自動搜尋中單桿不能拖、藍底欄位不能切換；按返回＝中止並離開 */
+  const OA_STEP_MS=180;
+  function distinctNotes(){return SB.notes?Object.keys(SB.notes.cnt).length:0}
+  function oaFinish(st,why){st.running=false;SB.auto=false;bc().remove("zp-sb-oa");if(!SB.on)return;SB.period=st.origPeriod;update(true);runSearch(0);
+    if(typeof logEvent==="function")try{logEvent("單桿原算法","自動搜尋"+why+"：註記 "+distinctNotes()+" 號")}catch(e){}}
+  function autoOrig(){if(!SB.on||SB.mode!=="orig"||!SB.notes)return;let st=SB.oa;if(st&&st.running)return;
+    if(!st||st.done){st=SB.oa={next:18,k:0,origPeriod:SB.period,noPause:false,done:false,running:false,paused:false}}
+    else{st.noPause=true;st.origPeriod=SB.period;st.paused=false}/* 暫停後再長按＝繼續，這次一直算到最上面 */
+    st.running=true;SB.auto=true;bc().add("zp-sb-oa");const tok=(SB.oaTok=(SB.oaTok||0)+1);
+    if(typeof logEvent==="function")try{logEvent("單桿原算法","自動搜尋"+(st.noPause?"繼續":"開始")+"：從第 "+st.next+" 期")}catch(e){}
+    function step(){if(tok!==SB.oaTok||!SB.on||SB.mode!=="orig"){st.running=false;SB.auto=false;bc().remove("zp-sb-oa");return}
+      if(st.next<1){st.done=true;oaFinish(st,"完成");return}
+      if(SB.period!==st.next){SB.period=st.next;update(true)}
+      let k=st.k;while(k<SB_OFFS.length&&!isValidOrig(k))k++;
+      if(k>=SB_OFFS.length){showOffset(-1);st.next--;st.k=0;setTimeout(step,Math.round(OA_STEP_MS/2));return}
+      SB.oi=k;SB.none=false;SB.lastShow=showOffset(k)||[];SB.none=false;
+      const key=SB.period+"|"+SB_OFFS[k];if(!SB.notes.keys[key]&&SB.lastShow.length){SB.notes.keys[key]=true;SB.lastShow.forEach(function(v){SB.notes.cnt[v]=(SB.notes.cnt[v]||0)+1})}
+      SB.stats=notesStats();try{renderStats()}catch(e){}
+      st.k=k+1;if(st.k>=SB_OFFS.length){st.next--;st.k=0}
+      if(!st.noPause&&distinctNotes()>=18){st.paused=true;setTimeout(function(){if(tok===SB.oaTok)oaFinish(st,"暫停(註記滿 18 號)")},OA_STEP_MS);return}
+      setTimeout(step,OA_STEP_MS)}
+    step()}
+  window.__zpSbAuto=autoOrig;window.__zpSbAutoState=function(){return SB.oa?{next:SB.oa.next,running:SB.oa.running,paused:SB.oa.paused,done:SB.oa.done,noPause:SB.oa.noPause}:null};
   function isValidOrig(oi){const tg=targetsFor(oi);if(!tg.length)return false;const rs=checkRows();
     if(!rs[0]||rs[0].some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0}))return false;
     const hit=[1,2].map(function(k){const row=rs[k];if(!row)return [];const h=[];row.forEach(function(c){if(c.v!==null&&tg.indexOf(c.v)>=0&&h.indexOf(c.v)<0)h.push(c.v)});return h});
@@ -8442,7 +8467,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   function nextOffset(){runSearch((SB.oi+1)%SB_OFFS.length)}
   /* 拖曳鍵上方的小標籤：顯示目前的九宮差 */
   /* 2026-09-25 22:49 使用者指示「九宮差顯示欄位是拖曳桿下面的日期星期欄位，藍底紅字，九宮差在欄位裡顯示最大化」：標籤蓋在單桿下一列的日期＋星期兩格(左到日期左邊格線、右到星期右邊格線)，藍底(#1E63D0)紅字(#e02020)，字級依格子大小最大化 */
-  function buildTag(){if(SB.tag)return SB.tag;const g=document.createElement("div");g.id="zp-sb-offset-tag";Object.assign(g.style,{position:"fixed",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9601",background:"#1E63D0",color:"#e02020",border:"2px solid #fff",boxSizing:"border-box",boxShadow:"0 0 4px rgba(0,0,0,0.7)",pointerEvents:"none",overflow:"hidden",whiteSpace:"nowrap"});const sp=document.createElement("span");sp.className="zp-sb-offset-txt";Object.assign(sp.style,{font:"900 20px/1 Arial, Helvetica, sans-serif",color:"#e02020",display:"inline-block"});g.appendChild(sp);document.body.appendChild(g);SB.tag=g;/* 2026-09-28 使用者指示「切換換到單桿下面那個藍色底 -11 那裡做切換，如果該桿不只一個則 -11 閃爍提示」：原算法版中單擊這個欄位＝換到下一個成立的九宮差 */g.addEventListener("click",function(e){if(!SB.on||SB.mode!=="orig"||SB.none)return;e.preventDefault();e.stopPropagation();const now=Date.now();if(now-(SB.tagTapAt||0)<300)return;SB.tagTapAt=now;nextOffset()});["pointerdown","touchstart"].forEach(function(ev){g.addEventListener(ev,function(e){if(SB.on&&SB.mode==="orig")e.stopPropagation()},{passive:true})});return g}
+  function buildTag(){if(SB.tag)return SB.tag;const g=document.createElement("div");g.id="zp-sb-offset-tag";Object.assign(g.style,{position:"fixed",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9601",background:"#1E63D0",color:"#e02020",border:"2px solid #fff",boxSizing:"border-box",boxShadow:"0 0 4px rgba(0,0,0,0.7)",pointerEvents:"none",overflow:"hidden",whiteSpace:"nowrap"});const sp=document.createElement("span");sp.className="zp-sb-offset-txt";Object.assign(sp.style,{font:"900 20px/1 Arial, Helvetica, sans-serif",color:"#e02020",display:"inline-block"});g.appendChild(sp);document.body.appendChild(g);SB.tag=g;/* 2026-09-28 使用者指示「切換換到單桿下面那個藍色底 -11 那裡做切換，如果該桿不只一個則 -11 閃爍提示」：原算法版中單擊這個欄位＝換到下一個成立的九宮差 */g.addEventListener("click",function(e){if(!SB.on||SB.mode!=="orig"||SB.none||(SB.oa&&SB.oa.running))return;e.preventDefault();e.stopPropagation();const now=Date.now();if(now-(SB.tagTapAt||0)<300)return;SB.tagTapAt=now;nextOffset()});["pointerdown","touchstart"].forEach(function(ev){g.addEventListener(ev,function(e){if(SB.on&&SB.mode==="orig")e.stopPropagation()},{passive:true})});return g}
   function placeTagText(){const g=buildTag();const sp=g.firstChild;const t=SB.none?"無":(SB.mode==="orig"?offLabel(SB_OFFS[SB.oi]):"九宮");/* 原算法版顯示目前的九宮差 *//* 2026-09-28 新算法：不再逐一換九宮差，欄位顯示「九宮」(有結果)或「無」 */if(sp.textContent!==t){sp.textContent=t;SB.tagFit=""}g.style.pointerEvents=(SB.mode==="orig")?"auto":"none";g.classList.toggle("zp-sb-multi",SB.mode==="orig"&&!SB.none&&(SB.validCount||0)>1)}
   function placeTag(tr){const g=buildTag();placeTagText();if(!tr){g.style.display="none";return}
     const side=Array.prototype.slice.call(tr.children).filter(function(td){return td.classList.contains("day")||td.classList.contains("wd")});
@@ -8455,7 +8480,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     if(force||key!==SB.lastKey||!SB.painted.length||!SB.painted[0].isConnected||!SB.painted[0].classList.contains("zp-sb-cell")){paint(tr);SB.lastKey=key}
     placeHandle(tr)}
   function loop(){SB.raf=0;if(!SB.on)return;try{update(false)}catch(e){}SB.raf=requestAnimationFrame(loop)}
-  function start(mode){if(SB.on)return false;const b=bc();if(!b.contains("zhuapai-mode")||b.contains("zp-sanceng"))return false;SB.mode=(mode==="orig")?"orig":"three";SB.startAt=Date.now();SB.notes={cnt:{},keys:{}};bc().toggle("zp-sb-orig",SB.mode==="orig");/* 2026-09-29 原算法版：註記亮燈、其他鍵熄燈；註記統計每次進入都從空的開始 *//* 2026-09-28 使用者指示：長按「定顯」＝統計表 ≥3；長按「註記」＝原算法版(逐一九宮差) */
+  function start(mode){if(SB.on)return false;const b=bc();if(!b.contains("zhuapai-mode")||b.contains("zp-sanceng"))return false;SB.mode=(mode==="orig")?"orig":"three";SB.startAt=Date.now();SB.notes={cnt:{},keys:{}};SB.oa=null;SB.oaTok=(SB.oaTok||0)+1;bc().toggle("zp-sb-orig",SB.mode==="orig");/* 2026-09-29 原算法版：註記亮燈、其他鍵熄燈；註記統計每次進入都從空的開始 *//* 2026-09-28 使用者指示：長按「定顯」＝統計表 ≥3；長按「註記」＝原算法版(逐一九宮差) */
     try{if(typeof window.__zpR19Uncover==="function")window.__zpR19Uncover()}catch(e){}/* 先還原一般抓牌的第 19 列(單桿有自己的處理) */
     SB.stash={pickedPaths:pickedPaths,connections:connections,broadened:broadened,historyStack:historyStack};
     pickedPaths=[];connections=[];broadened=false;historyStack=[];
@@ -8467,7 +8492,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     update(true);setTimeout(function(){update(true)},200);setTimeout(function(){update(true)},450);if(!SB.raf)SB.raf=requestAnimationFrame(loop);
     /* 原本等 0.9 秒才開始找號；改成：畫面本來就在最底＝馬上找，有往回捲＝等 0.25 秒捲回動畫結束再找(之後 0.2/0.45/0.8 秒若又被拉回，會自動重找) */
     if(!__moved){if(!SB.drag)runSearch(0)}else setTimeout(function(){if(SB.on&&!SB.drag){SB.rowsDirty=true;update(true);runSearch(0)}},250);return true}
-  function exit(){if(!SB.on)return false;cancelRun();clearHits();uncover();SB.on=false;SB.stats=null;SB.notes=null;bc().remove("zp-sb-orig");/* 2026-09-29 離開原算法版＝註記統計清除 */SB.auto=false;try{renderStats()}catch(e){}{const __b=document.getElementById("float-save-btn");if(__b)__b.classList.remove("shot-lit")}/* 統計結果清掉，註記欄原本的號碼恢復顯示 */SB.drag=null;if(SB.tag)SB.tag.style.display="none";if(SB.raf){cancelAnimationFrame(SB.raf);SB.raf=0}unpaint();if(SB.handle)SB.handle.style.display="none";bc().remove("zp-single-bar");try{updateFloatSaveBtnForFullPage()}catch(e){}
+  function exit(){if(!SB.on)return false;cancelRun();clearHits();uncover();SB.on=false;SB.stats=null;SB.notes=null;SB.oa=null;SB.oaTok=(SB.oaTok||0)+1;bc().remove("zp-sb-orig");bc().remove("zp-sb-oa");/* 2026-09-29 離開原算法版＝註記統計清除 */SB.auto=false;try{renderStats()}catch(e){}{const __b=document.getElementById("float-save-btn");if(__b)__b.classList.remove("shot-lit")}/* 統計結果清掉，註記欄原本的號碼恢復顯示 */SB.drag=null;if(SB.tag)SB.tag.style.display="none";if(SB.raf){cancelAnimationFrame(SB.raf);SB.raf=0}unpaint();if(SB.handle)SB.handle.style.display="none";bc().remove("zp-single-bar");try{updateFloatSaveBtnForFullPage()}catch(e){}
     const st=SB.stash;SB.stash=null;if(st){pickedPaths=st.pickedPaths;connections=st.connections;broadened=st.broadened;historyStack=st.historyStack}
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function"){renderConnections();requestAnimationFrame(renderConnections)}}catch(e){}
     if(typeof logEvent==="function")try{logEvent("單桿","離開，標記放回")}catch(e){}return true}
@@ -8543,9 +8568,9 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
       /* 2026-09-29 單擊/雙擊/長按註記鍵＝把當下預測號碼記進註記欄(剛長按進入、放開手指那一下不算) */
       if(now-(SB.startAt||0)<900)return;
       const hd=t.closest(".zp-pick-head");const flash=function(){if(hd){hd.classList.add("tap-flash");setTimeout(function(){hd.classList.remove("tap-flash")},180)}};
-      if(ev==="pointerdown"||ev==="touchstart"||ev==="mousedown"){clearTimeout(SB.noteLpT);SB.noteLpT=setTimeout(function(){SB.noteLpT=0;if(noteNow()){flash();if(navigator.vibrate)try{navigator.vibrate(30)}catch(x){}}},550)}
+      if(SB.oa&&SB.oa.running)return;/* 自動搜尋中註記鍵不作用 */if(ev==="pointerdown"||ev==="touchstart"||ev==="mousedown"){clearTimeout(SB.noteLpT);SB.noteLpT=setTimeout(function(){SB.noteLpT=0;SB.noteLpAt=Date.now();flash();if(navigator.vibrate)try{navigator.vibrate(30)}catch(x){}autoOrig()},550)/* 2026-09-29 長按註記＝自動搜尋(暫停後再長按＝繼續) */}
       else if(ev==="touchend"||ev==="mouseup"){/* 放開時取消長按計時(長按已記過也沒關係，同一組不會重複) */clearTimeout(SB.noteLpT);SB.noteLpT=0}
-      else if(ev==="click"||ev==="dblclick"){if(noteNow())flash()}
+      else if(ev==="click"||ev==="dblclick"){if(now-(SB.noteLpAt||0)<700)return;/* 長按放開的那一下不算單擊 */if(noteNow())flash()}
       return}
     if(t.closest("#zp-pick-col")){/* 14:20 單桿中註記欄不能操作(長按選號、雙擊取消都不作用) */e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();return}
     if(t.closest("#zhuapai-btn")||t.closest("#fullpage-btn")){/* 三層鍵、清除鍵 */e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();return}
@@ -9920,6 +9945,7 @@ html body #zp-pick-col .zp-pick-head.tap-flash{ background:#FFD700 !important; c
 html body.zp-sb-orig #zp-pick-col .zp-pick-head{ background:#FFD700 !important; color:#000 !important; text-shadow:none !important; box-shadow:0 2px 0 #a88a00, 0 3px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.45) !important; }
 html body.zp-sb-orig #float-save-btn.armed, html body.zp-sb-orig #period-btn.armed{ background-color:#8a8a8a !important; color:#fff !important; box-shadow:0 3px 0 #4d4d4d, 0 5px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45) !important; }
 html body.theme-dark.zp-sb-orig #float-save-btn.armed, html body.theme-dark.zp-sb-orig #period-btn.armed{ box-shadow:0 3px 0 #2a2a2a, 0 5px 8px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.35) !important; }
+html body.zp-sb-orig.zp-sb-oa #zp-pick-col .zp-pick-head{ animation:zpSbMultiBlink 0.8s steps(1,end) infinite; }
 </style>
 <script>/* 2026-09-29 使用者指示「程式先跑、先量好、先存檔，之後正式開啟直接讀取設定」：預先校正。
    第一次開程式(或螢幕寬高、開獎單字體改變)時，蓋上「正在為這支手機調整畫面」提示，後面自動把四種彩券的各畫面(首頁、全頁、抓牌、單桿／九宮格、抓牌十八、C式)切換一遍，
