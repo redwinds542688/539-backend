@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 18:06";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 18:09";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-29 18:09  單桿九宮(長按定顯/全顯)：註記鍵單擊、雙擊、長按皆失效(使用者指示)；註記欄只由長按九宮回溯累加。
    2026-09-29 18:06  單桿九宮：註記欄列出的前二名，號碼右上角的相加次數取消(使用者指示)；累加預測號的次數照舊顯示。
    2026-09-29 17:06  單桿九宮(長按定顯/全顯)：還沒按註記前，註記欄列出前二名(基礎號)，右上角＝九宮＋414 相加次數(使用者指示「先列出來看看」)；按過註記或長按九宮回溯後改顯示累加的預測號。
    2026-09-29 17:03  單桿九宮(長按定顯/全顯)：停在沒有成立九宮差(顯示「無」)的期＝自動跳過(使用者指示)：往拖的方向(往上＝上一期、往下＝下一期，剛進入＝往上)找最近有成立的期，那方向沒有就往反方向找，18 期都沒有才顯示「無」。
@@ -5082,8 +5083,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
       if(ev==="pointerdown")lpStart();else if(ev==="touchend"||ev==="mouseup")lpCancel();/* 14:20 長按九宮＝單桿 1～18 期全部跑一次並統計 */
       if(ev==="click"){if(SB.mode==="orig"||SB.mode==="three")return;/* 九宮模式也改在藍底九宮差欄位切換 *//* 2026-09-28 原算法版：九宮鍵不換九宮差(改在藍底九宮差欄位切換) */if(SB.auto||now-SB.lpAt<900)return;/* 統計跑的途中、或長按放開的那一下，不換九宮差 */if(now-SB.tapAt<350){SB.tapAt=now;return}SB.tapAt=now;const bt=document.getElementById("float-save-btn");if(bt){bt.classList.add("tap-flash");setTimeout(function(){bt.classList.remove("tap-flash")},180)}nextOffset()}return}
     /* 原算法版中「註記」鍵單擊不作用(2026-09-28 使用者指示切換改在藍底九宮差欄位) */
-    if(t.closest("#zp-pick-col .zp-pick-head")&&SB.mode==="three"){e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();/* 2026-09-29 九宮(長按定顯)：單擊/雙擊註記＝累加空白期預測號；長按不作用 */
-      if((ev==="click"||ev==="dblclick")&&now-(SB.startAt||0)>=900&&!(SB.oa&&SB.oa.running)){const hd=t.closest(".zp-pick-head");if(noteThree()&&hd){hd.classList.add("tap-flash");setTimeout(function(){hd.classList.remove("tap-flash")},180)}}return}
+    if(t.closest("#zp-pick-col .zp-pick-head")&&SB.mode==="three"){e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();/* 2026-09-29 九宮(長按定顯)：單擊/雙擊註記＝累加空白期預測號；長按不作用 *//* 2026-09-29 使用者指示「九宮裡註記單擊、雙擊、長按皆失效」 */return}
     if(t.closest("#zp-pick-col .zp-pick-head")&&SB.mode==="orig"){e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();
       /* 2026-09-29 單擊/雙擊/長按註記鍵＝把當下預測號碼記進註記欄(剛長按進入、放開手指那一下不算) */
       if(now-(SB.startAt||0)<900)return;
