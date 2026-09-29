@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 16:30";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 16:56";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-29 16:56  單桿九宮(長按定顯/全顯)改為「九宮＋414 前二名接原算法」(使用者指示)：前二名(同名次全部)＝基礎號，空白期只放第 1 名；基礎號加九宮差(-11 起)，第 16 期不中、17/18 期都中且不同號＝成立，藍底欄位顯示九宮差(多個閃爍、點欄位切換)，18 期標定目標號碼；按註記＝把 17/18 期沒中的目標號碼記進註記欄；長按九宮＝原算法回溯(滿 18 剔除最後一名暫停)。九宮鍵單擊不再換。
    2026-09-29 16:30  單桿九宮(長按定顯/全顯)：取消「剛進入時註記欄顯示九宮 ≥3 的號碼」(使用者指示)，註記欄一開始是空的，只顯示單擊註記/長按九宮回溯累加的預測號；18 期標定不變。
    2026-09-29 16:00  單桿九宮(長按定顯/全顯)：長按「九宮」＝自動回溯(使用者指示，與長按註記同邏輯)：單桿從第 18 期往上逐期，把九宮＋414 前 2 名預測號累加進註記欄(同一期只記一次)；滿 18 號剔除最後一名、暫停並回到原位，再長按九宮從停的地方繼續，到第 1 期為止。九宮模式九宮鍵亮燈(黃)、返回鍵熄燈，回溯中九宮鍵閃爍。
    2026-09-29 15:13  單桿九宮(長按定顯/全顯)：單擊/雙擊「註記」＝把空白期的預測號(九宮＋414 前 2 名)累加到註記欄(使用者指示)；同一期只記一次不重複，最多顯示 18 個；按過後註記欄改顯示累加結果，離開單桿即清除；長按註記在此模式不作用。
@@ -8404,7 +8405,20 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
      成立條件＝桿位各號加上九宮差得到的 5(6) 個號碼，在單桿下面的 3 期(單桿在第 15 期時＝第 16、17、18 期)每一期都至少開出其中一個。
      不成立的九宮差直接跳過(不跑動畫)，往下找到第一個成立的才逐號標定；9 個都不成立＝不標定，欄位顯示「無」。 */
   function barNumsNow(){const g=grid();const r=g[barIdx()];return r?r.map(function(c){return c.v}).filter(function(v){return v!==null}):[]}
-  function targetsFor(oi){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;return barNumsNow().map(function(n){return wrapNum(n,SB_OFFS[oi],max)})}
+  function targetsFor(oi){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;return baseNums().map(function(n){return wrapNum(n,SB_OFFS[oi],max)})}
+  /* 2026-09-29 使用者指示「把長按註記後(原算法)的邏輯接在九宮找到前二名之後；差別只有：原算法以單桿裡的號碼為基礎號，九宮這邊以前二名為基礎號；空白期只顯示第一名」：
+     九宮模式(長按定顯/全顯進入)：統計1＝桿上號碼九宮拖牌、統計2＝414 拖牌(-14、-4、+4、+14)，兩個都有的號碼次數相加；
+     第 1、2 名(同次數同名次，全部都用、不限個數)＝基礎號；第 1 名(最多 5(6) 格，由小到大)＝空白期。
+     之後照原算法：基礎號加九宮差(-11 起逐一)＝目標號碼；第 16 期不中、17/18 期都中且中不同號＝成立；成立的九宮差中 17/18 期沒中的目標號碼＝預測號(按註記/長按九宮回溯記進註記欄) */
+  function baseNums(){return SB.mode==="three"?(SB.base||[]):barNumsNow()}
+  function calcBase(){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const bn=barNumsNow();const c1={},c2={};
+    bn.forEach(function(n){SB_OFFS.forEach(function(o){const t=wrapNum(n,o,max);c1[t]=(c1[t]||0)+1});[-14,-4,4,14].forEach(function(o){const t=wrapNum(n,o,max);c2[t]=(c2[t]||0)+1})});
+    const sum={};Object.keys(c1).forEach(function(k){if(c2[k]>0)sum[k]=c1[k]+c2[k]});
+    const lv=[];Object.keys(sum).map(function(k){return sum[k]}).sort(function(a,b){return b-a}).forEach(function(c){if(lv.indexOf(c)<0)lv.push(c)});
+    const cols=(typeof cModeColCount==="function")?cModeColCount():5;const nums=Object.keys(sum).map(Number);
+    SB.base=lv.length?nums.filter(function(v){return sum[v]>=lv[Math.min(1,lv.length-1)]}).sort(function(a,b){return sum[b]-sum[a]||a-b}):[];
+    SB.top1=lv.length?nums.filter(function(v){return sum[v]===lv[0]}).sort(function(a,b){return a-b}).slice(0,cols):[];
+    SB.sum={c1:c1,c2:c2,sum:sum,top2:SB.base,top1:SB.top1};return SB.base}
   /* 2026-09-25 23:31 使用者更正「不是單桿的下三期，是畫面裡的 16/17/18 期皆有中號碼才算」：對照期固定＝畫面上第 16、17、18 期(最後 3 期)，不隨單桿移動 */
   function checkRows(){const g=grid();return[g.length-3,g.length-2,g.length-1].map(function(i){return i>=0?g[i]:null})}
   function isValid(oi){const tg=targetsFor(oi);if(!tg.length)return false;const rs=checkRows();
@@ -8429,12 +8443,12 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
      (例：17 中 01、18 中 01＝不成立；17 中 01、18 中 01 與 05＝成立；17 中 01 與 05、18 中 05＝成立) */
   /* 2026-09-29 使用者指示「單擊/雙擊/長按註記鍵，只是把當下預測號碼統計並顯示在註記欄位；同一組(同一桿、同一個九宮差)再按一次無效，不重複註記；離開長按註記則資料清除」 */
   function notesStats(){const n=SB.notes;if(!n)return null;const list=Object.keys(n.cnt).map(Number).sort(function(a,b){return n.cnt[b]-n.cnt[a]||a-b}).slice(0,18)/* 註記欄最多放 18 個：次數最少的不顯示 */.map(function(v){return {v:v,c:n.cnt[v]}});return {cnt:n.cnt,list:list}}
-  function noteNow(){if(!SB.on||SB.mode!=="orig"||SB.none||!SB.notes)return false;const nums=(SB.lastShow||[]).slice();if(!nums.length)return false;
+  function noteNow(){if(!SB.on||(SB.mode!=="orig"&&SB.mode!=="three")||SB.none||!SB.notes)return false;const nums=(SB.lastShow||[]).slice();if(!nums.length)return false;
     const key=SB.period+"|"+SB_OFFS[SB.oi];if(SB.notes.keys[key])return false;SB.notes.keys[key]=true;nums.forEach(function(v){SB.notes.cnt[v]=(SB.notes.cnt[v]||0)+1});
     SB.stats=notesStats();try{renderStats()}catch(e){}if(typeof logEvent==="function")try{logEvent("單桿原算法","註記 第 "+SB.period+" 期 九宮差 "+offLabel(SB_OFFS[SB.oi])+"："+nums.map(function(v){return String(v).padStart(2,"0")}).join(" "))}catch(e){}return true}
   /* 2026-09-29 使用者指示「(長按定顯進入九宮)這時候按註記就是累加預測號」：單擊/雙擊註記＝把空白期的預測號(九宮＋414 前 2 名)各 +1 累加到註記欄；
      同一期(單桿同一格)只記一次，不重複；註記欄最多 18 個(次數少的不顯示)；按過之後註記欄改顯示累加結果；離開單桿即清除 */
-  function noteThree(){if(!SB.on||SB.mode!=="three"||!SB.notes||!SB.sum)return false;const nums=(SB.sum.top2||[]).slice();if(!nums.length)return false;
+  function noteThree(){return noteNow()}function noteThreeOld(){if(!SB.on||SB.mode!=="three"||!SB.notes||!SB.sum)return false;const nums=(SB.sum.top2||[]).slice();if(!nums.length)return false;
     const key=SB.period+"|three";if(SB.notes.keys[key])return false;SB.notes.keys[key]=true;nums.forEach(function(v){SB.notes.cnt[v]=(SB.notes.cnt[v]||0)+1});
     SB.stats=notesStats();try{renderStats()}catch(e){}if(typeof logEvent==="function")try{logEvent("單桿九宮","註記 第 "+SB.period+" 期："+nums.map(function(v){return String(v).padStart(2,"0")}).join(" "))}catch(e){}return true}
   window.__zpSbNote=noteNow;window.__zpSbNoteThree=noteThree;
@@ -8444,14 +8458,14 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   function distinctNotes(){return SB.notes?Object.keys(SB.notes.cnt).length:0}
   function oaFinish(st,why){st.running=false;SB.auto=false;bc().remove("zp-sb-oa");if(!SB.on)return;SB.period=st.origPeriod;update(true);runSearch(0);
     if(typeof logEvent==="function")try{logEvent("單桿原算法","自動搜尋"+why+"：註記 "+distinctNotes()+" 號")}catch(e){}}
-  function autoOrig(){if(!SB.on||SB.mode!=="orig"||!SB.notes)return;let st=SB.oa;if(st&&st.running)return;
+  function autoOrig(){if(!SB.on||(SB.mode!=="orig"&&SB.mode!=="three")||!SB.notes)return;let st=SB.oa;if(st&&st.running)return;
     if(!st||st.done){st=SB.oa={next:18,k:0,origPeriod:SB.period,noPause:false,done:false,running:false,paused:false}}
     else{st.origPeriod=SB.period;st.paused=false}/* 暫停後再長按＝從剛剛停的地方繼續往上找 */
     st.running=true;SB.auto=true;bc().add("zp-sb-oa");const tok=(SB.oaTok=(SB.oaTok||0)+1);
     if(typeof logEvent==="function")try{logEvent("單桿原算法","自動搜尋"+(st.noPause?"繼續":"開始")+"：從第 "+st.next+" 期")}catch(e){}
-    function step(){if(tok!==SB.oaTok||!SB.on||SB.mode!=="orig"){st.running=false;SB.auto=false;bc().remove("zp-sb-oa");return}
+    function step(){if(tok!==SB.oaTok||!SB.on||(SB.mode!=="orig"&&SB.mode!=="three")){st.running=false;SB.auto=false;bc().remove("zp-sb-oa");return}
       if(st.next<1){st.done=true;oaFinish(st,"完成");return}
-      if(SB.period!==st.next){SB.period=st.next;update(true)}
+      if(SB.period!==st.next){SB.period=st.next;update(true)}if(SB.mode==="three")calcBase();/* 九宮模式：每一期重算前二名基礎號 */
       let k=st.k;while(k<SB_OFFS.length&&!isValidOrig(k))k++;
       if(k>=SB_OFFS.length){showOffset(-1);st.next--;st.k=0;setTimeout(step,Math.round(OA_STEP_MS/2));return}
       SB.oi=k;SB.none=false;SB.lastShow=showOffset(k)||[];SB.none=false;
@@ -8493,7 +8507,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     const hit=[1,2].map(function(k){const row=rs[k];if(!row)return [];const h=[];row.forEach(function(c){if(c.v!==null&&tg.indexOf(c.v)>=0&&h.indexOf(c.v)<0)h.push(c.v)});return h});
     if(!hit[0].length||!hit[1].length)return false;
     return hit[0].some(function(a){return hit[1].some(function(b){return a!==b})})}
-  function runSearch(from){if(!SB.on)return;if(SB.mode==="orig"){cancelRun();SB.stats=notesStats();try{renderStats()}catch(e){}let oi=-1;const st=(typeof from==="number"&&from>=0)?from:0;SB.validCount=0;for(let k=0;k<SB_OFFS.length;k++)if(isValidOrig(k))SB.validCount++;for(let k=0;k<SB_OFFS.length;k++){const i=(st+k)%SB_OFFS.length;if(isValidOrig(i)){oi=i;break}}SB.lastShow=showOffset(oi)||[];if(typeof logEvent==="function")try{logEvent("單桿原算法","第 "+SB.period+" 期 → "+(oi<0?"無":offLabel(SB_OFFS[oi])))}catch(e){}return}cancelRun();clearHits();const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const g=grid();const barNums=barNumsNow();
+  function runSearch(from){if(!SB.on)return;if(SB.mode==="three")calcBase();if(SB.mode==="orig"||SB.mode==="three"){cancelRun();SB.stats=notesStats();try{renderStats()}catch(e){}let oi=-1;const st=(typeof from==="number"&&from>=0)?from:0;SB.validCount=0;for(let k=0;k<SB_OFFS.length;k++)if(isValidOrig(k))SB.validCount++;for(let k=0;k<SB_OFFS.length;k++){const i=(st+k)%SB_OFFS.length;if(isValidOrig(i)){oi=i;break}}SB.lastShow=showOffset(oi)||[];if(typeof logEvent==="function")try{logEvent("單桿原算法","第 "+SB.period+" 期 → "+(oi<0?"無":offLabel(SB_OFFS[oi])))}catch(e){}return}cancelRun();clearHits();const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const g=grid();const barNums=barNumsNow();
     const cnt={};barNums.forEach(function(n){SB_OFFS.forEach(function(o){const t=wrapNum(n,o,max);cnt[t]=(cnt[t]||0)+1})});
     /* 2026-09-28 使用者指示「在這桿沒有 3 次的，顯示等於 2 次的給我看」：先找 ≥3；一個都沒有才改用 =2(標定、註記、空白期都照同樣方式顯示)；連 2 次都沒有才顯示「無」 *//* 2026-09-28 使用者指示「把長按九宮等於 2 的邏輯改在長按註記，長按九宮改回原邏輯」：SB.mode="three"(長按定顯進入)＝次數 ≥3 成立：18 期標定、註記欄、空白期放第一名；SB.mode="two"(長按註記進入)＝次數剛好等於 2 成立：18 期標定、註記欄，空白期不放 */const thr=(SB.mode==="two")?2:3;let res=Object.keys(cnt).map(Number).filter(function(v){return thr===2?cnt[v]===2:cnt[v]>=3});res.sort(function(a,b){return cnt[b]-cnt[a]||a-b});SB.thr=thr;
     SB.none=!res.length;SB.res=res;placeTagText();SB.stats=notesStats()||{cnt:{},list:[]};/* 2026-09-29 使用者指示取消「剛進入九宮時註記欄顯示九宮 ≥3 的號碼」：註記欄只顯示累加的預測號(一開始是空的) */try{renderStats()}catch(e){}
@@ -8513,8 +8527,8 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   function nextOffset(){runSearch((SB.oi+1)%SB_OFFS.length)}
   /* 拖曳鍵上方的小標籤：顯示目前的九宮差 */
   /* 2026-09-25 22:49 使用者指示「九宮差顯示欄位是拖曳桿下面的日期星期欄位，藍底紅字，九宮差在欄位裡顯示最大化」：標籤蓋在單桿下一列的日期＋星期兩格(左到日期左邊格線、右到星期右邊格線)，藍底(#1E63D0)紅字(#e02020)，字級依格子大小最大化 */
-  function buildTag(){if(SB.tag)return SB.tag;const g=document.createElement("div");g.id="zp-sb-offset-tag";Object.assign(g.style,{position:"fixed",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9601",background:"#1E63D0",color:"#e02020",border:"2px solid #fff",boxSizing:"border-box",boxShadow:"0 0 4px rgba(0,0,0,0.7)",pointerEvents:"none",overflow:"hidden",whiteSpace:"nowrap"});const sp=document.createElement("span");sp.className="zp-sb-offset-txt";Object.assign(sp.style,{font:"900 20px/1 Arial, Helvetica, sans-serif",color:"#e02020",display:"inline-block"});g.appendChild(sp);document.body.appendChild(g);SB.tag=g;/* 2026-09-28 使用者指示「切換換到單桿下面那個藍色底 -11 那裡做切換，如果該桿不只一個則 -11 閃爍提示」：原算法版中單擊這個欄位＝換到下一個成立的九宮差 */g.addEventListener("click",function(e){if(!SB.on||SB.mode!=="orig"||SB.none||(SB.oa&&SB.oa.running))return;e.preventDefault();e.stopPropagation();const now=Date.now();if(now-(SB.tagTapAt||0)<300)return;SB.tagTapAt=now;nextOffset()});["pointerdown","touchstart"].forEach(function(ev){g.addEventListener(ev,function(e){if(SB.on&&SB.mode==="orig")e.stopPropagation()},{passive:true})});return g}
-  function placeTagText(){const g=buildTag();const sp=g.firstChild;const t=SB.none?"無":(SB.mode==="orig"?offLabel(SB_OFFS[SB.oi]):"九宮");/* 原算法版顯示目前的九宮差 *//* 2026-09-28 新算法：不再逐一換九宮差，欄位顯示「九宮」(有結果)或「無」 */if(sp.textContent!==t){sp.textContent=t;SB.tagFit=""}g.style.pointerEvents=(SB.mode==="orig")?"auto":"none";g.classList.toggle("zp-sb-multi",SB.mode==="orig"&&!SB.none&&(SB.validCount||0)>1)}
+  function buildTag(){if(SB.tag)return SB.tag;const g=document.createElement("div");g.id="zp-sb-offset-tag";Object.assign(g.style,{position:"fixed",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9601",background:"#1E63D0",color:"#e02020",border:"2px solid #fff",boxSizing:"border-box",boxShadow:"0 0 4px rgba(0,0,0,0.7)",pointerEvents:"none",overflow:"hidden",whiteSpace:"nowrap"});const sp=document.createElement("span");sp.className="zp-sb-offset-txt";Object.assign(sp.style,{font:"900 20px/1 Arial, Helvetica, sans-serif",color:"#e02020",display:"inline-block"});g.appendChild(sp);document.body.appendChild(g);SB.tag=g;/* 2026-09-28 使用者指示「切換換到單桿下面那個藍色底 -11 那裡做切換，如果該桿不只一個則 -11 閃爍提示」：原算法版中單擊這個欄位＝換到下一個成立的九宮差 */g.addEventListener("click",function(e){if(!SB.on||(SB.mode!=="orig"&&SB.mode!=="three")||SB.none||(SB.oa&&SB.oa.running))return;e.preventDefault();e.stopPropagation();const now=Date.now();if(now-(SB.tagTapAt||0)<300)return;SB.tagTapAt=now;nextOffset()});["pointerdown","touchstart"].forEach(function(ev){g.addEventListener(ev,function(e){if(SB.on&&(SB.mode==="orig"||SB.mode==="three"))e.stopPropagation()},{passive:true})});return g}
+  function placeTagText(){const g=buildTag();const sp=g.firstChild;const t=SB.none?"無":((SB.mode==="orig"||SB.mode==="three")?offLabel(SB_OFFS[SB.oi]):"九宮");/* 原算法版顯示目前的九宮差 *//* 2026-09-28 新算法：不再逐一換九宮差，欄位顯示「九宮」(有結果)或「無」 */if(sp.textContent!==t){sp.textContent=t;SB.tagFit=""}g.style.pointerEvents=((SB.mode==="orig"||SB.mode==="three"))?"auto":"none";g.classList.toggle("zp-sb-multi",(SB.mode==="orig"||SB.mode==="three")&&!SB.none&&(SB.validCount||0)>1)}
   function placeTag(tr){const g=buildTag();placeTagText();if(!tr){g.style.display="none";return}
     const side=Array.prototype.slice.call(tr.children).filter(function(td){return td.classList.contains("day")||td.classList.contains("wd")});
     let L=Infinity,T=Infinity,R=-Infinity,B=-Infinity;side.forEach(function(td){const r=td.getBoundingClientRect();if(r.width<=0)return;L=Math.min(L,r.left);T=Math.min(T,r.top);R=Math.max(R,r.right);B=Math.max(B,r.bottom)});
@@ -8552,13 +8566,13 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   const AUTO_OFF_MS=260,AUTO_NONE_MS=140;
   SB.stats=null;SB.auto=false;SB.lpT=0;SB.lpAt=0;
   (function(){try{const st=document.createElement("style");st.textContent="body.zp-single-bar #zp-pick-col .zp-pick-cell:not(.zp-sb-stat){display:none !important}#zp-pick-col .zp-pick-cell.zp-sb-stat{position:relative}";document.head.appendChild(st)}catch(e){}})();
-  function showOffset(oi){clearHits();const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const g=grid();const barNums=barNumsNow();
-    if(oi<0){SB.none=true;placeTagText();return []}
+  function showOffset(oi){clearHits();const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const g=grid();const barNums=baseNums();
+    if(oi<0){SB.none=true;placeTagText();if(SB.mode==="three")fillBlank(SB.top1||[]);return []}
     SB.oi=oi;SB.none=false;placeTagText();const off=SB_OFFS[oi];
     barNums.forEach(function(n){const target=wrapNum(n,off,max);g.forEach(function(row){row.forEach(function(cl){if(cl.v===target)markHit(cl.td)})})});
     const below=[];checkRows().slice(1).forEach(function(row){if(row)row.forEach(function(c){if(c.v!==null)below.push(c.v)})});
     const uniq=[];barNums.forEach(function(n){const t=wrapNum(n,off,max);if(uniq.indexOf(t)<0)uniq.push(t)});
-    const show=uniq.filter(function(t){return below.indexOf(t)<0}).sort(function(a,b){return a-b});fillBlank(show);return show}
+    const show=uniq.filter(function(t){return below.indexOf(t)<0}).sort(function(a,b){return a-b});fillBlank(SB.mode==="three"?(SB.top1||[]):show)/* 九宮模式空白期只放第 1 名 */;return show}
   function ranking(cnt){const nums=Object.keys(cnt).map(Number);if(!nums.length)return [];
     const levels=[];nums.map(function(n){return cnt[n]}).sort(function(a,b){return b-a}).forEach(function(c){if(levels.indexOf(c)<0)levels.push(c)});
     let pick=nums.filter(function(n){return cnt[n]>=levels[Math.min(1,levels.length-1)]});
@@ -8586,7 +8600,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
       li++;if(li>=list.length){list=null;pi++}SB.autoT=setTimeout(tick,AUTO_OFF_MS)/* 用自己的計時器：拖曳單桿(cancelRun)只改 runToken，下一拍發現後正常收尾(熄燈) */}
     tick()}
   function lpCancel(){if(SB.lpT){clearTimeout(SB.lpT);SB.lpT=0}}
-  function lpStart(){lpCancel();SB.lpT=setTimeout(function(){SB.lpT=0;if(!SB.on)return;SB.lpAt=Date.now();if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}if(SB.mode==="three"){autoThree();return}autoRun()},550)}
+  function lpStart(){lpCancel();SB.lpT=setTimeout(function(){SB.lpT=0;if(!SB.on)return;SB.lpAt=Date.now();if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}if(SB.mode==="three"){autoOrig();return}/* 九宮模式長按九宮＝原算法回溯(基礎號＝前二名) */autoRun()},550)}
   ["pointerup","pointercancel"].forEach(function(ev){window.addEventListener(ev,lpCancel,true)});
   window.__zpSingleBarStart=start;window.__zpSingleBarExit=exit;window.__zpSingleBarOn=function(){return SB.on};window.__zpSingleBarPeriod=function(){return SB.on?SB.period:null};window.__zpSingleBarOffset=function(){return SB.on?(SB.none?null:SB_OFFS[SB.oi]):null};window.__zpSingleBarNext=function(){if(SB.on)nextOffset()};
   /* 單桿開著：一二三招失效、抓牌單指捲動(視窗重排)停用 */
@@ -8608,7 +8622,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     if(!SB.on){if(back&&now<SB.guardUntil){e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault()}return}
     if(t.closest("#float-save-btn")){/* 九宮鍵：單擊或雙擊＝換下一個九宮差(第一下立刻生效，0.35 秒內的第二下不再多換)；長按不動作 */e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();
       if(ev==="pointerdown")lpStart();else if(ev==="touchend"||ev==="mouseup")lpCancel();/* 14:20 長按九宮＝單桿 1～18 期全部跑一次並統計 */
-      if(ev==="click"){if(SB.mode==="orig")return;/* 2026-09-28 原算法版：九宮鍵不換九宮差(改在藍底九宮差欄位切換) */if(SB.auto||now-SB.lpAt<900)return;/* 統計跑的途中、或長按放開的那一下，不換九宮差 */if(now-SB.tapAt<350){SB.tapAt=now;return}SB.tapAt=now;const bt=document.getElementById("float-save-btn");if(bt){bt.classList.add("tap-flash");setTimeout(function(){bt.classList.remove("tap-flash")},180)}nextOffset()}return}
+      if(ev==="click"){if(SB.mode==="orig"||SB.mode==="three")return;/* 九宮模式也改在藍底九宮差欄位切換 *//* 2026-09-28 原算法版：九宮鍵不換九宮差(改在藍底九宮差欄位切換) */if(SB.auto||now-SB.lpAt<900)return;/* 統計跑的途中、或長按放開的那一下，不換九宮差 */if(now-SB.tapAt<350){SB.tapAt=now;return}SB.tapAt=now;const bt=document.getElementById("float-save-btn");if(bt){bt.classList.add("tap-flash");setTimeout(function(){bt.classList.remove("tap-flash")},180)}nextOffset()}return}
     /* 原算法版中「註記」鍵單擊不作用(2026-09-28 使用者指示切換改在藍底九宮差欄位) */
     if(t.closest("#zp-pick-col .zp-pick-head")&&SB.mode==="three"){e.stopImmediatePropagation();if(ev==="click"||ev==="dblclick"||ev==="contextmenu")e.preventDefault();/* 2026-09-29 九宮(長按定顯)：單擊/雙擊註記＝累加空白期預測號；長按不作用 */
       if((ev==="click"||ev==="dblclick")&&now-(SB.startAt||0)>=900&&!(SB.oa&&SB.oa.running)){const hd=t.closest(".zp-pick-head");if(noteThree()&&hd){hd.classList.add("tap-flash");setTimeout(function(){hd.classList.remove("tap-flash")},180)}}return}
