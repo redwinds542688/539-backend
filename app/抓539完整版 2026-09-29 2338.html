@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 23:35";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 23:38";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-29 23:38  全程式檢查預測號碼框一律 1px(使用者指示)：單桿空白期/註記欄(已改)、三層(本來就 1px)；C式合匯下桿指定格黃框 1.5px→1px、定顯 Ai 欄「已開」框 3px→1px。上下桿整列框、標記框(綠框)不是預測號，不動。
    2026-09-29 23:35  空白期預測號框由 1.5px(放大後約 3px)改為畫面上 1px；註記欄預測號加 1px 藍框、已開出的粉紅格框改 1px(使用者指示)。
    2026-09-29 23:04  長按註記(原算法版)：註記欄也改成顯示目前九宮差的全部目標號碼(由小到大)，第 17/18 期已開出的粉紅底另外標記，切換九宮差跟著換(使用者指示)；按註記累加後改顯示累加結果。
    2026-09-29 21:34  修正「在長按註記或九宮裡按手機虛擬按鍵離開再回來，回到抓牌、單桿/標記/註記全消失，有時畫面閃一下」(使用者回報)：轉向自動重建表格原本連『高度改變 >120』也重建(回前景時網址列/導覽列造成)，重建會關掉單桿。改成只在直橫翻轉或寬度改變才重建、背景中不處理；真的重建時先保存單桿狀態(模式、期、九宮差、註記累加、回溯進度)，重建後自動恢復。
@@ -869,7 +870,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   body.theme-dark .blank-stepper .count{ color:#33D17A; }
   body.theme-dark #c-ding-ai-box{ background:#121212 !important; border-right-color:#555 !important; }
 /* 2026-09-19 第 65 條：Ai 欄「已開」3px 框顏色依明/暗主題——亮色用深紅、暗色用亮橘紅，兩種底下都明顯；外圈再加 1px 白/黑細邊讓框跟旁邊格子分開 */
-#c-ding-ai-box .ai-box-rank.ai-opened{ border:3px solid #D50000 !important; box-shadow:0 0 0 1px #fff, 0 0 6px rgba(213,0,0,.55) !important; }
+#c-ding-ai-box .ai-box-rank.ai-opened{ border:1px solid #D50000 !important;/* 2026-09-29 使用者指示預測號框一律 1px(原 3px) */ box-shadow:0 0 0 1px #fff, 0 0 6px rgba(213,0,0,.55) !important; }
 body.theme-dark #c-ding-ai-box .ai-box-rank.ai-opened{ border-color:#FF3D00 !important; box-shadow:0 0 0 1px #000, 0 0 8px rgba(255,61,0,.85) !important; }
   body.theme-dark #fullpage-bottom-mask, body.theme-dark #bottom-frame-line-wrap, body.theme-dark #full-page-function-zone-outline{ background:#121212 !important; }/* 第101條：#img-overlay是滿版透明的按鍵層，不能塗底色 */
   body.theme-dark #c-ding-left-blank-frame{ background:#121212 !important; }
@@ -1991,9 +1992,9 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
   table.road td.num, table.road td.num.num-marked, table.road td.num.num-marked.num-marked-click{ box-sizing:border-box !important; }
   /* 2026-09-14(格線完整)：合匯下桿指定格的黃色上下框線改由格內的 <i> 疊出來，td 的 border 一律不改，格線不會被推歪 */
   table.road td.num.c-mode-he-b-ring-host{ position:relative; }
-  table.road td.num > i.c-mode-he-b-ring{ position:absolute; left:0; top:0; right:0; bottom:0; box-sizing:border-box; border-top:1.5px solid var(--mark-predict-color, #FFCC1A); border-bottom:1.5px solid var(--mark-predict-color, #FFCC1A); pointer-events:none; z-index:1; }
-  table.road td.num > i.c-mode-he-b-ring.ring-left{ border-left:1.5px solid var(--mark-predict-color, #FFCC1A); }
-  table.road td.num > i.c-mode-he-b-ring.ring-right{ border-right:1.5px solid var(--mark-predict-color, #FFCC1A); }
+  table.road td.num > i.c-mode-he-b-ring{ position:absolute; left:0; top:0; right:0; bottom:0; box-sizing:border-box; border-top:calc(1px * var(--fx, 1)) solid var(--mark-predict-color, #FFCC1A); border-bottom:calc(1px * var(--fx, 1)) solid var(--mark-predict-color, #FFCC1A);/* 2026-09-29 使用者指示預測號框一律 1px */ pointer-events:none; z-index:1; }
+  table.road td.num > i.c-mode-he-b-ring.ring-left{ border-left:calc(1px * var(--fx, 1)) solid var(--mark-predict-color, #FFCC1A); }
+  table.road td.num > i.c-mode-he-b-ring.ring-right{ border-right:calc(1px * var(--fx, 1)) solid var(--mark-predict-color, #FFCC1A); }
 /* 2026-09-13：使用者指示——彩卷版(主程式)「一般首頁」左下角漂浮的抓牌/AI鍵(#bug-log-fab)拿掉；其他畫面(抓牌首頁magnifier-mode、定期十六/C式recent-only-mode、全頁pinch-fullscreen-mode、catch-card-fit-mode等)一律不動、照常顯示。只有body沒有任何模式class時才隱藏；抓牌版不套用 */
 body:not(.recent-only-mode):not(.c-mode-active):not(.pinch-fullscreen-mode):not(.c-ding-entering) #bug-log-fab{ display:none !important; }
   /* ===== 2026-09-20 第 95 條：開獎單外部 UI 照解析度比例 =====================================
