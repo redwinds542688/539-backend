@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 21:08";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 21:18";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-29 21:18  自動調整系統加星期徽章檢查(使用者指示「自動調整系統也要注意這部分」)：每次自動調整(__numFitRun)時量星期徽章，右緣蓋到右邊 1.5px 線的部分用 clip-path(--wd-clip)切掉，徽章與字的大小、位置不變；首頁/抓牌/單桿、各種畫面寬度都適用。
    2026-09-29 21:08  修正「星期右邊格線破了」(使用者回報)：星期徽章放大後蓋住格子右邊 1.5px 線，只露出圓角處一小段；改在星期格上疊一層同一套內陰影畫的線(z-index 高於徽章)，截圖時不疊。
    2026-09-29 19:14  單桿九宮：註記欄改列目前九宮差的全部目標號碼(由小到大)，第 17/18 期已開出的用粉紅底另外標示；空白期只放沒開出的，最多 5(6) 號(使用者指示)。
    2026-09-29 19:00  單桿九宮：基礎號門檻改成「九宮＋414 相加次數 ≥3」(使用者指示，原前二名同名次並列太多)；沒有 ≥3 的期＝無，自動跳過。
@@ -6208,7 +6209,16 @@ window.__drawNums15=function(canvas,scale){try{const ctx=canvas.getContext("2d")
     const need=Math.min(TW/m.kw,TH/m.kh);if(Math.abs(need-1)<=TOL){remember(cur);return}
     let f=Math.max(0.3,Math.min(3,cur*need));if(Math.abs(f-1)<0.005)tb.style.removeProperty("--num-fit");else tb.style.setProperty("--num-fit",f.toFixed(4));remember(f);
     window.__numFit=window.__numFit||{};window.__numFit[Array.prototype.indexOf.call(document.querySelectorAll("table.road"),tb)]={fit:+f.toFixed(3),寬比:+m.kw.toFixed(3),高比:+m.kh.toFixed(3)}}
-  function run(){try{document.querySelectorAll("table.road").forEach(function(tb){const r=tb.getBoundingClientRect();if(r.width>0&&r.height>0)fitTable(tb)})}catch(e){}}
+  /* 2026-09-29 使用者指示「自動調整系統也要注意這部分」(星期徽章放大後蓋住右邊 1.5px 線)：自動調整時一併量星期徽章，
+     徽章右緣蓋到右邊線的部分，用 --wd-clip(clip-path)切掉，字的大小與位置不變；每張表只量一格 */
+  function fitWd(tb){try{const td=Array.prototype.find.call(tb.querySelectorAll("td.wd"),function(t){const q=t.getBoundingClientRect();return q.width>4&&q.height>4&&t.querySelector(".badge")});if(!td)return;
+    const bd=td.querySelector(".badge");const r=td.getBoundingClientRect(),q=bd.getBoundingClientRect();if(!(q.width>0)||!(td.offsetWidth>0)||!(bd.offsetWidth>0))return;
+    /* 右邊線的實際寬度＝內陰影寬 × 畫面縮放；徽章右緣超過「右邊線左緣」的部分用 clip-path 切掉(徽章大小、字的大小與位置都不變；getBoundingClientRect 不受 clip-path 影響，每次直接重算) */
+    const m=/(-?[\d.]+)px 0px 0px 0px inset/.exec(getComputedStyle(td).boxShadow||"");const lineVis=(m?Math.abs(parseFloat(m[1])):1.5)*r.width/td.offsetWidth;
+    const over=q.right-(r.right-lineVis);const sc=q.width/bd.offsetWidth;/* 徽章本身的總縮放(放大 1.3 × 畫面縮放) */
+    const x=over>0.05?+(over/sc+0.02).toFixed(3):0;const cur=parseFloat(tb.style.getPropertyValue("--wd-clip"))||0;
+    if(Math.abs(x-cur)>0.005){if(!x)tb.style.removeProperty("--wd-clip");else tb.style.setProperty("--wd-clip",x+"px")}}catch(e){}}
+  function run(){try{document.querySelectorAll("table.road").forEach(function(tb){const r=tb.getBoundingClientRect();if(r.width>0&&r.height>0){fitTable(tb);fitWd(tb)}})}catch(e){}}
   let q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;run();requestAnimationFrame(run)},80)}
   window.__numFitRun=run;
   function start(){if(!window.__isMobile)return;/* 只在手機上執行 */sch();window.__onLayout(run);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
@@ -6479,6 +6489,7 @@ html body.magnifier-mode:not(.capturing-plain):not(.capturing-save-only):not(.ca
 html body.theme-dark:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr:has(+ tr.month-start) td, html body.theme-dark:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr:has(+ tr.month-start) td.num.num-marked.num-marked.num-marked.num-marked.num-marked{ border-bottom-color:var(--zpL) !important; }
 /* 2026-09-28 使用者指示：星期欄與第一個號碼之間、六合/大樂最後一個號碼與特別號之間的豎線也是 1.5px(四種彩券都一樣)，顏色同其他線(亮黑暗白) */
 html body table.road tr td.wd, html body table.road tr td:has(+ td.special){ --zpRW:1.5px; }
+html body table.road td.wd .badge{ clip-path:inset(0 var(--wd-clip, 0px) 0 0); }/* 自動調整算出的星期徽章縮放(避免蓋住右邊線) */
 /* 2026-09-29 使用者回報「星期右邊格線破了」：星期徽章(.badge 放大 1.3 倍)幾乎填滿整格，蓋住格子內陰影畫的右邊 1.5px 線，只剩徽章圓角露出一點線(一段一段像沙漏)。
    改在星期格上面疊一條同寬同色的線(::after，z-index 高於徽章)，徽章怎麼放大都蓋不到；截圖(capturing-*)時不疊，照原本截圖補畫 */
 html body:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr td.wd{ position:relative; }
