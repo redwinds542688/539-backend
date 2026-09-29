@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 23:48";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-29 23:58";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-29 23:58  單桿空白期(第 19 列已開獎時)預測號格右上角的真實開獎號碼改成跟空白欄位一樣的紅色(#FF3B3B)(使用者指示)；原本被預測號格的藍字(-webkit-text-fill-color)蓋成藍色。
    2026-09-29 23:48  單桿整列框(與底色)在六合彩/大樂透包含特別號那一格(使用者指示「單桿、雙桿、三桿的框都必須涵蓋特別號」)；C式雙桿、E式三桿、拖曳固定框本來就含特別號。桿上號碼計算不含特別號(不變)。
    2026-09-29 23:46  所有主動標記號碼、被動標記號碼的框改為畫面上 1px(使用者指示)：放大畫面(抓牌/三層/單桿/C式/E式)標記格原本保留 0.5px 灰框線，放大後約 3.5px 粗灰框，改成不用框線、1px 內陰影外框＋一般格線；圓圈型標記(全頁/C式/E式 ::before)1.4px→1px。
    2026-09-29 23:40  所有桿的整列框改為畫面上 1px(使用者指示)：C式/E式上下桿整列框、單桿整列框(原 1.5px，放大畫面約 3px，改用 calc(1px*--fx/--fy))、C式拖曳時固定在原位的 A/B/中桿框(1.5px→1px)。
@@ -10064,6 +10065,9 @@ html body.zp-sb-orig #zp-pick-col .zp-pick-head{ background:#FFD700 !important; 
 html body.zp-sb-orig #float-save-btn.armed, html body.zp-sb-orig #period-btn.armed{ background-color:#8a8a8a !important; color:#fff !important; box-shadow:0 3px 0 #4d4d4d, 0 5px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45) !important; }
 html body.theme-dark.zp-sb-orig #float-save-btn.armed, html body.theme-dark.zp-sb-orig #period-btn.armed{ box-shadow:0 3px 0 #2a2a2a, 0 5px 8px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.35) !important; }
 html body.zp-sb-orig.zp-sb-oa #zp-pick-col .zp-pick-head{ animation:zpSbMultiBlink 0.8s steps(1,end) infinite; }
+/* 2026-09-29 使用者指示「預測號右上角的真實開獎號碼要與空白欄位的顏色一致」：預測號格子整格套了藍字(含 -webkit-text-fill-color)，連右上角的真實號碼也變藍；
+   真實號碼一律照空白欄位的紅色(#FF3B3B) */
+html body table.road tr td.num.num.num.num.num.num.num.num.num.zp-sb-cover .zp-sb-real{ color:#FF3B3B !important; -webkit-text-fill-color:#FF3B3B !important; }
 /* 2026-09-29 單桿九宮模式(長按定顯/全顯進入)：九宮鍵亮燈(黃)，其他鍵(返回)熄燈；長按九宮自動回溯中九宮鍵閃爍 */
 html body.zp-sb-three #float-save-btn{ background:#FFD700 !important; background-color:#FFD700 !important; color:#000 !important; text-shadow:none !important; box-shadow:0 3px 0 #a88a00, 0 5px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45) !important; }
 html body.zp-sb-three #period-btn.armed{ background-color:#8a8a8a !important; color:#fff !important; box-shadow:0 3px 0 #4d4d4d, 0 5px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45) !important; }
