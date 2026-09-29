@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 01:20";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 01:40";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-30 01:40  切回程式不再跳回抓牌(使用者回報)：按虛擬鍵或非正常離開、超過 1 分鐘再回來會重讀資料並重建開獎單，原本會順便關掉單桿，長按註記/九宮直接跳回抓牌。改成重建前記下單桿狀態(九宮或註記、期數、九宮差、註記累計)，重建完自動恢復；註記累加中會停在暫停狀態。
    2026-09-30 01:20  空白期預測號離框太近看不清楚(使用者回報)：預測號筆畫離左格線、下格線由 1px 改為格子大小的 8%(至少 3px)，不再貼著 1px 藍框；單桿空白期、三層第三區第 6 期共用同一套定位，截圖補畫位置同步。
    2026-09-30 00:00  所有「預測號格右上角的真實開獎號碼」一律紅色(使用者指示「其他類似的也要修改」)：單桿空白期、三層第三區第 6 期預測格(標記格/定顯格)原本都會被格子的藍字蓋成藍色。
    2026-09-29 23:58  單桿空白期(第 19 列已開獎時)預測號格右上角的真實開獎號碼改成跟空白欄位一樣的紅色(#FF3B3B)(使用者指示)；原本被預測號格的藍字(-webkit-text-fill-color)蓋成藍色。
@@ -5127,7 +5128,7 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   },true)});
   /* 離開抓牌、重畫開獎單、視窗大小改變 */
   new MutationObserver(function(){if(SB.on&&!bc().contains("zhuapai-mode"))exit()}).observe(document.body,{attributes:true,attributeFilter:["class"]});
-  if(typeof buildPanels==="function"){const __obp=buildPanels;buildPanels=function(){exit();return __obp.apply(this,arguments)}}
+  if(typeof buildPanels==="function"){const __obp=buildPanels;buildPanels=function(){/* 2026-09-30 01:40 使用者回報「按到虛擬按鍵或非正常離開再回到程式，原在長按註記或九宮會直接跳回抓牌」：切回程式超過 1 分鐘會 loadData()→重建開獎單，這裡原本直接離開單桿。改成重建前記下單桿狀態(九宮/註記、期數、九宮差、註記累計)，重建完還在抓牌就恢復(同轉向的做法)；已經在恢復中不重複 */let __snap=null;try{if(SB.on&&typeof window.__zpSbSnap==="function")__snap=window.__zpSbSnap()}catch(e){}exit();const __r=__obp.apply(this,arguments);if(__snap)[120,450].forEach(function(ms){setTimeout(function(){try{if(!SB.on&&bc().contains("zhuapai-mode")&&!bc().contains("zp-sanceng"))window.__zpSbRestore(__snap)}catch(e){}},ms)});return __r}}
 })();
 /* ===== 「三層」(使用者設計 2026-09-22) =====
    抓牌畫面左下角「三層」鍵：單擊＝開／關三層畫面。畫面固定 20 列(第 20 列在按鍵後面看不到)，只用第 1～19 列：
