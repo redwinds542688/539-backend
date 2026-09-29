@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 23:40";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-29 23:46";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-29 23:46  所有主動標記號碼、被動標記號碼的框改為畫面上 1px(使用者指示)：放大畫面(抓牌/三層/單桿/C式/E式)標記格原本保留 0.5px 灰框線，放大後約 3.5px 粗灰框，改成不用框線、1px 內陰影外框＋一般格線；圓圈型標記(全頁/C式/E式 ::before)1.4px→1px。
    2026-09-29 23:40  所有桿的整列框改為畫面上 1px(使用者指示)：C式/E式上下桿整列框、單桿整列框(原 1.5px，放大畫面約 3px，改用 calc(1px*--fx/--fy))、C式拖曳時固定在原位的 A/B/中桿框(1.5px→1px)。
    2026-09-29 23:38  全程式檢查預測號碼框一律 1px(使用者指示)：單桿空白期/註記欄(已改)、三層(本來就 1px)；C式合匯下桿指定格黃框 1.5px→1px、定顯 Ai 欄「已開」框 3px→1px。上下桿整列框、標記框(綠框)不是預測號，不動。
    2026-09-29 23:35  空白期預測號框由 1.5px(放大後約 3px)改為畫面上 1px；註記欄預測號加 1px 藍框、已開出的粉紅格框改 1px(使用者指示)。
@@ -1774,7 +1775,7 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
     aspect-ratio:1;
     border-radius:50%;
     background:var(--mark-bg-color, #FF3B3B) !important;
-    border:1.4px solid var(--mark-frame-color, #2ECC71);
+    border:calc(1px * var(--fx, 1)) solid var(--mark-frame-color, #2ECC71);
     box-sizing:border-box;
     z-index:0;
     pointer-events:none;
@@ -1787,7 +1788,7 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
   }
   table.road td.num.num-marked.num-marked-click.c-mode-he-drag-designated::before{
     background:var(--mark-frame-color, #2ECC71) !important;
-    border:1.4px solid var(--mark-bg-color, #FF3B3B) !important;
+    border:calc(1px * var(--fx, 1)) solid var(--mark-bg-color, #FF3B3B) !important;
   }
   table.road td.num.num-marked.num-marked-click{
     overflow:visible;
@@ -1846,7 +1847,7 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
     aspect-ratio:1;
     border-radius:50%;
     background:var(--mark-bg-color, #FF3B3B) !important;
-    border:1.4px solid var(--mark-frame-color, #2ECC71);
+    border:calc(1px * var(--fx, 1)) solid var(--mark-frame-color, #2ECC71);
     box-sizing:border-box;
     z-index:0;
     pointer-events:none;
@@ -1855,7 +1856,7 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
   table.road td.num.c-mode-auto-match-cell.c-mode-cha-echo-cell::before,
   table.road td.num.num-marked.num-marked-click.c-mode-auto-match-cell.c-mode-cha-echo-cell::before{
     background:var(--mark-frame-color, #2ECC71) !important;
-    border:1.4px solid var(--mark-bg-color, #FF3B3B) !important;
+    border:calc(1px * var(--fx, 1)) solid var(--mark-bg-color, #FF3B3B) !important;
   }
   /* 命中格如果剛好落在空白期(pending，尚未開獎，沒有真實號碼)，用一個純CSS畫的元寶造型取代
      空的圓圈，避免使用者誤以為是命中了某個具體號碼。
@@ -1919,18 +1920,18 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
     aspect-ratio:1;
     border-radius:50%;
     background:var(--mark-frame-color, #2ECC71) !important;
-    border:1.4px solid var(--mark-bg-color, #FF3B3B);
+    border:calc(1px * var(--fx, 1)) solid var(--mark-bg-color, #FF3B3B);
     box-sizing:border-box;
     z-index:0;
     pointer-events:none;
   }
   table.road td.num.c-mode-he-drag-designated.c-mode-ding-drag-on-anchor::before{
     background:var(--mark-bg-color, #FF3B3B) !important;
-    border:1.4px solid var(--mark-frame-color, #2ECC71) !important;
+    border:calc(1px * var(--fx, 1)) solid var(--mark-frame-color, #2ECC71) !important;
   }
   table.road td.num.num-marked.num-marked-click.c-mode-he-drag-designated.c-mode-ding-drag-on-anchor::before{
     background:var(--mark-bg-color, #FF3B3B) !important;
-    border:1.4px solid var(--mark-frame-color, #2ECC71) !important;
+    border:calc(1px * var(--fx, 1)) solid var(--mark-frame-color, #2ECC71) !important;
   }
   body.capturing-plain table.road td.num.c-mode-auto-match-cell::before,
   body.capturing-plain table.road td.num.c-mode-he-drag-designated::before{
@@ -1955,7 +1956,7 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
     aspect-ratio:1;
     border-radius:50%;
     background:var(--mark-bg-color, #FF3B3B) !important;
-    border:1.4px solid var(--mark-frame-color, #2ECC71) !important;
+    border:calc(1px * var(--fx, 1)) solid var(--mark-frame-color, #2ECC71) !important;
     box-sizing:border-box;
     z-index:0;
     pointer-events:none;
@@ -1964,7 +1965,7 @@ body.c-mode-pin-frame.sheet-font-serif-light table.road td.num{ font-family:"She
   table.road td.num.num-marked.num-marked-click.c-mode-ab-suppress-circle.e-mode-nine-line-designated::before{
     content:"" !important;
     background:var(--mark-bg-color, #FF3B3B) !important;
-    border:1.4px solid var(--mark-frame-color, #2ECC71) !important;
+    border:calc(1px * var(--fx, 1)) solid var(--mark-frame-color, #2ECC71) !important;
   }
   body.capturing-plain table.road td.num.e-mode-nine-line-designated::before{
     display:none !important;
@@ -2128,6 +2129,13 @@ body.theme-dark:not(.capturing-plain):not(.capturing-save-only):not(.capturing-c
 body.theme-dark:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road td.num.num-marked.num-marked-click.c-mode-ab-suppress-circle.c-mode-he-drag-designated{ border-color:#555 !important; }
 body:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road td.num.num-marked.num-marked-click.c-mode-he-drag-designated,
 body:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road td.num.num-marked.num-marked-click.zp-sc-triple-hit{ box-shadow:inset calc(1px * var(--fx, 1)) 0 0 0 var(--mark-bg-color, #FF3B3B), inset calc(-1px * var(--fx, 1)) 0 0 0 var(--mark-bg-color, #FF3B3B), inset 0 calc(1px * var(--fy, 1)) 0 0 var(--mark-bg-color, #FF3B3B), inset 0 calc(-1px * var(--fy, 1)) 0 0 var(--mark-bg-color, #FF3B3B) !important; }
+/* 2026-09-29 使用者指示「所有主動標記號碼、被動標記號碼框也都改 1px」：放大畫面(抓牌/三層/單桿/C式/E式)標記格原本保留 0.5px 灰色框線，
+   Chrome 放大後框線最細只能 1 個版面 px(畫面約 3.5px)，看起來是一圈粗灰框。改成跟首頁一樣：不用框線，外框＝畫面 1px 內陰影，格線(右、下)照一般格子用陰影畫 */
+body.magnifier-mode:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr td.num.num-marked.num-marked-drag,
+body.magnifier-mode:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr td.num.num-marked.num-marked-click:not(.c-mode-ab-suppress-circle),
+body.magnifier-mode:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr td.num.num-marked.num-marked-click.c-mode-ab-suppress-circle.c-mode-he-drag-designated{ border-style:none !important; box-shadow:inset calc(1px * var(--fx, 1)) 0 0 0 var(--mark-frame-color, #2ECC71), inset calc(-1px * var(--fx, 1)) 0 0 0 var(--mark-frame-color, #2ECC71), inset 0 calc(1px * var(--fy, 1)) 0 0 var(--mark-frame-color, #2ECC71), inset 0 calc(-1px * var(--fy, 1)) 0 0 var(--mark-frame-color, #2ECC71), inset calc(-1 * var(--zpRW, 1px) * var(--fx, 1)) 0 0 0 var(--zpL), inset 0 calc(-1 * var(--zpBW, 1px) * var(--fy, 1)) 0 0 var(--zpL) !important; }
+body.magnifier-mode:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr td.num.num-marked.num-marked-click.c-mode-he-drag-designated,
+body.magnifier-mode:not(.capturing-plain):not(.capturing-save-only):not(.capturing-clean-sheet) table.road tr td.num.num-marked.num-marked-click.zp-sc-triple-hit{ border-style:none !important; box-shadow:inset calc(1px * var(--fx, 1)) 0 0 0 var(--mark-bg-color, #FF3B3B), inset calc(-1px * var(--fx, 1)) 0 0 0 var(--mark-bg-color, #FF3B3B), inset 0 calc(1px * var(--fy, 1)) 0 0 var(--mark-bg-color, #FF3B3B), inset 0 calc(-1px * var(--fy, 1)) 0 0 var(--mark-bg-color, #FF3B3B), inset calc(-1 * var(--zpRW, 1px) * var(--fx, 1)) 0 0 0 var(--zpL), inset 0 calc(-1 * var(--zpBW, 1px) * var(--fy, 1)) 0 0 var(--zpL) !important; }
 /* 2026-09-25 09:55 使用者指示「號碼以安卓100%、蘋果80%，其他全部一樣，全自動」＋格線「取中間」：
    開獎單(首頁/全頁)的格線不再用框線畫——Safari 與 Chrome 畫細框線的規則不同(Safari 1px 以上的框線縮小時不變細，所以蘋果格線比安卓粗)，同一個設定兩邊粗細就不一樣。
    改成：格子不畫框線(border-style:none)，格線改由格子內側的陰影畫(右、下；日期格加左)，寬度＝畫面上 0.52px(--fx/--fy 由程式量每張表的縮放換算)，
