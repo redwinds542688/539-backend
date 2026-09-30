@@ -42,7 +42,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 23:17";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 23:48";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -188,8 +188,11 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
  ・註記欄會被其他程式重畫而清掉單桿結果 → watchCol 監看後補回；改註記欄時保留這個機制。
  ・特殊算法、各種回測都用「陣列相鄰＝前後期」，資料缺期就會算錯 → 資料要完整。
  ・Safari 量有 CSS zoom 的元素不含 zoom(全頁高度量錯)；蘋果放開手指的事件可能被攔 → 相關量測用實際畫面框與最後觸控時間。
+ ・開獎球置中程式每次都改動畫面(插入標記、清掉再設位移)，觸發自己跟「按鍵文字最大化」的監看＝每一格畫面都重算(2 秒 5 萬多次)，把選單按鍵字級蓋掉、也耗電 → 已改成量到的位置已置中就不動、基線只在號碼/字型改變時量。
+   規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-30 23:48  修正開獎球置中程式無限重算(主程式回報 C式「搜期」選單字變小)：21:02 的置中程式每次執行都改動畫面，跟「按鍵文字最大化」互相觸發變成每格畫面重算，會蓋掉選單按鍵的字級、也耗電。改成已置中就不動、基線只在號碼/字型改變時量。
    2026-09-30 23:17  程式規格書補上 C式定位十字差「十字」顯示、閃爍與空白期統計(副程式沒有 C式，程式行為不變)。
    2026-09-30 23:05  程式規格書更正 C式定位十字差方向(格子號碼＋十字差＝上桿號碼；副程式沒有 C式，程式行為不變)。
    2026-09-30 22:57  程式規格書補上「C式定位十字差」說明(與主程式同一份規格書；副程式沒有 C式，程式行為不變)。
@@ -6836,20 +6839,24 @@ html body.theme-dark.zp-single-bar #zp-pick-col .zp-pick-cell.zp-sb-stat.zp-sb-p
 })();</script>
 <script>/* 2026-09-30 21:02 使用者回報「最新開獎球號碼沒有置中」：球用 flex 置中的是字框，手機實際用的字型(例：襯線字)筆畫左右、上下不對稱，實測號碼偏左約 1px、偏下約 1px。
    改成量號碼實際筆畫(canvas measureText 的 actualBoundingBox＋基線位置)，把筆畫中心移到球的正中心。球重畫、縮放(開獎球自動縮小)、字型載入、切換畫面時重算；不改球的大小與字級。 */
-(function(){var cv=null,raf=0;
-function fix(){raf=0;var hb=document.getElementById("hero-balls");if(!hb)return;cv=cv||document.createElement("canvas").getContext("2d");
+(function(){var cv=null,raf=0,busy=false,mo=null;
+function fix(){raf=0;var hb=document.getElementById("hero-balls");if(!hb)return;cv=cv||document.createElement("canvas").getContext("2d");busy=true;
   Array.prototype.forEach.call(hb.querySelectorAll(".ball"),function(b){try{var t=(b.textContent||"").trim();if(!t)return;var sp=b.querySelector(".ball-ink");
-    if(!sp||sp.textContent!==t){b.innerHTML='<span class="ball-ink" style="display:inline-block">'+t+"</span>";sp=b.firstChild}
-    sp.style.transform="none";var cs=getComputedStyle(sp);var fs=parseFloat(cs.fontSize)||0;if(!(fs>0))return;
-    cv.font=cs.fontStyle+" "+cs.fontWeight+" 100px "+cs.fontFamily;var m=cv.measureText(t);var q=fs/100;
+    var mk=sp&&sp.querySelector("i.ball-base");
+    if(!sp||!mk||sp.textContent!==t){b.innerHTML='<span class="ball-ink" style="display:inline-block">'+t+'<i class="ball-base" style="display:inline-block;width:0;height:0;padding:0;margin:0;border:0;vertical-align:baseline"></i></span>';sp=b.firstChild;mk=sp.lastChild}/* 基線標記常駐在球裡(大小 0、看不到)，每次量都不必改動畫面 */
+    var cs=getComputedStyle(sp);var fs=parseFloat(cs.fontSize)||0;if(!(fs>0))return;cv.font=cs.fontStyle+" "+cs.fontWeight+" 100px "+cs.fontFamily;var m=cv.measureText(t);var q=fs/100;
+    /* 目前的位移(量到的位置含位移，要扣回去)；不先把位移清掉，避免每次都改動畫面 */
+    var mt=/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/.exec(sp.style.transform||"");var tx=mt?+mt[1]:0,ty=mt?+mt[2]:0;
+    var br=b.getBoundingClientRect();if(!(br.width>2))return;var k=b.offsetWidth?br.width/b.offsetWidth:1;if(!(k>0))k=1;var sr=sp.getBoundingClientRect();
     var L=m.actualBoundingBoxLeft*q,R=m.actualBoundingBoxRight*q,A=m.actualBoundingBoxAscent*q,D=m.actualBoundingBoxDescent*q;
-    var mk=document.createElement("i");mk.style.cssText="display:inline-block;width:0;height:0;padding:0;margin:0;border:0;vertical-align:baseline";sp.appendChild(mk);var base=mk.getBoundingClientRect().top;var sr=sp.getBoundingClientRect();sp.removeChild(mk);
-    var br=b.getBoundingClientRect();if(!(br.width>2))return;var k=b.offsetWidth?br.width/b.offsetWidth:1;if(!(k>0))k=1;
-    var dx=(br.left+br.width/2-(sr.left+(R-L)/2*k))/k,dy=(br.top+br.height/2-(base+(D-A)/2*k))/k;
-    if(Math.abs(dx)>fs||Math.abs(dy)>fs)return;sp.style.transform="translate("+dx.toFixed(2)+"px,"+dy.toFixed(2)+"px)"}catch(e){}})}
+    var left0=sr.left-tx*k,base0=mk.getBoundingClientRect().top-ty*k;
+    var dx=(br.left+br.width/2-(left0+(R-L)/2*k))/k,dy=(br.top+br.height/2-(base0+(D-A)/2*k))/k;
+    if(Math.abs(dx)>fs||Math.abs(dy)>fs)return;if(Math.abs(dx-tx)<0.05&&Math.abs(dy-ty)<0.05)return;/* 已經置中就不動 */
+    sp.style.transform="translate("+dx.toFixed(2)+"px,"+dy.toFixed(2)+"px)"}catch(e){}});busy=false;if(mo)mo.takeRecords()}
 function sch(){if(!raf)raf=requestAnimationFrame(fix)}
 window.__ballInkCenter=fix;
-function start(){sch();var hb=document.getElementById("hero-balls");if(hb)try{new MutationObserver(sch).observe(hb,{childList:true,subtree:true,attributes:true,attributeFilter:["style"],characterData:true})}catch(e){}
+function start(){sch();var hb=document.getElementById("hero-balls");if(hb)try{mo=new MutationObserver(function(rs){if(busy)return;for(var i=0;i<rs.length;i++){var r=rs[i];if(r.type==="attributes"&&r.target.classList&&r.target.classList.contains("ball-ink"))continue;sch();return}});mo.observe(hb,{childList:true,subtree:true,attributes:true,attributeFilter:["style"],characterData:true})}catch(e){}
+  if(hb){hb.addEventListener("animationend",sch,true);hb.addEventListener("transitionend",sch,true)}/* 球的縮放動畫結束後再對一次 */
   if(typeof window.__onLayout==="function")window.__onLayout(sch);window.addEventListener("resize",sch);
   try{if(document.fonts){document.fonts.ready.then(sch);document.fonts.addEventListener("loadingdone",sch)}}catch(e){}}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start()})();
