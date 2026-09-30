@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-30 19:11";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-30 19:48";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-30 19:48  版本檢查修正(使用者回報「已經上傳新版，舊版卻沒有更新提示」)：每次檢查新版前，先叫手機重新抓網站上的 sw.js(離線背景程式)；搭配新的 sw.js(網頁與版本檢查一律先上網抓最新，沒網路才用手機裡的)，避免手機快取的舊版擋住更新提示。
    2026-09-30 19:11  長按註記(原算法版，註記亮燈)：註記欄不再顯示目前九宮差的全部預測號(使用者指示，取消 09-29 23:04 的做法)，只顯示按註記/長按註記回溯累加的結果，還沒累加前是空的。空白期、18 期標定、九宮模式不變。
    2026-09-30 19:06  單桿九宮空白期改回原來的做法(使用者指示「改回原來的」)：空白期放目前九宮差 17/18 期沒中的目標號碼(最多 5(6) 格)；撤回 10:11、10:15、10:18 三次修改(17/18 期或單桿那期九宮＋414 等於 0 的號碼、六合彩/大樂透放 7 個)。
    2026-09-30 10:18  單桿九宮空白期：六合彩/大樂透最多放 7 個(使用者指示)，連特別號那格一起填(右上角照樣標真實特別號)；539/天天樂仍是 5 個。長按註記(原算法版)不變。
@@ -9746,7 +9747,7 @@ function go(){t=null;if(document.hidden){return}var w=innerWidth,h=innerHeight;v
   /* 更新回來後：到了新版就報「已更新」；還是舊版且已經自動試過，就改顯示手動重裝步驟 */
   const target=ls(TKEY);
   if(target){if(LOCAL>=target){ls(TKEY,null);ls(AKEY,null);window.addEventListener("load",function(){setTimeout(function(){const ov=box(H+'更新完成</div>'+P+'已經更新到最新版本：<b>'+LOCAL+'</b></div><div id="app-update-ok" '+BTN+'>好</div>');ov.querySelector("#app-update-ok").addEventListener("click",function(){ov.remove()})},800)})}}
-  async function check(){if(busy||Date.now()<laterUntil)return;busy=true;lastCheck=Date.now();
+  async function check(){if(busy||Date.now()<laterUntil)return;busy=true;lastCheck=Date.now();/* 2026-09-30 19:48 使用者回報「已經上傳新版，舊版卻沒有更新提示」：查版本的請求會先經過手機裡的 sw.js，舊的 sw.js 若先用快取就會拿到舊版、以為沒有新版。每次檢查前先叫手機重新抓 sw.js(registration.update)，網站上換了新的 sw.js(網頁一律先上網抓)就會立刻換上 */try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration){const reg=await navigator.serviceWorker.getRegistration();if(reg&&reg.update)await Promise.race([reg.update().catch(function(){}),new Promise(function(r){setTimeout(r,3000)})])}}catch(e){}
     try{const remote=await remoteBuild();if(!remote||!(remote>LOCAL))return;
       if(document.getElementById("app-update-overlay"))return;
       const t=ls(TKEY),tries=parseInt(ls(AKEY)||"0",10)||0;
