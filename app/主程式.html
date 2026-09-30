@@ -44,7 +44,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 01:40";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 01:50";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -204,6 +204,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-10-01 01:50  C式空白期填號顏色(亮色)由深紅 #5E0E0E 改鮮紅 #D50000(使用者指示「空白欄位的字體顏色與上面太相近，容易混淆」)；暗色主題不變。
    2026-10-01 01:40  C式定位搜期改單選(使用者指示「搜期只能選一個，不需要前面的打勾，文字最大化」)：選項只顯示「n期」，選一個就取消其他的，字最大化；舊設定勾了多個時只留最大的。差數/合匯不變。
    2026-10-01 01:20  C式定位：被動標定落在上桿列(下桿往前幾期剛好是上桿那一列)時原本沒畫圈(桿列格子的關圈設定蓋掉)，改成照被動標定樣式顯示(使用者回報「上桿被動標記 10 對應下桿 18，18 該用被動標定號的設定顯示」)。
    2026-10-01 01:10  C式定位最上面一二三期(掃描累加)：前二名合計 ≤2 顆時再取第三名(使用者指示)。
@@ -5011,7 +5012,8 @@ body.theme-dark #c-ding-ai-box .ai-box-rank.ai-opened{ border-color:#FF3D00 !imp
     z-index:2;
   }
   /* 2026-09-01：長按定位掃描完成後，空白期格子顯示統計前三名(號碼+右上角次數)，樣式比照四招 */
-  table.road td.num.c-ding-top3{ position:relative; color:#5E0E0E !important; font-weight:700; background:#fff !important; }
+  /* 2026-10-01 01:50 使用者指示「空白欄位的字體顏色與上面太相近，容易混淆」：空白期填號(亮色)由深紅 #5E0E0E 改成鮮紅 #D50000，跟開獎號碼的黑字明顯區分；暗色主題維持 #FF8A80 */
+  table.road td.num.c-ding-top3{ position:relative; color:#D50000 !important; font-weight:700; background:#fff !important; }
   table.road td.num.c-ding-top3 .cell-shift{ animation:none; } /* 2026-09-16：使用者指示——空白期顯示號碼不再閃爍(原 pinBlink 1.1s 無限循環) */ /* 2026-09-01：前幾名號碼閃爍(試效果) */
   table.road td.num.c-ding-top3 .ding-top-badge{ position:absolute; top:2px; right:2.5px; font-size:0.5em; line-height:1; font-weight:700; font-family:Arial, Helvetica, sans-serif; color:#FF3B3B !important; pointer-events:none; z-index:2; }
   /* 2026-09-20 使用者指示(第 75 條)：空白列再畫一個「連七號碼／最強九宮差」對照表，用藍字跟空白期的紅字分開 */
@@ -5152,10 +5154,10 @@ body.theme-dark #c-ding-ai-box .ai-box-rank.ai-opened{ border-color:#FF3D00 !imp
   table.road tr.c-scroll-blanked td.num.num.num.num.num.num{ color:transparent !important; background:transparent !important; box-shadow:none !important; }
   table.road tr.c-scroll-blanked td.num .cell-shift{ visibility:hidden !important; }
   table.road tr.c-scroll-blanked td.num::before, table.road tr.c-scroll-blanked td.num::after{ content:none !important; display:none !important; }
-  table.road tr.c-scroll-blanked td.num.c-ding-top3{ color:#5E0E0E !important; background:#fff !important; }
+  table.road tr.c-scroll-blanked td.num.c-ding-top3{ color:#D50000 !important; background:#fff !important; }
   table.road tr.c-scroll-blanked td.num.c-ding-top3 .cell-shift{ visibility:visible !important; }
   /* 2026-09-06：捲動模式下「前幾名填空白格」照常顯示(使用者指示)，包括填在被佔用列上的 */
-  body.c-mode-pin-frame table.road td.num.num.num.num.num.num.c-ding-top3, body.c-mode-pin-frame table.road tr.c-scroll-blanked td.num.num.num.num.num.num.c-ding-top3, table.road tr.c-scroll-blanked td.num.num.num.num.num.num.c-ding-top3{ color:#5E0E0E !important; background:#fff !important; }
+  body.c-mode-pin-frame table.road td.num.num.num.num.num.num.c-ding-top3, body.c-mode-pin-frame table.road tr.c-scroll-blanked td.num.num.num.num.num.num.c-ding-top3, table.road tr.c-scroll-blanked td.num.num.num.num.num.num.c-ding-top3{ color:#D50000 !important; background:#fff !important; }
   /* 2026-09-15：使用者回報「Ai 欄位顯示的號碼底色不太一樣」。亮色系量過：Ai 前三名格(td.num.c-ding-top3)底色 #fff、旁邊空白格透明壓在 #ffffff 的表格上，兩者一樣白，看不出差別；
      暗色系才是問題：上面三條規則把 Ai 格寫死 background:#fff !important，暗色系其他號碼格是 #1a1a1a，Ai 格變成一塊白底、深紅字。
      補上暗色系專用規則：底色改成跟一般號碼格相同的 #1a1a1a，字色改亮紅 #FF8A80(深紅 #5E0E0E 在深底上看不見)；右上角次數徽章維持 #FF3B3B。
@@ -5163,9 +5165,9 @@ body.theme-dark #c-ding-ai-box .ai-box-rank.ai-opened{ border-color:#FF3D00 !imp
   body.theme-dark table.road td.num.num.num.num.num.num.num.c-ding-top3{ background:#1a1a1a !important; color:#FF8A80 !important; }
   /* 2026-09-17：使用者截圖(定位 暗色)——下桿停在第一空白列時，該列填號的字色跟第二空白列不一樣(下桿列上色會把 td 行內寫 color:#1F1F1F !important，行內 !important 壓過樣式表)。
      填號的顏色改寫在號碼 span(.cell-shift) 上：span 自己的樣式表顏色不受 td 行內顏色影響，下桿列的灰底與綠框照舊，只有號碼顏色跟其他空白列一致。截圖(pin-frame)模式維持原本的深紅。 */
-  table.road td.num.c-ding-top3 .cell-shift{ color:#5E0E0E !important; }
+  table.road td.num.c-ding-top3 .cell-shift{ color:#D50000 !important; }
   body.theme-dark table.road td.num.c-ding-top3 .cell-shift{ color:#FF8A80 !important; }
-  body.c-mode-pin-frame table.road td.num.c-ding-top3 .cell-shift{ color:#5E0E0E !important; }
+  body.c-mode-pin-frame table.road td.num.c-ding-top3 .cell-shift{ color:#D50000 !important; }
   body.c-mode-pin-frame table.road td.num.c-ding-top3 .cell-shift, body.c-mode-pin-frame table.road tr.c-scroll-blanked td.num.c-ding-top3 .cell-shift{ visibility:visible !important; }
   body.c-mode-pin-frame table.road td.num.c-ding-top3 .ding-top-badge{ display:block !important; }
   /* 2026-09-06：捲動模式下原16與17之間的紅色分隔線也隱藏 */
