@@ -44,7 +44,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 01:00";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 01:10";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -164,7 +164,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
  ・最上面三列的藍字：原連七九宮差 2026-10-01 00:20 刪除(C式各模式都不顯示)。
  ・進入定位的掃描(2026-10-01 00:50)：上桿從差 6 一期一期往下到差 1(同差法動畫掃描 runChaSameAnimatedSweep，每步 0.05 秒，搜期打勾幾個就各跑一輪)，
    每一步用現在的邏輯＝5 個十字差全跑的統計前二名(Ai 欄那組預測號，cModeCurrentSubModeStatCounts 在定位掃描中改回傳它)，次數全部累加；
-   跑完上桿回原位，累加結果前二名(同次數並列全算、不補第三名，最多 15 顆)依序填在最上面第一→二→三期(藍字，右上角＝累加次數，沒用到的格子空白)，
+   跑完上桿回原位，累加結果前二名(同次數並列全算；前二名合計 ≤2 顆再取第三名(2026-10-01 01:10)，最多 15 顆)依序填在最上面第一→二→三期(藍字，右上角＝累加次數，沒用到的格子空白)，
    由 showCModeStreak7Table 畫(沿用連七表格子機制，normalizedNum 仍回傳原號碼)；重算/切十字差後補回；最上面三列有上/下桿就不畫；掃描開始先清掉。
 
 ────────────────────────────────────────
@@ -202,6 +202,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-10-01 01:10  C式定位最上面一二三期(掃描累加)：前二名合計 ≤2 顆時再取第三名(使用者指示)。
    2026-10-01 01:00  Ai 欄號碼的次數角標改到號碼右上角(使用者指示，原左上角)；C式各模式的 Ai 欄都一樣。
    2026-10-01 00:50  C式定位進入掃描(使用者指示)：上桿從差 6 往下到差 1，每一步改用現在的十字差邏輯(5 個十字差全跑的統計前二名)，所有預測號次數累加；跑完上桿回原位，累加前二名填在最上面一二三期(右上角＝次數)。
    2026-10-01 00:35  C式定位十字差(使用者指示「有主動標定號，但搭配十字差卻沒有被動標定號，直接跳過換下一個十字差」)：目前十字差沒有被動標定就自動換到下一個有的(順序 0→+10→-10→+1→-1)，單擊切換也跳過沒有的；空白期跟著換。
@@ -7728,7 +7729,7 @@ function showCModeStreak7Table(){/* 2026-10-01 00:20 使用者指示「把一二
   /* 2026-10-01 00:50 使用者指示：C式定位進入時的掃描(上桿從差 6 一期一期往下到差 1，每一步用現在的十字差邏輯統計、把所有預測號次數累加)，跑完上桿回原位，累加結果「前二名」(同次數並列全算、不補第三名) 填在最上面一二三期；
      一列 5 格，依序填第一期→第二期→第三期(次數高在前、同次數號碼小在前，最多 15 顆)，號碼右上角＝累加次數；沿用連七表的格子機制(normalizedNum 仍回傳原號碼，計算不受影響)。最上面三列有上/下桿就不畫。 */
   try{if(typeof cSubMode==="undefined"||cSubMode!=="定位"||!cModeActive||window.eModeEqualDist)return;const T=window.__cModeDingSweepTotal;if(!T)return;const LOG=function(d){if(typeof logEvent==="function")logEvent("定位掃描前二名",d)};const pad=function(v){return String(v).padStart(2,"0")};
-    const list=Object.keys(T).map(function(k){return{n:parseInt(k,10),c:T[k]}}).filter(function(x){return x.c>0}).sort(function(a,b){return b.c-a.c||a.n-b.n});const vals=[];list.forEach(function(x){if(vals.indexOf(x.c)<0)vals.push(x.c)});const keep=vals.slice(0,2);let show=list.filter(function(x){return keep.indexOf(x.c)>=0});if(!show.length){LOG("掃描沒有預測號");return}
+    const list=Object.keys(T).map(function(k){return{n:parseInt(k,10),c:T[k]}}).filter(function(x){return x.c>0}).sort(function(a,b){return b.c-a.c||a.n-b.n});const vals=[];list.forEach(function(x){if(vals.indexOf(x.c)<0)vals.push(x.c)});let keep=vals.slice(0,2);let show=list.filter(function(x){return keep.indexOf(x.c)>=0});if(show.length<=2&&vals.length>2){keep=vals.slice(0,3);show=list.filter(function(x){return keep.indexOf(x.c)>=0})}/* 2026-10-01 01:10 使用者指示「前二名小於等於 2 顆再取第三名」 */if(!show.length){LOG("掃描沒有預測號");return}
     const tr=(typeof findCModeTargetRows==="function")?findCModeTargetRows():null;const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(x){return x.style.display!=="none"});if(!vp)return;
     const rows=Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(x){return x.style.display!=="none"&&!x.classList.contains("c-scroll-peek")&&x.getBoundingClientRect().height>0&&x.querySelectorAll("td.num").length>0});if(rows.length<3)return;const trs=[rows[0],rows[1],rows[2]];
     if(tr&&trs.some(function(x){return x===tr.aRow||x===tr.bRow})){LOG("最上面三列裡有上/下桿，不畫");return}const cc=cModeColCount();const cells=[];trs.forEach(function(x){Array.prototype.slice.call(x.querySelectorAll("td.num")).slice(0,cc).forEach(function(td){cells.push(td)})});
