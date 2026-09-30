@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 10:11";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 10:15";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-30 10:15  單桿九宮空白期再調整(使用者指示「只算單桿那期就好」)：九宮＋414 統計等於 0 的號碼改成只用單桿那一期的桿上號碼計算(原為第 17、18 期合併，幾乎蓋滿所有號碼)，跟著單桿移動；等於 0 的由小到大放進空白期(最多 5(6) 格)。其他不變。
    2026-09-30 10:11  單桿九宮(長按定顯/全顯)空白期改算法(使用者指示)：畫面第 17、18 期的號碼各做九宮拖牌(9 個)＋414 拖牌(-14、-4、+4、+14)，次數直接相加，等於 0 的號碼(兩種都沒出現)由小到大放進空白期(最多 5(6) 格，沒有就空著)；原本放的「目前九宮差 17/18 期沒中的目標號碼」取消(註記欄已有顯示)。註記欄、18 期標定、按註記/長按九宮回溯累加不變；長按註記(原算法版)不變。
    2026-09-30 09:49  版本檢查時機(使用者指示「進入程式立刻檢查，縮放開獎單也再檢查一次」)：每次切回程式立刻檢查有沒有新版(取消 10 分鐘內不重查、1.5 秒延遲)，從上一頁切回來也查；兩指縮放開獎單放開時再查一次(5 秒內不重查)。開啟程式立刻查、每 30 分鐘查一次不變。版本檢查只在網站上(https)執行，直接開檔案(content://)仍不查。
    2026-09-30 01:41  檢查所有子系統切回程式(重建開獎單)後是否保留(使用者指示「看看其他子系統是否也有同樣問題一起修復」)：實測首頁、抓牌首頁、全頁、抓牌十八/抓牌(含往回捲動與標記)、E式、C式、C式定位、C式合匯、統計表都本來就會保留；只有三層跟單桿一樣會被關掉跳回抓牌。三層改成重建前記下標的、段落(三層段落/備用列)、捲動位置，重建完重開三層並切回同一個標的/段落/位置。(橫向時三層本來就開不起來，轉成橫向仍會回到抓牌，不在這次修改範圍)
@@ -5058,11 +5059,12 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   SB.stats=null;SB.auto=false;SB.lpT=0;SB.lpAt=0;
   (function(){try{const st=document.createElement("style");st.textContent="body.zp-single-bar #zp-pick-col .zp-pick-cell:not(.zp-sb-stat){display:none !important}#zp-pick-col .zp-pick-cell.zp-sb-stat{position:relative}";document.head.appendChild(st)}catch(e){}})();
   /* 2026-09-30 10:11 使用者指示「在九宮裡把 17/18 期搭配九宮跟 414 統計起來，等於 0 的顯示在空白期；原空白期的顯示取消，因為註記欄裡已經有顯示了」：
-     九宮模式(長按定顯/全顯進入)的空白期改放 zeroNums()：畫面第 17、18 期(固定位置，不含特別號)的號碼各做九宮拖牌(-11、-10、-9、-1、0、+1、+9、+10、+11)與 414 拖牌(-14、-4、+4、+14)，超出範圍繞回；
-     兩個統計次數直接相加，等於 0(九宮、414 都沒出現)的號碼由小到大放進空白期，最多 5(6) 格；沒有等於 0 的空白期就空著。只看 17/18 期，跟單桿位置、九宮差無關。
+     九宮模式(長按定顯/全顯進入)的空白期改放 zeroNums()：單桿那一期(桿上號碼，不含特別號；原為畫面第 17、18 期)的號碼各做九宮拖牌(-11、-10、-9、-1、0、+1、+9、+10、+11)與 414 拖牌(-14、-4、+4、+14)，超出範圍繞回；
+     兩個統計次數直接相加，等於 0(九宮、414 都沒出現)的號碼由小到大放進空白期，最多 5(6) 格；沒有等於 0 的空白期就空著。跟著單桿移動，跟九宮差無關。
      原本空白期放的「目前九宮差 17/18 期沒中的目標號碼」取消(註記欄照舊顯示)；按註記/長按九宮回溯累加的預測號不變。長按註記(原算法版)的空白期不變 */
   function zeroNums(){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const cols=(typeof cModeColCount==="function")?cModeColCount():5;const cnt={};
-    checkRows().slice(1).forEach(function(row){if(row)row.forEach(function(c){if(c.v===null)return;SB_OFFS.concat([-14,-4,4,14]).forEach(function(o){const t=wrapNum(c.v,o,max);cnt[t]=(cnt[t]||0)+1})})});
+    /* 2026-09-30 10:15 使用者指示「17 算 17 的、18 算 18 的，二期合起來統計太多…那就只算單桿那期就好」：改成只用單桿那一期(桿上 5(6) 個號碼，不含特別號)做九宮＋414 統計，跟著單桿移動；等於 0 的放空白期 */
+    barNumsNow().forEach(function(v){SB_OFFS.concat([-14,-4,4,14]).forEach(function(o){const t=wrapNum(v,o,max);cnt[t]=(cnt[t]||0)+1})});
     const out=[];for(let v=1;v<=max&&out.length<cols;v++)if(!cnt[v])out.push(v);return out}
   function showOffset(oi){clearHits();const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const g=grid();const barNums=baseNums();
     if(oi<0){SB.none=true;placeTagText();if(SB.mode==="three")fillBlank(zeroNums());return []}
