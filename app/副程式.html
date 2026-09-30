@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 01:41";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 09:49";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-30 09:49  版本檢查時機(使用者指示「進入程式立刻檢查，縮放開獎單也再檢查一次」)：每次切回程式立刻檢查有沒有新版(取消 10 分鐘內不重查、1.5 秒延遲)，從上一頁切回來也查；兩指縮放開獎單放開時再查一次(5 秒內不重查)。開啟程式立刻查、每 30 分鐘查一次不變。版本檢查只在網站上(https)執行，直接開檔案(content://)仍不查。
    2026-09-30 01:41  檢查所有子系統切回程式(重建開獎單)後是否保留(使用者指示「看看其他子系統是否也有同樣問題一起修復」)：實測首頁、抓牌首頁、全頁、抓牌十八/抓牌(含往回捲動與標記)、E式、C式、C式定位、C式合匯、統計表都本來就會保留；只有三層跟單桿一樣會被關掉跳回抓牌。三層改成重建前記下標的、段落(三層段落/備用列)、捲動位置，重建完重開三層並切回同一個標的/段落/位置。(橫向時三層本來就開不起來，轉成橫向仍會回到抓牌，不在這次修改範圍)
    2026-09-30 01:40  切回程式不再跳回抓牌(使用者回報)：按虛擬鍵或非正常離開、超過 1 分鐘再回來會重讀資料並重建開獎單，原本會順便關掉單桿，長按註記/九宮直接跳回抓牌。改成重建前記下單桿狀態(九宮或註記、期數、九宮差、註記累計)，重建完自動恢復；註記累加中會停在暫停狀態。
    2026-09-30 01:20  空白期預測號離框太近看不清楚(使用者回報)：預測號筆畫離左格線、下格線由 1px 改為格子大小的 8%(至少 3px)，不再貼著 1px 藍框；單桿空白期、三層第三區第 6 期共用同一套定位，截圖補畫位置同步。
@@ -6157,7 +6158,7 @@ function go(){t=null;if(document.hidden){return}var w=innerWidth,h=innerHeight;v
 })();</script>
 
 <script>/* ===== 版本檢查與強制更新(2026-09-26 12:49 使用者指示「當下使用的程式與最新上傳 GitHub 的程式不同，程式需告訴使用者要求更新，然後先刪除原來的程式，再安裝新程式」) =====
-   ・何時查：開啟程式後 3 秒；App 從背景切回來(10 分鐘內不重查)。只在網站上執行(https/http)，直接開檔案不查。
+   ・何時查：開啟程式立刻查；每次切回程式立刻查；兩指縮放開獎單放開時再查(5 秒內不重查)；開著時每 30 分鐘查一次。只在網站上執行(https/http)，直接開檔案不查。
    ・怎麼查：向網站讀「目前這個網址」的最新檔案(加時間參數避開快取)，只讀開頭幾 KB 找 window.APP_BUILD 就停，不下載整個檔案；比這支程式的 APP_BUILD 新才算有新版。
    ・有新版：蓋一層提示「發現新版本，必須更新」，只有「立即更新」一顆鍵。
    ・立即更新＝先刪除原來的程式(註銷 service worker、刪除所有快取的程式檔)，再重新載入安裝新程式；使用者的標記、設定(localStorage)保留。
@@ -6217,7 +6218,15 @@ function go(){t=null;if(document.hidden){return}var w=innerWidth,h=innerHeight;v
   /* 2026-09-27 使用者指示「更新檢查可以一起附上」：程式一直開在前面時，每 30 分鐘也自動檢查一次(背景中不查，切回來照原本規則) */
   setInterval(function(){if(document.visibilityState==="visible")check()},1800000);
   /* 2026-09-27 使用者指示「一啟動程式立刻檢查版本」：不再等畫面載完＋3 秒，程式一開就查(這段在頁面最後，畫面元素都已經在了) */check();
-  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&Date.now()-lastCheck>600000)setTimeout(check,1500)});
+  /* 2026-09-30 09:49 使用者指示「進入程式立刻檢查，縮放開獎單也再檢查一次」：
+   ①每次進入程式都立刻查(App 從背景切回來、從上一頁/分頁切回來)，取消原本「10 分鐘內不重查」與 1.5 秒延遲；
+   ②兩指縮放開獎單，手指全部放開時再查一次(同一次縮放只查一次；5 秒內重複縮放不重查，避免一直連網) */
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")check()});
+window.addEventListener("pageshow",function(e){if(e&&e.persisted)check()});
+(function(){let pinch=false,lastPinchCheck=0;const done=function(){if(!pinch)return;pinch=false;const now=Date.now();if(now-lastPinchCheck<5000)return;lastPinchCheck=now;check()};
+  window.addEventListener("touchstart",function(e){if(e.touches&&e.touches.length>=2)pinch=true},{passive:true,capture:true});
+  ["touchend","touchcancel"].forEach(function(ev){window.addEventListener(ev,function(e){if(!e.touches||e.touches.length===0)done()},{passive:true,capture:true})});
+  window.addEventListener("gesturestart",function(){pinch=true},{passive:true,capture:true});window.addEventListener("gestureend",function(){setTimeout(done,0)},{passive:true,capture:true})/* iPhone Safari 的縮放手勢 */})();
 })();</script>
 
 <script>/* 2026-09-27 使用者回報(iPhone)「全頁顯示正常，進入抓牌號碼破格」並指示「進入任何畫面都自動調整一次，不會讓號碼破格出去，自動調整」：
