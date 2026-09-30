@@ -42,9 +42,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 20:41";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 21:02";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-30 21:02  首頁最新開獎球號碼置中(使用者回報「沒有置中」)：改量號碼實際筆畫位置，把筆畫中心移到球的正中心(原本 flex 置中字框，襯線字實測偏左、偏下約 1px)；球的大小、字級不變。
    2026-09-30 20:41  單桿新增隱藏的特殊算法(使用者指示)：單桿出現時，紅色桿頭按住不動 0.6 秒＝以目前彩種最新一期預測下一期(最近 30 期最準的 5 條「上期加減」規則→同一期兩條都中比例最高的組合→第一種：被 2 條以上規則同時挑到的號碼；第二種：組合兩個差相加後被 2 組以上算到的號碼)，蓋在畫面第 1 列、放不下放第 2 列，5 秒後消失。拖桿(手指移動)不觸發。
    2026-09-30 19:48  版本檢查修正(使用者回報「已經上傳新版，舊版卻沒有更新提示」)：每次檢查新版前，先叫手機重新抓網站上的 sw.js(離線背景程式)；搭配新的 sw.js(網頁與版本檢查一律先上網抓最新，沒網路才用手機裡的)，避免手機快取的舊版擋住更新提示。
    2026-09-30 19:11  長按註記(原算法版，註記亮燈)：註記欄不再顯示目前九宮差的全部預測號(使用者指示，取消 09-29 23:04 的做法)，只顯示按註記/長按註記回溯累加的結果，還沒累加前是空的。空白期、18 期標定、九宮模式不變。
@@ -6683,5 +6684,25 @@ html body.theme-dark.zp-single-bar #zp-pick-col .zp-pick-cell.zp-sb-stat.zp-sb-p
   function boot(){var go=function(){setTimeout(function(){run(false)},1200)};if(document.fonts&&document.fonts.ready)document.fonts.ready.then(go);else go()}
   if(document.readyState==="complete")boot();else window.addEventListener("load",boot);
 })();</script>
+<script>/* 2026-09-30 21:02 使用者回報「最新開獎球號碼沒有置中」：球用 flex 置中的是字框，手機實際用的字型(例：襯線字)筆畫左右、上下不對稱，實測號碼偏左約 1px、偏下約 1px。
+   改成量號碼實際筆畫(canvas measureText 的 actualBoundingBox＋基線位置)，把筆畫中心移到球的正中心。球重畫、縮放(開獎球自動縮小)、字型載入、切換畫面時重算；不改球的大小與字級。 */
+(function(){var cv=null,raf=0;
+function fix(){raf=0;var hb=document.getElementById("hero-balls");if(!hb)return;cv=cv||document.createElement("canvas").getContext("2d");
+  Array.prototype.forEach.call(hb.querySelectorAll(".ball"),function(b){try{var t=(b.textContent||"").trim();if(!t)return;var sp=b.querySelector(".ball-ink");
+    if(!sp||sp.textContent!==t){b.innerHTML='<span class="ball-ink" style="display:inline-block">'+t+"</span>";sp=b.firstChild}
+    sp.style.transform="none";var cs=getComputedStyle(sp);var fs=parseFloat(cs.fontSize)||0;if(!(fs>0))return;
+    cv.font=cs.fontStyle+" "+cs.fontWeight+" 100px "+cs.fontFamily;var m=cv.measureText(t);var q=fs/100;
+    var L=m.actualBoundingBoxLeft*q,R=m.actualBoundingBoxRight*q,A=m.actualBoundingBoxAscent*q,D=m.actualBoundingBoxDescent*q;
+    var mk=document.createElement("i");mk.style.cssText="display:inline-block;width:0;height:0;padding:0;margin:0;border:0;vertical-align:baseline";sp.appendChild(mk);var base=mk.getBoundingClientRect().top;var sr=sp.getBoundingClientRect();sp.removeChild(mk);
+    var br=b.getBoundingClientRect();if(!(br.width>2))return;var k=b.offsetWidth?br.width/b.offsetWidth:1;if(!(k>0))k=1;
+    var dx=(br.left+br.width/2-(sr.left+(R-L)/2*k))/k,dy=(br.top+br.height/2-(base+(D-A)/2*k))/k;
+    if(Math.abs(dx)>fs||Math.abs(dy)>fs)return;sp.style.transform="translate("+dx.toFixed(2)+"px,"+dy.toFixed(2)+"px)"}catch(e){}})}
+function sch(){if(!raf)raf=requestAnimationFrame(fix)}
+window.__ballInkCenter=fix;
+function start(){sch();var hb=document.getElementById("hero-balls");if(hb)try{new MutationObserver(sch).observe(hb,{childList:true,subtree:true,attributes:true,attributeFilter:["style"],characterData:true})}catch(e){}
+  if(typeof window.__onLayout==="function")window.__onLayout(sch);window.addEventListener("resize",sch);
+  try{if(document.fonts){document.fonts.ready.then(sch);document.fonts.addEventListener("loadingdone",sch)}}catch(e){}}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start()})();
+</script>
 </body>
 </html>
