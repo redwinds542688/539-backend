@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-30 10:18";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-30 19:06";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-30 19:06  單桿九宮空白期改回原來的做法(使用者指示「改回原來的」)：空白期放目前九宮差 17/18 期沒中的目標號碼(最多 5(6) 格)；撤回 10:11、10:15、10:18 三次修改(17/18 期或單桿那期九宮＋414 等於 0 的號碼、六合彩/大樂透放 7 個)。
    2026-09-30 10:18  單桿九宮空白期：六合彩/大樂透最多放 7 個(使用者指示)，連特別號那格一起填(右上角照樣標真實特別號)；539/天天樂仍是 5 個。長按註記(原算法版)不變。
    2026-09-30 10:15  單桿九宮空白期再調整(使用者指示「只算單桿那期就好」)：九宮＋414 統計等於 0 的號碼改成只用單桿那一期的桿上號碼計算(原為第 17、18 期合併，幾乎蓋滿所有號碼)，跟著單桿移動；等於 0 的由小到大放進空白期(最多 5(6) 格)。其他不變。
    2026-09-30 10:11  單桿九宮(長按定顯/全顯)空白期改算法(使用者指示)：畫面第 17、18 期的號碼各做九宮拖牌(9 個)＋414 拖牌(-14、-4、+4、+14)，次數直接相加，等於 0 的號碼(兩種都沒出現)由小到大放進空白期(最多 5(6) 格，沒有就空著)；原本放的「目前九宮差 17/18 期沒中的目標號碼」取消(註記欄已有顯示)。註記欄、18 期標定、按註記/長按九宮回溯累加不變；長按註記(原算法版)不變。
@@ -8428,8 +8429,8 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   function uncover(){panels.querySelectorAll("td.num.zp-sb-cover").forEach(function(td){td.classList.remove("zp-sb-blank","c-ding-top3","zp-sb-cover");td.innerHTML=td.dataset.zpSbOrig||"&nbsp;";td.classList.toggle("pending",td.dataset.zpSbPending==="1");delete td.dataset.zpSbOrig;delete td.dataset.zpSbPending;delete td.dataset.zpSbReal})}
   /* 清掉尋號結果：蓋住的第 19 列維持空白期樣子(只清號碼)；真正的空白期格子恢復成空白 */
   function clearBlank(){panels.querySelectorAll("td.num.zp-sb-blank").forEach(function(td){if(td.classList.contains("zp-sb-cover")){setCov(td,null);return}td.classList.remove("zp-sb-blank","c-ding-top3");td.innerHTML="&nbsp;";td.classList.add("pending")})}
-  function fillBlank(nums,useAll){/* useAll：連特別號那格也填(2026-09-30 10:18 九宮空白期，六合彩/大樂透可放 7 個) */clearBlank();if(!SB.on)return;coverRow19();if(!nums.length)return;const fr=row19();if(!fr)return;
-    if(fr.querySelector("td.num.zp-sb-cover")){const cs=Array.prototype.slice.call(fr.querySelectorAll("td.num.zp-sb-cover")).slice(0,useAll?99:cModeColCount());cs.forEach(function(td,i){setCov(td,i<nums.length?nums[i]:null)});refitCov();requestAnimationFrame(refitCov);[150,500,1200].forEach(function(ms){setTimeout(function(){if(SB.on)refitCov()},ms)})/* 排版/字型穩定後再校正 */;return}
+  function fillBlank(nums){clearBlank();if(!SB.on)return;coverRow19();if(!nums.length)return;const fr=row19();if(!fr)return;
+    if(fr.querySelector("td.num.zp-sb-cover")){const cs=Array.prototype.slice.call(fr.querySelectorAll("td.num.zp-sb-cover")).slice(0,cModeColCount());cs.forEach(function(td,i){setCov(td,i<nums.length?nums[i]:null)});refitCov();requestAnimationFrame(refitCov);[150,500,1200].forEach(function(ms){setTimeout(function(){if(SB.on)refitCov()},ms)})/* 排版/字型穩定後再校正 */;return}
     const cells=Array.prototype.slice.call(fr.querySelectorAll("td.num")).filter(function(td){return td.classList.contains("pending")&&!td.classList.contains("num-picked")&&(td.textContent||"").trim()===""});
     nums.forEach(function(n,i){const td=cells[i];if(!td)return;td.innerHTML='<span class="cell-shift">'+String(n).padStart(2,"0")+"</span>";td.classList.remove("pending");td.classList.add("c-ding-top3","zp-sb-blank")})}
   function clearHits(){clearBlank();let bar=false;SB.hits.forEach(function(td){try{if(td.classList.contains("zp-sb-cell"))bar=true;td.classList.remove("zp-sb-hit","num-marked","num-marked-click")}catch(e){}});SB.hits=[];if(bar&&SB.on){try{paint(rowOf(SB.period))}catch(e){}}/* 單桿列恢復單桿底色 */}
@@ -8614,21 +8615,13 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   const AUTO_OFF_MS=260,AUTO_NONE_MS=140;
   SB.stats=null;SB.auto=false;SB.lpT=0;SB.lpAt=0;
   (function(){try{const st=document.createElement("style");st.textContent="body.zp-single-bar #zp-pick-col .zp-pick-cell:not(.zp-sb-stat){display:none !important}#zp-pick-col .zp-pick-cell.zp-sb-stat{position:relative}";document.head.appendChild(st)}catch(e){}})();
-  /* 2026-09-30 10:11 使用者指示「在九宮裡把 17/18 期搭配九宮跟 414 統計起來，等於 0 的顯示在空白期；原空白期的顯示取消，因為註記欄裡已經有顯示了」：
-     九宮模式(長按定顯/全顯進入)的空白期改放 zeroNums()：單桿那一期(桿上號碼，不含特別號；原為畫面第 17、18 期)的號碼各做九宮拖牌(-11、-10、-9、-1、0、+1、+9、+10、+11)與 414 拖牌(-14、-4、+4、+14)，超出範圍繞回；
-     兩個統計次數直接相加，等於 0(九宮、414 都沒出現)的號碼由小到大放進空白期，最多 5(6) 格；沒有等於 0 的空白期就空著。跟著單桿移動，跟九宮差無關。
-     原本空白期放的「目前九宮差 17/18 期沒中的目標號碼」取消(註記欄照舊顯示)；按註記/長按九宮回溯累加的預測號不變。長按註記(原算法版)的空白期不變 */
-  function zeroNums(){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const cols=((typeof cModeColCount==="function")?cModeColCount():5)+((typeof currentGameKey!=="undefined"&&(currentGameKey==="mark6"||currentGameKey==="lotto"))?1:0);/* 2026-09-30 10:18 使用者指示「六合彩、大樂透可以放七個」：連特別號那格一起放，539/天天樂 5 個 */const cnt={};
-    /* 2026-09-30 10:15 使用者指示「17 算 17 的、18 算 18 的，二期合起來統計太多…那就只算單桿那期就好」：改成只用單桿那一期(桿上 5(6) 個號碼，不含特別號)做九宮＋414 統計，跟著單桿移動；等於 0 的放空白期 */
-    barNumsNow().forEach(function(v){SB_OFFS.concat([-14,-4,4,14]).forEach(function(o){const t=wrapNum(v,o,max);cnt[t]=(cnt[t]||0)+1})});
-    const out=[];for(let v=1;v<=max&&out.length<cols;v++)if(!cnt[v])out.push(v);return out}
   function showOffset(oi){clearHits();const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const g=grid();const barNums=baseNums();
-    if(oi<0){SB.none=true;placeTagText();if(SB.mode==="three")fillBlank(zeroNums(),true);return []}
+    if(oi<0){SB.none=true;placeTagText();return []}
     SB.oi=oi;SB.none=false;placeTagText();const off=SB_OFFS[oi];
     barNums.forEach(function(n){const target=wrapNum(n,off,max);g.forEach(function(row){row.forEach(function(cl){if(cl.v===target)markHit(cl.td)})})});
     const below=[];checkRows().slice(1).forEach(function(row){if(row)row.forEach(function(c){if(c.v!==null)below.push(c.v)})});
     const uniq=[];barNums.forEach(function(n){const t=wrapNum(n,off,max);if(uniq.indexOf(t)<0)uniq.push(t)});
-    const show=uniq.filter(function(t){return below.indexOf(t)<0}).sort(function(a,b){return a-b});(SB.mode==="three"?fillBlank(zeroNums(),true):fillBlank(show))/* 2026-09-29 使用者指示九宮模式空白期也改放目前九宮差的預測號(17/18 期沒中的)；2026-09-30 10:11 九宮模式改放 17/18 期九宮＋414 統計等於 0 的號碼(見 zeroNums)，長按註記(原算法版)照舊 */;return show}
+    const show=uniq.filter(function(t){return below.indexOf(t)<0}).sort(function(a,b){return a-b});fillBlank(show)/* 2026-09-29 使用者指示九宮模式空白期也改放目前九宮差的預測號(17/18 期沒中的) */;return show}
   function ranking(cnt){const nums=Object.keys(cnt).map(Number);if(!nums.length)return [];
     const levels=[];nums.map(function(n){return cnt[n]}).sort(function(a,b){return b-a}).forEach(function(c){if(levels.indexOf(c)<0)levels.push(c)});
     let pick=nums.filter(function(n){return cnt[n]>=levels[Math.min(1,levels.length-1)]});
