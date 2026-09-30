@@ -44,7 +44,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 02:35";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 02:45";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -161,7 +161,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    下桿同期同欄的格子也標藍，連線到下桿同欄(與上桿命中號碼同欄)的號碼。原本「以粉紅格做九宮拖牌」的藍色邏輯已停用，九宮差打勾不影響藍色。定位統計表的「已標定」包含藍格。
  ・十字差統計(window.__cModeCrossTally(十字差清單))：A 側被動標定成立(格子＋十字差＝上桿號碼，格子不是主動標定)時，取 B 側同期同欄號碼＋同一十字差(繞回)記一票；
    累加後取次數最高的兩個名次(同次數並列全算、不補第三名)；沒有主動標定＝沒有結果。
- ・跟下桿上一期相同(2026-10-01 02:35)：Ai 欄、空白期的號碼如果跟下桿上一期(下桿往上一列)的號碼相同 → 琥珀色底(#FFD54F，暗色 #6B5300；class c-bprev-same)。
+ ・跟下桿上一期相同(2026-10-01 02:35，02:45 改淺色)：Ai 欄、空白期的號碼如果跟下桿上一期(下桿往上一列)的號碼相同 → 淺米黃底 #FFF4D6＋1px 淺琥珀框 #F2C14E(暗色：底 #2E2A1C、框 #8C7A3E；class c-bprev-same)，不顯示「已開」字樣、號碼顏色不變。
  ・空白期閃爍(2026-10-01 02:00)：空白期號碼右上角次數 ≥2(當下十字差下，有 2 格以上下桿被動標定號相同、得數相同)→ 該號碼閃爍(td 加 c-cross-same-blink)。
  ・Ai 欄(2026-10-01 02:15 改)：5 個十字差全跑、次數 >0 全列，超過 18 顆就把最後一名(次數最低、同次數整批)剔除到 ≤18 顆，閃爍的號碼不剔除(2026-10-01 02:25)；同一個十字差裡下桿被動標定號相同(得數次數 ≥2)的號碼閃爍。原(00:20)：5 個十字差全跑的統計前二名(號碼右上角＝次數(2026-10-01 01:00 由左上角改右上角，C式各模式 Ai 欄的次數都一樣)，最多 15／寬彩種 21 顆)，在 cModeBlankShiftToAi 裡處理；定位不再用九宮差平移；沒有主動標定＝Ai 欄空白。
  ・空白期(2026-10-01 00:20)：只跑「當下十字差」(按鍵顯示的那個)的統計前二名，經 fillCModeChaSameBlanks 填入；切換十字差就重算。差數照舊同差法。
@@ -206,6 +206,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-10-01 02:45  C式定位「跟下桿上一期相同」的標示改淺色：淺米黃底＋1px 淺琥珀框，號碼顏色不變；閃爍暗的那一下由 12% 改 35%，號碼不會消失只剩底色(使用者指示「不用顯示已開，底色不能壓過號碼，底色與框都用淺色系」)。
    2026-10-01 02:35  C式定位：Ai 欄、空白期的號碼跟下桿上一期相同時改用琥珀色底(使用者指示)。
    2026-10-01 02:25  C式定位 Ai 欄：超過 18 顆剔除最後一名時，閃爍的號碼不剔除(使用者指示)。
    2026-10-01 02:15  C式定位 Ai 欄(使用者指示)：改顯示所有次數 >0 的號碼，超過 18 顆就把最後一名剔除；同一個十字差裡下桿被動標定號相同的號碼(跟空白期同規則)也閃爍。
@@ -5021,11 +5022,12 @@ body.theme-dark #c-ding-ai-box .ai-box-rank.ai-opened{ border-color:#FF3D00 !imp
   /* 2026-10-01 01:50 使用者指示「空白欄位的字體顏色與上面太相近，容易混淆」：空白期填號(亮色)由深紅 #5E0E0E 改成鮮紅 #D50000，跟開獎號碼的黑字明顯區分；暗色主題維持 #FF8A80 */
   table.road td.num.c-ding-top3{ position:relative; color:#D50000 !important; font-weight:700; background:#fff !important; }
   /* 2026-10-01 02:00：C式定位空白期得數次數 ≥2(下桿被動標定號相同)的號碼閃爍 */
-  @keyframes cCrossSameBlink{0%,49%{opacity:1}50%,100%{opacity:.12}}
-  /* 2026-10-01 02:35：C式定位 Ai 欄、空白期號碼跟下桿上一期相同 → 琥珀色底 */
-  table.road td.num.num.num.num.num.num.num.num.c-ding-top3.c-bprev-same{ background:#FFD54F !important; }
-  body.theme-dark table.road td.num.num.num.num.num.num.num.num.c-ding-top3.c-bprev-same{ background:#6B5300 !important; }
-  #c-ding-ai-box .ai-box-rank.c-bprev-same{ background:#FFD54F !important; }
+  @keyframes cCrossSameBlink{0%,49%{opacity:1}50%,100%{opacity:.35}}/* 02:45：暗的那一下保留 35%，有底色的格子閃爍時號碼不會消失只剩底色 */
+  /* 2026-10-01 02:35：C式定位 Ai 欄、空白期號碼跟下桿上一期相同 → 換底色。
+     2026-10-01 02:45 使用者指示「不用顯示已開，只要用不同的底色跟框(1px)標示；底色不能壓過號碼，底色與框都用淺色系」：改淺米黃底 #FFF4D6 ＋ 1px 淺琥珀框 #F2C14E(空白期用 outline 畫在格子內側，不受桿列格線影響，格子大小不變)，號碼顏色不變 */
+  table.road td.num.num.num.num.num.num.num.num.c-ding-top3.c-bprev-same{ background:#FFF4D6 !important; outline:1px solid #F2C14E !important; outline-offset:-2px; }
+  body.theme-dark table.road td.num.num.num.num.num.num.num.num.c-ding-top3.c-bprev-same{ background:#2E2A1C !important; outline:1px solid #8C7A3E !important; outline-offset:-2px; }
+  #c-ding-ai-box .ai-box-rank.c-bprev-same{ background:#FFF4D6 !important; border:1px solid #F2C14E !important; }
   #c-ding-ai-box .ai-box-rank.c-cross-same-blink .ai-num{ animation:cCrossSameBlink 1s steps(1,end) infinite !important; }/* 2026-10-01 02:15：Ai 欄同規則閃爍 */
   table.road td.num.num.c-ding-top3.c-cross-same-blink .cell-shift{ animation:cCrossSameBlink 1s steps(1,end) infinite !important; }
   table.road td.num.c-ding-top3 .cell-shift{ animation:none; } /* 2026-09-16：使用者指示——空白期顯示號碼不再閃爍(原 pinBlink 1.1s 無限循環) */ /* 2026-09-01：前幾名號碼閃爍(試效果) */
@@ -8085,7 +8087,7 @@ function cModeBlankShiftToAi(top3){const LOG=function(d){if(typeof logEvent==="f
   const __r=window.__cModeCrossTally(null,true)||{all:{},same:{}};const __all=__r.all||{};const __same=__r.same||{};let __list=Object.keys(__all).map(function(k){return{n:parseInt(k,10),c:__all[k]}}).filter(function(x){return x.c>0}).sort(function(a,b){return b.c-a.c||a.n-b.n});
   /* 2026-10-01 02:25 使用者指示「Ai 欄有閃爍的不能剔除」：剔除時只拿掉不閃爍的號碼；閃爍的一律保留(閃爍的本身超過 18 顆也全留) */
   while(__list.length>18){const __rm=__list.filter(function(x){return!__same[x.n]});if(!__rm.length)break;const __lo=Math.min.apply(null,__rm.map(function(x){return x.c}));if(__lo===__list[0].c){let __room=Math.max(0,18-__list.filter(function(x){return!!__same[x.n]}).length);__list=__list.filter(function(x){if(__same[x.n])return true;if(__room>0){__room--;return true}return false});break}__list=__list.filter(function(x){return!!__same[x.n]||x.c!==__lo})}
-  if(__list.length){if(typeof renderCModeChaRecordsInAiBox==="function")renderCModeChaRecordsInAiBox(__list);try{const __cells=document.querySelectorAll("#c-ding-ai-box .ai-box-rank");const __bp=window.__cModeBPrevSet();__list.forEach(function(x,i){if(__cells[i]){__cells[i].classList.toggle("c-cross-same-blink",!!__same[x.n]);__cells[i].classList.toggle("c-bprev-same",!!__bp[x.n]);if(__bp[x.n]&&/0,\s*160,\s*0|#00a000/i.test(__cells[i].style.color))__cells[i].style.color="#005A00"/* 綠字在琥珀底上看不清楚 → 深綠 */}})}catch(_){}}else if(typeof clearCModeChaRecordsAiBox==="function")clearCModeChaRecordsAiBox();
+  if(__list.length){if(typeof renderCModeChaRecordsInAiBox==="function")renderCModeChaRecordsInAiBox(__list);try{const __cells=document.querySelectorAll("#c-ding-ai-box .ai-box-rank");const __bp=window.__cModeBPrevSet();__list.forEach(function(x,i){if(__cells[i]){__cells[i].classList.toggle("c-cross-same-blink",!!__same[x.n]);__cells[i].classList.toggle("c-bprev-same",!!__bp[x.n]);/* 02:45 改淺色底後綠字照原色 */}})}catch(_){}}else if(typeof clearCModeChaRecordsAiBox==="function")clearCModeChaRecordsAiBox();
   LOG("定位 Ai 欄＝十字差全跑次數>0(最多 18 顆) "+(__list.map(function(x){return String(x.n).padStart(2,"0")+"×"+x.c+(__same[x.n]?"(閃)":"")}).join(" ")||"(無，留空)"));return __list}const r=cModeBlankShiftCompute(top3);const pad=function(n){return String(n).padStart(2,"0")};if(typeof window.__chaShiftTableRefresh==="function")window.__chaShiftTableRefresh(top3);/* 長按差數的對照表開著就同步更新 */if(!r.ok){LOG(r.reason+"；上四期="+(r.periods||[]).map(function(p){return p.date+" "+p.nums.map(pad).join(",")}).join("｜")+" → Ai 欄留空");if(typeof clearCModeChaRecordsAiBox==="function")clearCModeChaRecordsAiBox();return[]}const out=r.out;if(typeof renderCModeChaRecordsInAiBox==="function")renderCModeChaRecordsInAiBox(out);LOG("上四期="+r.periods.map(function(p){return p.date+" "+p.nums.map(pad).join(",")}).join("｜")+"；九宮拖牌上四期全中的號碼(命中期數×配對顆數；上四期開過的取消) "+r.allRaw.map(function(q){return pad(q.n)+"[上"+q.hitK.join("")+"]"+q.hitK.length+"x"+q.raw+"="+q.c+(q.excluded?"(已開,取消)":"")}).join(" ")+" → Ai 欄(分數≥"+r.scoreMin+"，共 "+out.length+" 顆) "+out.map(function(x){return pad(x.n)+"×"+x.c+(x.opened?"(已開)":"")}).join(" "));return out}catch(e){LOG("失敗："+(e&&e.message?e.message:e));return[]}}
 /* 2026-09-17(四)：使用者指示——「長按差數原先是顯示統計表，改顯示下桿上一期、上二期皆符合的九宮差與相加後的號碼，已經開出的註記顯示」。
    面板 #c-mode-cha-shift-stat-table(跟其他統計表同一個容器樣式、同一個 c-mode-stat-open 狀態)：標題＋上一期/上二期/空白期號碼＋每個合格九宮差一列(上一/上二命中數、空白期號碼加上去的結果，已開的號碼紅字＋「已開」小字)＋
