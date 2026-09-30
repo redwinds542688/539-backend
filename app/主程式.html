@@ -44,9 +44,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-30 19:48";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-09-30 20:41";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-09-30 20:41  單桿新增隱藏的特殊算法(使用者指示)：單桿出現時，紅色桿頭按住不動 0.6 秒＝以目前彩種最新一期預測下一期(最近 30 期最準的 5 條「上期加減」規則→同一期兩條都中比例最高的組合→第一種：被 2 條以上規則同時挑到的號碼；第二種：組合兩個差相加後被 2 組以上算到的號碼)，蓋在畫面第 1 列、放不下放第 2 列，5 秒後消失。拖桿(手指移動)不觸發。
    2026-09-30 19:48  版本檢查修正(使用者回報「已經上傳新版，舊版卻沒有更新提示」)：每次檢查新版前，先叫手機重新抓網站上的 sw.js(離線背景程式)；搭配新的 sw.js(網頁與版本檢查一律先上網抓最新，沒網路才用手機裡的)，避免手機快取的舊版擋住更新提示。
    2026-09-30 19:11  長按註記(原算法版，註記亮燈)：註記欄不再顯示目前九宮差的全部預測號(使用者指示，取消 09-29 23:04 的做法)，只顯示按註記/長按註記回溯累加的結果，還沒累加前是空的。空白期、18 期標定、九宮模式不變。
    2026-09-30 19:06  單桿九宮空白期改回原來的做法(使用者指示「改回原來的」)：空白期放目前九宮差 17/18 期沒中的目標號碼(最多 5(6) 格)；撤回 10:11、10:15、10:18 三次修改(17/18 期或單桿那期九宮＋414 等於 0 的號碼、六合彩/大樂透放 7 個)。
@@ -8375,7 +8376,47 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     cells.forEach(function(td,i){td.style.setProperty("background-color",rowBg,"important");td.style.setProperty("color","#1F1F1F","important");
       const sh=["inset 0 calc(1px * var(--fy, 1)) 0 0 "+rowBorder,"inset 0 calc(-1px * var(--fy, 1)) 0 0 "+rowBorder];if(i===0)sh.push("inset calc(1px * var(--fx, 1)) 0 0 0 "+rowBorder);if(i===cells.length-1)sh.push("inset calc(-1px * var(--fx, 1)) 0 0 0 "+rowBorder);
       td.style.setProperty("box-shadow",sh.join(", "),"important");td.classList.add("zp-sb-cell");SB.painted.push(td);barHitStyle(td)})}
-  /* 2026-09-25 21:56 使用者指示：拖曳鍵改紅底(#e02020，同 C式紅底)、藍色箭頭(#1E63D0) */function buildHandle(){if(SB.handle)return SB.handle;const h=document.createElement("div");h.id="zp-sb-handle";
+  /* 2026-09-25 21:56 使用者指示：拖曳鍵改紅底(#e02020，同 C式紅底)、藍色箭頭(#1E63D0) *//* 2026-09-30 20:41 使用者指示「0514 是一種方式、03 33 25 是另一種，這是特殊算法，藏進單桿：單桿出現時長按紅色桿頭，把這二組的預測號顯示在第一期，超過五顆顯示在第二期，5 秒後消失」：
+     算法(以目前彩種最新一期預測下一期，跟單桿位置無關)：
+     ①規則＝上期每個號碼加減 d(539/天天樂 ±1～±19、六合彩/大樂透 ±1～±24，超出範圍繞回)；最近 30 期逐期計算命中率(命中顆數÷挑出顆數)，取前 5 條。
+     ②5 條兩兩組合，最近 30 期「同一期兩條都至少中 1 顆」的比例；取比例最高的組合(最高只有 1 組時連第二高的也取)。
+     ③第一種：這些組合用到的規則裡，被 2 條以上規則同時挑到的號碼(多的在前)。
+     ④第二種：每個組合兩個 d 相加當新的差，被 2 個以上組合算到的號碼(多的在前)。
+     ⑤第一種在前、第二種在後(不重複)，蓋在畫面第 1 列(整列格子含特別號格)，放不下的放第 2 列；5 秒後消失，原本號碼不動。
+     觸發：紅色桿頭按住不動 0.6 秒(手指移動超過 10px＝拖桿，不觸發)。 */
+  function secretPicks(){const data=((typeof currentAllData!=="undefined"&&currentAllData)||[]).filter(function(r){return r&&r.numbers&&r.numbers.length});
+    const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const half=Math.floor(max/2);const n=data.length;if(n<3)return {a:[],b:[]};
+    const w=function(x,o){return((x-1+o)%max+max)%max+1};const map=function(nums,o){const s={};nums.forEach(function(x){s[w(x,o)]=1});return Object.keys(s).map(Number)};
+    const idx=[];for(let i=Math.max(1,n-30);i<n;i++)idx.push(i);
+    const offs=[];for(let d=-half;d<=half;d++)if(d!==0)offs.push(d);
+    const sc=offs.map(function(d){let h=0,m=0;idx.forEach(function(i){const S=map(data[i-1].numbers,d);const cur=data[i].numbers;m+=S.length;S.forEach(function(v){if(cur.indexOf(v)>=0)h++})});return {d:d,h:h,r:m?h/m:0}});
+    sc.sort(function(a,b){return b.r-a.r||b.h-a.h||a.d-b.d});const top=sc.slice(0,5).map(function(x){return x.d});
+    const hit=function(i,d){const cur=data[i].numbers;return map(data[i-1].numbers,d).some(function(v){return cur.indexOf(v)>=0})};
+    const pairs=[];for(let x=0;x<top.length;x++)for(let y=x+1;y<top.length;y++){let k=0;idx.forEach(function(i){if(hit(i,top[x])&&hit(i,top[y]))k++});pairs.push({d1:top[x],d2:top[y],r:idx.length?k/idx.length:0})}
+    const lv=[];pairs.forEach(function(p){if(lv.indexOf(p.r)<0)lv.push(p.r)});lv.sort(function(a,b){return b-a});
+    let sel=pairs.filter(function(p){return p.r===lv[0]});if(sel.length<2&&lv.length>1)sel=sel.concat(pairs.filter(function(p){return p.r===lv[1]}));
+    const last=data[n-1].numbers;const rank=function(cnt){return Object.keys(cnt).map(Number).filter(function(v){return cnt[v]>=2}).sort(function(a,b){return cnt[b]-cnt[a]||a-b})};
+    const rules=[];sel.forEach(function(p){[p.d1,p.d2].forEach(function(d){if(rules.indexOf(d)<0)rules.push(d)})});
+    const ca={};rules.forEach(function(d){map(last,d).forEach(function(v){ca[v]=(ca[v]||0)+1})});
+    const cb={};sel.forEach(function(p){map(last,p.d1+p.d2).forEach(function(v){cb[v]=(cb[v]||0)+1})});
+    const a=rank(ca),b=rank(cb).filter(function(v){return a.indexOf(v)<0});
+    if(typeof logEvent==="function")try{logEvent("單桿特殊算法","前5："+top.join(",")+" 組合："+sel.map(function(p){return p.d1+"&"+p.d2+"("+Math.round(p.r*100)+"%)"}).join(" ")+" 第一種："+a.join(",")+" 第二種："+b.join(","))}catch(e){}
+    return {a:a,b:b,top:top,sel:sel}}
+  window.__zpSecretPicks=secretPicks;
+  function hideSecret(){const o=document.getElementById("zp-secret-ov");if(o)o.remove();if(SB.secretT){clearTimeout(SB.secretT);SB.secretT=0}}
+  function showSecret(){hideSecret();if(!SB.on)return;const res=secretPicks();const nums=res.a.concat(res.b);const rows=dataRows();if(!rows.length)return;
+    const ov=document.createElement("div");ov.id="zp-secret-ov";Object.assign(ov.style,{position:"fixed",left:"0",top:"0",width:"0",height:"0",zIndex:"9700",pointerEvents:"none"});
+    const cells=[];[rows[0],rows[1]].forEach(function(tr){if(tr)Array.prototype.forEach.call(tr.querySelectorAll("td.num"),function(td){cells.push(td)})});
+    const list=nums.length?nums.map(function(v){return String(v).padStart(2,"0")}):["無"];
+    list.slice(0,cells.length).forEach(function(t,i){const r=cells[i].getBoundingClientRect();if(!(r.width>0))return;const d=document.createElement("div");
+      Object.assign(d.style,{position:"fixed",left:r.left+"px",top:r.top+"px",width:r.width+"px",height:r.height+"px",boxSizing:"border-box",background:"#DCEBFF",color:"#0050D0",border:"1px solid #3B82F6",display:"flex",alignItems:"center",justifyContent:"center",font:"800 "+Math.round(r.height*0.62)+"px/1 Arial, Helvetica, sans-serif"});
+      d.textContent=t;ov.appendChild(d)});
+    document.body.appendChild(ov);SB.secretT=setTimeout(hideSecret,5000)}
+  function attachSecret(h){let t=0,x0=0,y0=0;const cancel=function(){if(t){clearTimeout(t);t=0}};
+    h.addEventListener("pointerdown",function(e){cancel();if(!SB.on||(SB.oa&&SB.oa.running))return;x0=e.clientX;y0=e.clientY;t=setTimeout(function(){t=0;if(!SB.on)return;if(navigator.vibrate)try{navigator.vibrate(30)}catch(_){}showSecret()},600)});
+    h.addEventListener("pointermove",function(e){if(t&&(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10))cancel()});
+    ["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){h.addEventListener(ev,cancel)})}
+  function buildHandle(){if(SB.handle)return SB.handle;const h=document.createElement("div");h.id="zp-sb-handle";
     try{const ns="http://www.w3.org/2000/svg";const svg=document.createElementNS(ns,"svg");svg.setAttribute("width","24");svg.setAttribute("height","24");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("fill","none");svg.setAttribute("stroke","#1E63D0");svg.setAttribute("stroke-width","2.2");svg.setAttribute("stroke-linecap","round");svg.setAttribute("stroke-linejoin","round");const path=document.createElementNS(ns,"path");path.setAttribute("d","M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4");svg.appendChild(path);h.appendChild(svg)}catch(e){h.textContent="↕"}
     Object.assign(h.style,{position:"fixed",width:"34px",height:"34px",borderRadius:"50%",background:"#e02020",color:"#fff",display:"none",alignItems:"center",justifyContent:"center",zIndex:"9600",touchAction:"none",boxShadow:"0 0 4px rgba(0,0,0,0.7)",border:"2px solid #fff",boxSizing:"border-box",userSelect:"none",webkitUserSelect:"none"});
     h.addEventListener("pointerdown",function(e){if(!SB.on)return;e.preventDefault();e.stopPropagation();if(SB.oa&&SB.oa.running)return;/* 自動搜尋中單桿不能拖 */SB.drag={id:e.pointerId,p0:SB.period};cancelRun();clearHits();try{h.setPointerCapture(e.pointerId)}catch(_){}},{passive:false});
@@ -8384,7 +8425,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
       const p=Math.max(1,Math.min(18,best+1+(18-rows.length)));/* 2026-09-26 02:41 使用者指示：移動範圍 1～15 改成 1～18 */if(p!==SB.period){SB.period=p;update(true)}},{passive:false});
     ["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){h.addEventListener(ev,function(e){if(!SB.drag||e.pointerId!==SB.drag.id)return;const __p0=SB.drag.p0;SB.drag=null;if(typeof logEvent==="function")try{logEvent("單桿","停在第 "+SB.period+" 期")}catch(_){}if(SB.mode==="three"&&SB.period!==__p0)searchSkip(SB.period<__p0?-1:1);else runSearch(SB.period!==__p0?0:SB.oi)/* 換了桿位＝從第一個九宮差(-11)重新找；放回原位＝從目前的九宮差 */})});
     h.addEventListener("contextmenu",function(e){e.preventDefault()});
-    document.body.appendChild(h);SB.handle=h;return h}
+    attachSecret(h);document.body.appendChild(h);SB.handle=h;return h}
   function placeHandle(tr){const h=buildHandle();if(!tr){h.style.display="none";if(SB.tag)SB.tag.style.display="none";return}
     const side=Array.prototype.slice.call(tr.children).filter(function(td){return td.classList.contains("day")||td.classList.contains("wd")});
     let L=Infinity,T=Infinity,R=-Infinity,B=-Infinity;side.forEach(function(td){const r=td.getBoundingClientRect();if(r.width<=0)return;L=Math.min(L,r.left);T=Math.min(T,r.top);R=Math.max(R,r.right);B=Math.max(B,r.bottom)});
@@ -8603,7 +8644,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     update(true);setTimeout(function(){update(true)},200);setTimeout(function(){update(true)},450);if(!SB.raf)SB.raf=requestAnimationFrame(loop);
     /* 原本等 0.9 秒才開始找號；改成：畫面本來就在最底＝馬上找，有往回捲＝等 0.25 秒捲回動畫結束再找(之後 0.2/0.45/0.8 秒若又被拉回，會自動重找) */
     if(!__moved){if(!SB.drag)searchSkip(-1)}else setTimeout(function(){if(SB.on&&!SB.drag){SB.rowsDirty=true;update(true);searchSkip(-1)}},250);return true}
-  function exit(){if(!SB.on)return false;cancelRun();clearHits();uncover();SB.on=false;SB.stats=null;SB.notes=null;SB.oa=null;SB.oaTok=(SB.oaTok||0)+1;bc().remove("zp-sb-orig");bc().remove("zp-sb-three");bc().remove("zp-sb-oa");/* 2026-09-29 離開原算法版＝註記統計清除 */SB.auto=false;try{renderStats()}catch(e){}{const __b=document.getElementById("float-save-btn");if(__b)__b.classList.remove("shot-lit")}/* 統計結果清掉，註記欄原本的號碼恢復顯示 */SB.drag=null;if(SB.tag)SB.tag.style.display="none";if(SB.raf){cancelAnimationFrame(SB.raf);SB.raf=0}unpaint();if(SB.handle)SB.handle.style.display="none";bc().remove("zp-single-bar");try{updateFloatSaveBtnForFullPage()}catch(e){}
+  function exit(){if(!SB.on)return false;cancelRun();hideSecret();clearHits();uncover();SB.on=false;SB.stats=null;SB.notes=null;SB.oa=null;SB.oaTok=(SB.oaTok||0)+1;bc().remove("zp-sb-orig");bc().remove("zp-sb-three");bc().remove("zp-sb-oa");/* 2026-09-29 離開原算法版＝註記統計清除 */SB.auto=false;try{renderStats()}catch(e){}{const __b=document.getElementById("float-save-btn");if(__b)__b.classList.remove("shot-lit")}/* 統計結果清掉，註記欄原本的號碼恢復顯示 */SB.drag=null;if(SB.tag)SB.tag.style.display="none";if(SB.raf){cancelAnimationFrame(SB.raf);SB.raf=0}unpaint();if(SB.handle)SB.handle.style.display="none";bc().remove("zp-single-bar");try{updateFloatSaveBtnForFullPage()}catch(e){}
     const st=SB.stash;SB.stash=null;if(st){pickedPaths=st.pickedPaths;connections=st.connections;broadened=st.broadened;historyStack=st.historyStack}
     try{applyMarksToClone()}catch(e){}try{if(typeof renderConnections==="function"){renderConnections();requestAnimationFrame(renderConnections)}}catch(e){}
     if(typeof logEvent==="function")try{logEvent("單桿","離開，標記放回")}catch(e){}return true}
