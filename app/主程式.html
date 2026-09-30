@@ -44,7 +44,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 00:20";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 00:35";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -154,6 +154,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
  ・主動標定(粉紅)：上桿、下桿各自往前第 k 期(k＝1～搜期)同一欄同號 → 兩格標定。
  ・十字差按鍵(2026-09-30 22:57)：B 桿下面一列的日期＋星期欄位(藍底#1E63D0 紅字#e02020，字最大化，同單桿九宮差欄位)，定位模式一律顯示；
    沒有主動標定＝顯示「十字」、按了不作用；有主動標定＝顯示目前十字差並閃爍，單擊依序 0→+10→-10→+1→-1→0(2026-09-30 23:17)。
+   目前十字差找不到任何被動標定就自動往下換到第一個有被動標定的十字差(單擊切換也跳過沒有的)；5 個都沒有就留在原本的(2026-10-01 00:35)。
  ・被動標定(藍，c-mode-he-drag-designated)：上桿往前 1～搜期、所有欄位，格子號碼＋十字差＝上桿某號(1～39/49 繞回；例：格子 17、十字差 -1 → 上桿 16)→ 標藍並連線到上桿那個號碼(已是主動標定的格子不改)；
    下桿同期同欄的格子也標藍，連線到下桿同欄(與上桿命中號碼同欄)的號碼。原本「以粉紅格做九宮拖牌」的藍色邏輯已停用，九宮差打勾不影響藍色。定位統計表的「已標定」包含藍格。
  ・十字差統計(window.__cModeCrossTally(十字差清單))：A 側被動標定成立(格子＋十字差＝上桿號碼，格子不是主動標定)時，取 B 側同期同欄號碼＋同一十字差(繞回)記一票；
@@ -197,6 +198,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-10-01 00:35  C式定位十字差(使用者指示「有主動標定號，但搭配十字差卻沒有被動標定號，直接跳過換下一個十字差」)：目前十字差沒有被動標定就自動換到下一個有的(順序 0→+10→-10→+1→-1)，單擊切換也跳過沒有的；空白期跟著換。
    2026-10-01 00:20  C式定位(使用者指示)：①刪除最上面一二三期藍字(連七九宮差)的顯示；②Ai 欄原本的號碼(九宮差平移)取消，改放原空白期的內容(5 個十字差全跑的統計前二名)；③空白期改成只搭「當下十字差」的統計前二名，按十字差切換就跟著變。
    2026-09-30 23:48  修正 C式「搜期」選單字變小(使用者回報「搜期文字最大化，我又沒有改到這邊為什麼會變化」)：原因是 21:02 開獎球置中程式每次執行都改動畫面，跟「按鍵文字最大化」互相觸發變成每格畫面重算，蓋掉搜期選單原本的最大化字級(也耗電)。改成已置中就不動、基線只在號碼/字型改變時量，不再無限重算；搜期選單恢復原本字級。
    2026-09-30 23:17  C式定位十字差(使用者指示)：①沒有主動標定時按鍵顯示「十字」(按了不作用)，有主動標定時顯示十字差並閃爍；②空白期改成一次跑完 5 個十字差：A 桿被動標定成立(格子＋十字差＝上桿號碼)時，取 B 桿同位置號碼＋同一十字差記一票，累加後取前二名(同次數並列全算)填空白期(差數仍是同差法)。
@@ -7481,10 +7483,14 @@ if(window.eModeEqualDist)return;if(!cModeActive||cSubMode!=="定位")return;cons
    原本以粉紅格為錨點的九宮拖牌做法停用(九宮差打勾不影響藍色)。 */
 const __CROSS_DIFFS=[0,10,-10,1,-1];
 if(typeof window.__cModeCrossIdx!=="number")window.__cModeCrossIdx=0;
-{const __d=__CROSS_DIFFS[window.__cModeCrossIdx]||0;const aBar=getRowCells(cModeAPeriod-1),bBar=getRowCells(cModeBPeriod-1);let hasPink=false;
+{let __d=__CROSS_DIFFS[window.__cModeCrossIdx]||0;const aBar=getRowCells(cModeAPeriod-1),bBar=getRowCells(cModeBPeriod-1);let hasPink=false;
  for(let k=1;k<=cModeDingSearchSpan&&!hasPink;k++){const ac=getRowCells(cModeAPeriod-1-k),bc=getRowCells(cModeBPeriod-1-k);if(!ac||!bc||cModeAPeriod-1-k<0||cModeBPeriod-1-k<0)continue;for(let c=0;c<colCount;c++){const x=normalizedNum(ac[c]),y=normalizedNum(bc[c]);if(x&&y&&x===y){hasPink=true;break}}}
  window.__cModeCrossActive=!!(hasPink&&aBar&&bBar);
- if(window.__cModeCrossActive){const wrap=function(v){let z=v-__d;if(z<=0)z+=maxBall;else if(z>maxBall)z-=maxBall;return z};/* 2026-09-30 23:05 使用者更正「藍色 17 中 A 桿 16，十字差應該顯示 -1」：方向＝格子號碼＋十字差＝上桿號碼(找的號碼＝上桿號碼－十字差) */const tgt={};
+ if(window.__cModeCrossActive){/* 2026-10-01 00:35 使用者指示「有主動標定號，但搭配十字差卻沒有被動標定號，直接跳過換下一個十字差」：
+   目前的十字差找不到任何被動標定(上桿往前 1～搜期、非主動標定格，格子＋十字差＝上桿號碼)就依 0→+10→-10→+1→-1 順序往下換到第一個有的；5 個都沒有就留在原本的。單擊切換也會跳過沒有的。 */
+  const __hits=function(d){const aSet={};aBar.forEach(function(td){const v=parseInt(normalizedNum(td),10);if(!isNaN(v))aSet[v]=1});for(let k=1;k<=cModeDingSearchSpan;k++){const aIdx=cModeAPeriod-1-k,bIdx=cModeBPeriod-1-k;if(aIdx<0||bIdx<0)continue;const aCells=getRowCells(aIdx),bCells=getRowCells(bIdx);if(!aCells||!bCells)continue;for(let col=0;col<colCount;col++){const aTd=aCells[col];const v=parseInt(normalizedNum(aTd),10);if(isNaN(v)||aTd.classList.contains("c-mode-auto-match-cell"))continue;let z=v+d;if(z<=0)z+=maxBall;else if(z>maxBall)z-=maxBall;if(aSet[z])return true}}return false};
+  if(!__hits(__d)){for(let j=1;j<5;j++){const ii=((window.__cModeCrossIdx||0)+j)%5;if(__hits(__CROSS_DIFFS[ii])){window.__cModeCrossIdx=ii;__d=__CROSS_DIFFS[ii];break}}}
+  const wrap=function(v){let z=v-__d;if(z<=0)z+=maxBall;else if(z>maxBall)z-=maxBall;return z};/* 2026-09-30 23:05 使用者更正「藍色 17 中 A 桿 16，十字差應該顯示 -1」：方向＝格子號碼＋十字差＝上桿號碼(找的號碼＝上桿號碼－十字差) */const tgt={};
   aBar.forEach(function(td,c){const v=parseInt(normalizedNum(td),10);if(isNaN(v))return;const t=wrap(v);(tgt[t]=tgt[t]||[]).push(c)});
   for(let k=1;k<=cModeDingSearchSpan;k++){const aIdx=cModeAPeriod-1-k,bIdx=cModeBPeriod-1-k;if(aIdx<0||bIdx<0)continue;const aCells=getRowCells(aIdx),bCells=getRowCells(bIdx);if(!aCells||!bCells)continue;
    for(let col=0;col<colCount;col++){const aTd=aCells[col];const v=parseInt(normalizedNum(aTd),10);if(isNaN(v)||!tgt[v])continue;if(aTd.classList.contains("c-mode-auto-match-cell"))continue;
