@@ -42,7 +42,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 22:57";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 23:05";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -151,7 +151,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 ────────────────────────────────────────
  ・主動標定(粉紅)：上桿、下桿各自往前第 k 期(k＝1～搜期)同一欄同號 → 兩格標定。
  ・十字差按鍵(2026-09-30 22:57)：B 桿下面一列的日期＋星期欄位(藍底#1E63D0 紅字#e02020，字最大化，同單桿九宮差欄位)，有主動標定才出現；單擊依序 0→+10→-10→+1→-1→0。
- ・被動標定(藍，c-mode-he-drag-designated)：上桿往前 1～搜期、所有欄位，格子號碼＝上桿某號＋十字差(1～39/49 繞回)→ 標藍並連線到上桿那個號碼(已是主動標定的格子不改)；
+ ・被動標定(藍，c-mode-he-drag-designated)：上桿往前 1～搜期、所有欄位，格子號碼＋十字差＝上桿某號(1～39/49 繞回；例：格子 17、十字差 -1 → 上桿 16)→ 標藍並連線到上桿那個號碼(已是主動標定的格子不改)；
    下桿同期同欄的格子也標藍，連線到下桿同欄(與上桿命中號碼同欄)的號碼。原本「以粉紅格做九宮拖牌」的藍色邏輯已停用，九宮差打勾不影響藍色。定位統計表的「已標定」包含藍格。
 
 ────────────────────────────────────────
@@ -187,6 +187,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
  ・Safari 量有 CSS zoom 的元素不含 zoom(全頁高度量錯)；蘋果放開手指的事件可能被攔 → 相關量測用實際畫面框與最後觸控時間。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-09-30 23:05  程式規格書更正 C式定位十字差方向(格子號碼＋十字差＝上桿號碼；副程式沒有 C式，程式行為不變)。
    2026-09-30 22:57  程式規格書補上「C式定位十字差」說明(與主程式同一份規格書；副程式沒有 C式，程式行為不變)。
    2026-09-30 21:49  程式規格書補上「C式差數」說明(與主程式同一份規格書；副程式沒有 C式，程式行為不變)。
    2026-09-30 21:11  新增「程式規格書」(使用者指示「邏輯、設定、顯示都要寫進去程式，避免一直發生錯誤」)：放在修改紀錄上方，寫明修改鐵則、各畫面、單桿/三層/版本檢查的完整邏輯、顯示規格、設定儲存位置、曾發生的錯誤與防範；權威順序：規格書＞修改紀錄＞舊技術文件。程式行為不變。
