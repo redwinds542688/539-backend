@@ -44,7 +44,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 12:40";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 13:45";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -86,6 +86,8 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
  進入：
   ・抓牌(非三層)長按「定顯/全顯」0.55 秒 → 九宮模式(SB.mode="three")，該鍵改名「九宮」並亮黃燈。
   ・長按左欄「註記」→ 長按註記模式＝原算法版(SB.mode="orig")，註記鍵亮燈、九宮/返回熄燈。
+  ・長按註記模式(2026-10-01 13:45)：第三顆顯示「十字」(九宮模式仍是「九宮」)；可以單指上下捲動開獎單，捲動中單桿拖曳鍵停在畫面原位置不動(單桿列底色、標定先清掉)，
+    放手後 0.45 秒以「畫面上同一個位置」的新期數重算(runSearch，註記累加照常)。九宮模式、自動回溯中、拖曳單桿中不能捲動。
   ・進入時所有標記、一二三招先暫存隱藏(離開放回；第四招不動)；單桿中畫面不能捲動、一二三招失效、第四招(選號盤)失效。
  位置：
   ・單桿範圍畫面第 1～18 期，初始第 18 期；紅色桿頭(紅底#e02020、藍箭頭#1E63D0、白框)拖曳換期。
@@ -214,6 +216,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-10-01 13:45  單桿長按註記(使用者指示)：第三顆「九宮」改顯示「十字」；可以單指捲動開獎單，捲動中單桿停在畫面原位置不跟著動，捲動完畢以單桿所在位置的新期數重算。
    2026-10-01 12:40  修正捲動開獎單時號碼忽大忽小(使用者錄影回報)：號碼破格保護的「套用記住的倍率」把 >1 的放大倍率當成 1 清掉，每次拖曳開始/結束都清一次、量測後又放大回去；改成只有接近 1 才清。另外拖曳中不量、只量已置中的格子。
    2026-10-01 10:20  修正 C式搜期選單點選後字越來越小(使用者回報「搜期點選縮小」)：宋體時全域按鍵最大化依按鍵高度縮字、按鍵高度又跟著字變小，每點一次縮一次；C式選單改只由 maximizeCPickerText 依寬度定字級(data-no-btnfit)。
    2026-10-01 03:15  全部比照 C式定位(使用者指示「C式差數空白期顯示設定就比照 C式定位空白期的設定」)：差數/合匯空白期只取前二名(取消 ≤2 顆補第三名)；差數 Ai 欄右上角顯示次數、已開改淺色底框；差數單格同號改一般粉紅主動標定。
@@ -8495,7 +8498,7 @@ window.__zpBorrowRows=function(on){
  function __sRowHeight(){const tr=Array.prototype.slice.call(panels.querySelectorAll("table.road tr")).find(function(t){return t.querySelector("td.num")&&t.getBoundingClientRect().height>0});return tr?tr.getBoundingClientRect().height:46}
  document.addEventListener("pointerdown",function(e){__sActive.add(e.pointerId);
    if(!document.body.classList.contains("zhuapai-mode")){__sOn=false;return}
-   if(document.body.classList.contains("zp-sanceng")||document.body.classList.contains("zp-single-bar")){__sOn=false;return}/* 三層開著：不捲動；2026-09-25 21:24 單桿開著也不捲動 */
+   if(document.body.classList.contains("zp-sanceng")||(document.body.classList.contains("zp-single-bar")&&!(typeof window.__zpSbScrollOk==="function"&&window.__zpSbScrollOk()))){__sOn=false;return}/* 2026-10-01 13:45：單桿長按註記(原算法)時可以捲動 *//* 三層開著：不捲動；2026-09-25 21:24 單桿開著也不捲動 */
    if(__sActive.size>1){__sOn=false;__sDecided=null;return}
    const inSheet=e.target&&e.target.closest&&e.target.closest("#panels");if(!inSheet){__sOn=false;return}
    const td=e.target.closest("td.num");if(td&&td.classList.contains("num-marked")){__sOn=false;return}
@@ -8635,7 +8638,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
 (function(){
   const SB={screen:[],rowsCache:null,rowsDirty:true,grid:null,gridRows:null,none:false,tagFit:"",oi:0,hits:[],runTimer:0,runToken:0,tapAt:0,tag:null,on:false,allow:false,period:15,stash:null,handle:null,painted:[],raf:0,drag:null,guardUntil:0,lastKey:""};
   /* 2026-09-25 21:24 使用者指示「啟動單桿尋號後定顯/全顯按鍵改名為九宮」：單桿開著時第三顆顯示「九宮」(功能待定義，目前按了不動作、不再切換定顯/全顯)；離開單桿還原成定顯/全顯 */
-  function setLabel(){const btn=document.getElementById("float-save-btn");if(!btn)return;const l=btn.querySelector(".fullpage-mode-label");if(l&&l.textContent!=="九宮")l.textContent="九宮";btn.setAttribute("aria-label","九宮")}
+  function setLabel(){const btn=document.getElementById("float-save-btn");if(!btn)return;const __t=(SB.mode==="orig")?"十字":"九宮";/* 2026-10-01 13:45 使用者指示「註記亮燈，底下九宮改十字」：長按註記(原算法)時第三顆顯示「十字」，九宮模式照舊「九宮」 */const l=btn.querySelector(".fullpage-mode-label");if(l&&l.textContent!==__t)l.textContent=__t;btn.setAttribute("aria-label",__t)}
   /* 回到最下面 18+2：捲回 0；0.2/0.45/0.8 秒後再確認一次(還在滑動慣性或平滑捲動的尾巴時，再拉回一次) */
   function toBottom(){let moved=false;try{if(typeof window.__zpScrollTo!=="function")return false;SB.allow=true;if(cModeScrollOffset!==0){window.__zpScrollTo(0);moved=true}}catch(e){}finally{SB.allow=false}if(moved)SB.rowsDirty=true;return moved}
   function bc(){return document.body.classList}
@@ -8913,7 +8916,14 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   function update(force){if(!SB.on)return;const tr=rowOf(SB.period);const key=tr?(tr.dataset.date||"")+"|"+SB.period:"";
     if(force||key!==SB.lastKey||!SB.painted.length||!SB.painted[0].isConnected||!SB.painted[0].classList.contains("zp-sb-cell")){paint(tr);SB.lastKey=key}
     placeHandle(tr)}
-  function loop(){SB.raf=0;if(!SB.on)return;try{update(false)}catch(e){}SB.raf=requestAnimationFrame(loop)}
+  function loop(){SB.raf=0;if(!SB.on)return;try{if(!SB.scrolling)update(false)}catch(e){}SB.raf=requestAnimationFrame(loop)}
+  /* 2026-10-01 13:45 使用者指示「註記亮燈：可以捲動畫面，單桿不隨捲動移動，捲動完畢單桿邏輯重算」：
+     長按註記(原算法)時允許單指捲動開獎單(九宮模式仍不捲動)。捲動中(body.c-drag-scroll)單桿拖曳鍵停在畫面上原位置不動，
+     單桿列底色與標定先清掉；放手、表格定位後(0.45 秒)以「畫面上同一個位置」(同一個第幾期)的新期數重算(runSearch，註記統計照常累加)。自動回溯進行中、拖曳單桿中不能捲動。 */
+  window.__zpSbScrollOk=function(){return !!(SB.on&&SB.mode==="orig"&&!SB.drag&&!(SB.oa&&SB.oa.running))};
+  (function(){let was=false,t=0;try{new MutationObserver(function(){const on=document.body.classList.contains("c-drag-scroll");if(on===was)return;was=on;if(!SB.on||SB.mode!=="orig")return;
+    if(on){if(t){clearTimeout(t);t=0}SB.scrolling=true;cancelRun();try{clearHits()}catch(_){}unpaint()}
+    else{if(t)clearTimeout(t);t=setTimeout(function(){t=0;SB.scrolling=false;if(!SB.on)return;SB.rowsDirty=true;SB.lastKey="";try{update(true)}catch(_){}try{if(typeof logEvent==="function")logEvent("單桿","捲動後重算 第 "+SB.period+" 期 "+((rowOf(SB.period)||{}).dataset||{}).date)}catch(_){}runSearch(0)},450)}}).observe(document.body,{attributes:true,attributeFilter:["class"]})}catch(e){}})();
   function start(mode){if(SB.on)return false;const b=bc();if(!b.contains("zhuapai-mode")||b.contains("zp-sanceng"))return false;SB.mode=(mode==="orig")?"orig":"three";SB.startAt=Date.now();SB.notes={cnt:{},keys:{}};SB.oa=null;SB.oaTok=(SB.oaTok||0)+1;bc().toggle("zp-sb-orig",SB.mode==="orig");bc().toggle("zp-sb-three",SB.mode==="three");/* 2026-09-29 九宮模式：九宮鍵亮燈、其他熄燈 *//* 2026-09-29 原算法版：註記亮燈、其他鍵熄燈；註記統計每次進入都從空的開始 *//* 2026-09-28 使用者指示：長按「定顯」＝統計表 ≥3；長按「註記」＝原算法版(逐一九宮差) */
     try{if(typeof window.__zpR19Uncover==="function")window.__zpR19Uncover()}catch(e){}/* 先還原一般抓牌的第 19 列(單桿有自己的處理) */
     SB.stash={pickedPaths:pickedPaths,connections:connections,broadened:broadened,historyStack:historyStack};
@@ -8984,7 +8994,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 2026-09-26 09:48 修正「在九宮裡長按截圖，結果畫面被清除」：截圖前會拆掉預備捲動列、再把畫面重新定位(applyCModeScrollOffset)，
      原本單桿中把這個動作整個擋掉，截圖時畫面沒回到正確位置，存出來是別段期數、單桿與標定都不見。
      單桿中的捲動已經在手指按下時擋掉(抓牌捲動的 pointerdown 判斷 zp-single-bar)，這裡只擋「換到不同期數」，同一個位置的重新定位照常執行 */
-  if(typeof applyCModeScrollOffset==="function"){const __o=applyCModeScrollOffset;applyCModeScrollOffset=function(k){if(SB.on&&!SB.allow&&typeof k==="number"&&typeof cModeScrollOffset==="number"&&k!==cModeScrollOffset)return;return __o.apply(this,arguments)}}
+  if(typeof applyCModeScrollOffset==="function"){const __o=applyCModeScrollOffset;applyCModeScrollOffset=function(k){if(SB.on&&!SB.allow&&SB.mode!=="orig"/* 2026-10-01 13:45：長按註記可以捲動 */&&typeof k==="number"&&typeof cModeScrollOffset==="number"&&k!==cModeScrollOffset)return;return __o.apply(this,arguments)}}
   if(typeof updateFloatSaveBtnForFullPage==="function"){const __ou=updateFloatSaveBtnForFullPage;updateFloatSaveBtnForFullPage=function(){const r=__ou.apply(this,arguments);if(SB.on)setLabel();return r};window.updateFloatSaveBtnForFullPage=updateFloatSaveBtnForFullPage}
   /* 按鍵：在 window 捕獲階段最先攔——三層鍵、清除鍵不作用；返回鍵＝只離開單桿(700ms 內的第二下吃掉) */
   ["click","dblclick","pointerdown","pointerup","touchstart","touchend","mousedown","mouseup","contextmenu"].forEach(function(ev){window.addEventListener(ev,function(e){
