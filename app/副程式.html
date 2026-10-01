@@ -42,7 +42,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-09-30 23:48";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-10-01 12:40";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -188,10 +188,12 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
  ・註記欄會被其他程式重畫而清掉單桿結果 → watchCol 監看後補回；改註記欄時保留這個機制。
  ・特殊算法、各種回測都用「陣列相鄰＝前後期」，資料缺期就會算錯 → 資料要完整。
  ・Safari 量有 CSS zoom 的元素不含 zoom(全頁高度量錯)；蘋果放開手指的事件可能被攔 → 相關量測用實際畫面框與最後觸控時間。
+ ・號碼破格保護(--num-fit)的 applyStored 把 ≥1 的倍率一律當 1 清掉(只會縮小時的舊寫法)，倍率 >1(放大)時每次畫面狀態改變(拖曳開始/結束)就被清掉、量測後又放大＝捲動時字忽大忽小(宋體最明顯) → 只有接近 1 才清；另外拖曳中不量、只量已置中的格子(2026-10-01 12:40)。
  ・開獎球置中程式每次都改動畫面(插入標記、清掉再設位移)，觸發自己跟「按鍵文字最大化」的監看＝每一格畫面都重算(2 秒 5 萬多次)，把選單按鍵字級蓋掉、也耗電 → 已改成量到的位置已置中就不動、基線只在號碼/字型改變時量。
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-10-01 12:40  修正捲動開獎單時號碼忽大忽小(使用者錄影回報)：號碼破格保護的「套用記住的倍率」把 >1 的放大倍率當成 1 清掉，每次拖曳開始/結束都清一次、量測後又放大回去；改成只有接近 1 才清。另外拖曳中不量、只量已置中的格子。
    2026-09-30 23:48  修正開獎球置中程式無限重算(主程式回報 C式「搜期」選單字變小)：21:02 的置中程式每次執行都改動畫面，跟「按鍵文字最大化」互相觸發變成每格畫面重算，會蓋掉選單按鍵的字級、也耗電。改成已置中就不動、基線只在號碼/字型改變時量。
    2026-09-30 23:17  程式規格書補上 C式定位十字差「十字」顯示、閃爍與空白期統計(副程式沒有 C式，程式行為不變)。
    2026-09-30 23:05  程式規格書更正 C式定位十字差方向(格子號碼＋十字差＝上桿號碼；副程式沒有 C式，程式行為不變)。
@@ -6442,8 +6444,8 @@ window.addEventListener("pageshow",function(e){if(e&&e.persisted)check()});
   function ink(font,text){const key=font+"|"+text;if(inkCache[key])return inkCache[key];if(!cv)cv=document.createElement("canvas");const c=cv.getContext("2d");c.font=font;const m=c.measureText(text);
     if(!(m.width>0)||typeof m.actualBoundingBoxAscent!=="number")return null;const v={adv:m.width/100,w:(m.actualBoundingBoxLeft+m.actualBoundingBoxRight)/100,h:(m.actualBoundingBoxAscent+m.actualBoundingBoxDescent)/100};inkCache[key]=v;return v}
   function med(a){a=a.slice().sort(function(x,y){return x-y});return a.length?a[Math.floor(a.length/2)]:0}
-  function measure(tb){const tds=tb.querySelectorAll("td.num");const n=tds.length;if(!n)return null;const step=Math.max(1,Math.floor(n/40));const rw=[],rh=[];
-    for(let i=0;i<n;i+=step){const td=tds[i];const sp=td.querySelector(".cell-shift");if(!sp||td.querySelector(".ding-top-badge,.zp-sb-pred"))continue;const t=(sp.textContent||"").trim();if(!/^\d{2}$/.test(t))continue;
+  function measure(tb){const tds=tb.querySelectorAll("td.num");const n=tds.length;if(!n)return null;const step=Math.max(1,Math.floor(n/40));const rw=[],rh=[];/* 2026-10-01 12:40：只量「號碼置中已做完」(data-ink-centered)的格子，同一個基準；整張表都沒有置中標記(不支援置中)時才全部都量 */const __anyInk=!!tb.querySelector("td.num .cell-shift[data-ink-centered]");
+    for(let i=0;i<n;i+=step){const td=tds[i];const sp=td.querySelector(".cell-shift");if(!sp||td.querySelector(".ding-top-badge,.zp-sb-pred"))continue;if(__anyInk&&!sp.getAttribute("data-ink-centered"))continue;const t=(sp.textContent||"").trim();if(!/^\d{2}$/.test(t))continue;
       const r=td.getBoundingClientRect();if(!(r.width>2&&r.height>2)||r.bottom<0||r.top>window.innerHeight)continue;let q;try{const rg=document.createRange();rg.selectNodeContents(sp);q=rg.getBoundingClientRect()}catch(e){continue}if(!(q.width>0))continue;
       const cs=getComputedStyle(sp);const k=ink(cs.fontStyle+" "+cs.fontWeight+" 100px "+cs.fontFamily,t);if(!k)continue;
       const px=q.width/k.adv;/* 畫面上的實際字級(含縮放) */rw.push(px*k.w/r.width);rh.push(px*k.h/r.height)}
@@ -6454,7 +6456,7 @@ window.addEventListener("pageshow",function(e){if(e&&e.persisted)check()});
   /* 2026-09-29 加快切換畫面：畫面寬高只在視窗改變時讀一次存起來(每次讀 window.innerWidth 都可能逼瀏覽器重排) */let __vw=window.innerWidth,__vh=window.innerHeight;function __vwUpd(){__vw=window.innerWidth;__vh=window.innerHeight}window.addEventListener("resize",__vwUpd,true);window.addEventListener("orientationchange",function(){__vwUpd();setTimeout(__vwUpd,300)},true);
   function keyNow(){const b=document.body.classList;const mode=b.contains("pinch-fullscreen-mode")?"full":b.contains("zp-sanceng")?"sc":b.contains("zp-single-bar")?"sb":b.contains("zhuapai-mode")?"zp":"home";let g="";try{g=(typeof currentGameKey!=="undefined")?currentGameKey:""}catch(e){}return g+"|"+mode+"|"+(__vw>__vh?"L":"P")+"|"+Math.round(__vw)}
   function remember(v){const k=keyNow();v=+(+v).toFixed(4);if(store[k]===v)return;store[k]=v;try{localStorage.setItem(SKEY,JSON.stringify(store))}catch(e){}}
-  function applyStored(){try{const v=store[keyNow()];if(!(v>0))return;const s=v>=0.9995?"":v.toFixed(4);document.querySelectorAll("table.road").forEach(function(tb){if(tb.style.getPropertyValue("--num-fit")!==s){if(s)tb.style.setProperty("--num-fit",s);else tb.style.removeProperty("--num-fit")}})}catch(e){}}
+  function applyStored(){try{const v=store[keyNow()];if(!(v>0))return;const s=Math.abs(v-1)<0.005?"":v.toFixed(4);/* 2026-10-01 12:40 修正「捲動時字忽大忽小」的真正原因：原本 v≥0.9995 一律當 1(清掉)，那是只會縮小時的寫法；09-27 改成「對準比例」後倍率可以 >1(放大)，每次畫面狀態改變(拖曳開始/結束、切換畫面)都把放大清掉，80ms 後量測又放大回去＝字忽大忽小。改成跟 fitTable 一樣：只有接近 1 才清掉 */document.querySelectorAll("table.road").forEach(function(tb){if(tb.style.getPropertyValue("--num-fit")!==s){if(s)tb.style.setProperty("--num-fit",s);else tb.style.removeProperty("--num-fit")}})}catch(e){}}
   window.__numFitStore=function(){return store};
   function fitTable(tb){const m=measure(tb);if(!m)return;const cur=parseFloat(tb.style.getPropertyValue("--num-fit"))||1;
     const need=Math.min(TW/m.kw,TH/m.kh);if(Math.abs(need-1)<=TOL){remember(cur);return}
@@ -6469,7 +6471,7 @@ window.addEventListener("pageshow",function(e){if(e&&e.persisted)check()});
     const over=q.right-(r.right-lineVis);const sc=q.width/bd.offsetWidth;/* 徽章本身的總縮放(放大 1.3 × 畫面縮放) */
     const x=over>0.05?+(over/sc+0.02).toFixed(3):0;const cur=parseFloat(tb.style.getPropertyValue("--wd-clip"))||0;
     if(Math.abs(x-cur)>0.005){if(!x)tb.style.removeProperty("--wd-clip");else tb.style.setProperty("--wd-clip",x+"px")}}catch(e){}}
-  function run(){try{document.querySelectorAll("table.road").forEach(function(tb){const r=tb.getBoundingClientRect();if(r.width>0&&r.height>0){fitTable(tb);fitWd(tb)}})}catch(e){}}
+  function run(){/* 2026-10-01 12:40 使用者回報「(捲動時)字忽大忽小」：拖曳捲動中(body.c-drag-scroll)不量——號碼置中在拖曳中暫停，新捲進來的格子還沒套置中縮放，量到的大小會偏小，倍率在 1 與 1.045 之間來回跳；放手後再量 */if(document.body&&document.body.classList.contains("c-drag-scroll")){setTimeout(sch,400);return}try{document.querySelectorAll("table.road").forEach(function(tb){const r=tb.getBoundingClientRect();if(r.width>0&&r.height>0){fitTable(tb);fitWd(tb)}})}catch(e){}}
   let q=0;function sch(){if(q)return;q=setTimeout(function(){q=0;run();requestAnimationFrame(run)},80)}
   window.__numFitRun=run;
   function start(){if(!window.__isMobile)return;/* 只在手機上執行 */sch();window.__onLayout(run);window.addEventListener("resize",sch);window.addEventListener("orientationchange",function(){setTimeout(sch,300)});
