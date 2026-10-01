@@ -42,7 +42,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   });
 }catch(e){}})();</script>
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
-<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-10-01 14:05";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
+<script>/* APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面。規則：每次修改程式(不論大小)都要更新 APP_BUILD，並在下面「修改紀錄」最上面新增一筆；比對兩個檔案哪個新看 APP_BUILD，不要看檔名 */window.APP_BUILD="2026-10-01 14:20";/* 2026-09-24 18:08 使用者問「為什麼沒有版本」：新抓牌系統從主程式分出來時還沒有版本編號，這裡補上(從 v1.0 起編)，顯示在「設定」選單最下面，跟主程式「印」選單的「版本 v1.2」同樣位置與樣式。只做顯示，不送給 Worker(雲端讀資料的網址完全不變)；大改版時才升版本號，小修改只更新 APP_BUILD */window.APP_ID="zhuapai";window.APP_VERSION="v1.0";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -85,7 +85,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   ・抓牌(非三層)長按「定顯/全顯」0.55 秒 → 九宮模式(SB.mode="three")，該鍵改名「九宮」並亮黃燈。
   ・長按左欄「註記」→ 長按註記模式＝原算法版(SB.mode="orig")，註記鍵亮燈、九宮/返回熄燈。
   ・長按註記模式(2026-10-01 13:45)：第三顆顯示「十字」(九宮模式仍是「九宮」)；可以單指上下捲動開獎單，捲動中單桿拖曳鍵停在畫面原位置不動(單桿列底色、標定先清掉)，
-    放手後 0.45 秒以「畫面上同一個位置」的新期數重算(runSearch，註記累加照常)。捲動開始時先全部清掉(標定、單桿列底色、空白期預測號、第 19 列的覆蓋還原)再移動(13:55)；重算後第 19 列一律保持空白(結果「無」也蓋，14:05)。九宮模式、自動回溯中、拖曳單桿中不能捲動。
+    放手後 0.45 秒以「畫面上同一個位置」的新期數重算(runSearch，註記累加照常)。捲動開始時先全部清掉(標定、單桿列底色、空白期預測號、第 19 列的覆蓋還原)再移動(13:55)；重算後第 19 列一律保持空白(結果「無」也蓋，14:05)；拖動中照★★「號碼淡出」規格，號碼進入第 19 格依比例變透明(14:20)。九宮模式、自動回溯中、拖曳單桿中不能捲動。
   ・進入時所有標記、一二三招先暫存隱藏(離開放回；第四招不動)；單桿中畫面不能捲動、一二三招失效、第四招(選號盤)失效。
  位置：
   ・單桿範圍畫面第 1～18 期，初始第 18 期；紅色桿頭(紅底#e02020、藍箭頭#1E63D0、白框)拖曳換期。
@@ -195,6 +195,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面；最新的寫在最上面）=====
+   2026-10-01 14:20  單桿長按註記捲動也套用「號碼淡出」(使用者提醒「之前有一個淡化捲動」)：拖動時號碼進入第 19 格依比例變透明，跟一般抓牌捲動一樣。
    2026-10-01 14:05  單桿：結果「無」時第 19 列也蓋成空白期(使用者指示「第十九期需保持空白」；捲動後第 19 列是已開獎期數，原本「無」沒有蓋，露出真實號碼)。
    2026-10-01 13:55  單桿長按註記捲動：捲動開始時連第 19 列的預測號覆蓋也先還原(使用者回報捲動後有一列號碼被藏住、只剩右上角小字)，先清除、捲動完再重畫。
    2026-10-01 13:45  單桿長按註記(使用者指示)：第三顆「九宮」改顯示「十字」；可以單指捲動開獎單，捲動中單桿停在畫面原位置不跟著動，捲動完畢以單桿所在位置的新期數重算。
@@ -4908,9 +4909,11 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
      列滑過遮罩上緣時數字被切成半截＝殘影)。改成「號碼淡出」：手指拖著捲動時，每一列的號碼依照進入第 19 格的比例變透明(完全進入＝看不到)，
      往上滑出第 19 格則漸漸出現；格線、底色、日期、星期都跟著表格正常移動。拖動中暫停第 19 列的清空/還原(避免中途換內容造成閃動)，放手定位後再清空、恢復透明度。 */
   V.faded=new Set();V.loop=0;V.settle=false;
+  /* 2026-10-01 14:20 使用者提醒「之前有一個淡化捲動」：單桿長按註記可以捲動後，號碼淡出也要照★★規格作用(原本 active() 在單桿開著時是 false，拖動時號碼直接滑進第 19 格)；第 19 列的清空/還原仍由單桿自己處理(sync 照舊只在 active() 時動作) */
+  function fadeOk(){return active()||(typeof window.__zpSbScrollOk==="function"&&window.__zpSbScrollOk())}
   function dataRowsForFade(){const panelEls=Array.prototype.slice.call(panels.querySelectorAll(".panel"));const vp=panelEls.find(function(p){return p.style.display!=="none"})||panels;
     return Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(tr){return tr.style.display!=="none"&&!tr.classList.contains("c-scroll-peek")&&!tr.classList.contains("future")&&tr.querySelector("td.num")})}
-  function fadeFrame(){V.loop=0;if(!(V.dragging||V.settle)||!active()){clearFade();return}const g=V.geo;if(!g){V.loop=requestAnimationFrame(fadeFrame);return}const Y=g.top;
+  function fadeFrame(){V.loop=0;if(!(V.dragging||V.settle)||!fadeOk()){clearFade();return}const g=V.geo;if(!g){V.loop=requestAnimationFrame(fadeFrame);return}const Y=g.top;
     const rows=dataRowsForFade();const seen=new Set();
     for(let i=rows.length-1;i>=0;i--){const rr=rows[i].getBoundingClientRect();if(rr.height<=0)continue;if(rr.bottom<Y-1)break;
       const f=Math.max(0,Math.min(1,(rr.bottom-Y)/rr.height));
@@ -4920,11 +4923,11 @@ window.__zpStepCount=function(){while(__zpSteps.length&&__zpSteps[__zpSteps.leng
   function clearFade(){V.faded.forEach(function(sp){try{sp.style.removeProperty("opacity")}catch(e){}});V.faded.clear();if(V.loop){cancelAnimationFrame(V.loop);V.loop=0}}
   function startFade(){if(R.row)uncover();/* 拖動開始：先還原第 19 列(內容換回號碼)，改由淡出處理 */if(!V.loop)V.loop=requestAnimationFrame(fadeFrame)}
   function hideVeil(){if(V.el)V.el.style.display="none"}
-  document.addEventListener("pointerdown",function(e){if(!active())return;const t=e.target;if(!t||!t.closest||!t.closest("#panels"))return;clearTimeout(V.hideT);V.dragging=true;V.moved=false;V.x0=e.clientX;V.y0=e.clientY;if(!V.settle)measureGeo()},true);
-  document.addEventListener("pointermove",function(e){if(!V.dragging||V.moved)return;if(Math.abs(e.clientY-V.y0)>6||Math.abs(e.clientX-V.x0)>6){V.moved=true;if(active())startFade()}},true);
+  document.addEventListener("pointerdown",function(e){if(!fadeOk())return;const t=e.target;if(!t||!t.closest||!t.closest("#panels"))return;clearTimeout(V.hideT);V.dragging=true;V.moved=false;V.x0=e.clientX;V.y0=e.clientY;if(!V.settle)measureGeo()},true);
+  document.addEventListener("pointermove",function(e){if(!V.dragging||V.moved)return;if(Math.abs(e.clientY-V.y0)>6||Math.abs(e.clientX-V.x0)>6){V.moved=true;if(active())startFade();else if(fadeOk()&&!V.loop)V.loop=requestAnimationFrame(fadeFrame)/* 單桿：第 19 列由單桿還原，這裡只淡出 */}},true);
   ["pointerup","pointercancel"].forEach(function(n){document.addEventListener(n,function(){if(!V.dragging)return;V.dragging=false;if(!V.moved)return;V.settle=true;clearTimeout(V.hideT);
     V.hideT=setTimeout(function(){V.settle=false;sync();requestAnimationFrame(function(){if(!V.dragging){clearFade()}})},450)},true)});
-  new MutationObserver(function(){if(!active()){clearFade();hideVeil()}}).observe(document.body,{attributes:true,attributeFilter:["class"]});
+  new MutationObserver(function(){if(!fadeOk()){clearFade();hideVeil()}}).observe(document.body,{attributes:true,attributeFilter:["class"]});
   window.addEventListener("resize",function(){V.geo=null});
   window.__zpR19Sync=sync;window.__zpR19Uncover=uncover;
   /* 捲動落定、標記重算之後同步；另每 0.3 秒檢查一次(平滑捲動、被動號碼保護等其他路徑) */
