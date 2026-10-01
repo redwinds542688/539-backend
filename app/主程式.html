@@ -44,7 +44,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 14:20";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 14:35";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -171,6 +171,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    Ai 欄原本的「已開」3px 紅框(.ai-opened)改成這個樣式。十字差閃爍、最上面三列掃描屬於定位邏輯，不套到其他模式。抓牌系統(單桿/九宮/三層)的標記是另一套設計，未改。
  ・跟下桿上一期相同(2026-10-01 02:35，02:45 改淺色)：Ai 欄、空白期的號碼如果跟下桿上一期(下桿往上一列)的號碼相同 → 淺米黃底 #FFF4D6＋1px 淺琥珀框 #F2C14E(暗色：底 #2E2A1C、框 #8C7A3E；class c-bprev-same)，不顯示「已開」字樣、號碼顏色不變。
  ・空白期閃爍(2026-10-01 02:00)：空白期號碼右上角次數 ≥2(當下十字差下，有 2 格以上下桿被動標定號相同、得數相同)→ 該號碼閃爍(td 加 c-cross-same-blink)。
+ ・捲動(2026-10-01 14:35，使用者指示「只要是捲動，一律用淡化捲動」)：C式/E式下桿拖到底繼續拖的平滑捲動也用號碼淡出——拖動開始時的空白期上緣當固定淡出線，號碼依越線比例變透明，往上離開空白區的列漸漸出現，只動號碼透明度，放手定位 0.45 秒後恢復。
  ・Ai 欄(2026-10-01 02:15 改)：5 個十字差全跑、次數 >0 全列，超過 18 顆就把最後一名(次數最低、同次數整批)剔除到 ≤18 顆，閃爍的號碼不剔除(2026-10-01 02:25)；同一個十字差裡下桿被動標定號相同(得數次數 ≥2)的號碼閃爍。原(00:20)：5 個十字差全跑的統計前二名(號碼右上角＝次數(2026-10-01 01:00 由左上角改右上角，C式各模式 Ai 欄的次數都一樣)，最多 15／寬彩種 21 顆)，在 cModeBlankShiftToAi 裡處理；定位不再用九宮差平移；沒有主動標定＝Ai 欄空白。
  ・空白期(2026-10-01 00:20)：只跑「當下十字差」(按鍵顯示的那個)的統計前二名，經 fillCModeChaSameBlanks 填入；切換十字差就重算。差數照舊同差法。
  ・最上面三列的藍字：原連七九宮差 2026-10-01 00:20 刪除(C式各模式都不顯示)。
@@ -216,6 +217,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-10-01 14:35  捲動一律用號碼淡出(使用者指示)：C式(定位/差數/合匯)與 E式拖桿到底的平滑捲動也加上號碼淡出(抓牌、單桿捲動已有)。
    2026-10-01 14:20  單桿長按註記捲動也套用「號碼淡出」(使用者提醒「之前有一個淡化捲動」)：拖動時號碼進入第 19 格依比例變透明，跟一般抓牌捲動一樣。
    2026-10-01 14:05  單桿：結果「無」時第 19 列也蓋成空白期(使用者指示「第十九期需保持空白」；捲動後第 19 列是已開獎期數，原本「無」沒有蓋，露出真實號碼)。
    2026-10-01 13:55  單桿長按註記捲動：捲動開始時連第 19 列的預測號覆蓋也先還原(使用者回報捲動後有一列號碼被藏住、只剩右上角小字)，先清除、捲動完再重畫。
@@ -10538,5 +10540,32 @@ function start(){sch();var hb=document.getElementById("hero-balls");if(hb)try{mo
   try{if(document.fonts){document.fonts.ready.then(sch);document.fonts.addEventListener("loadingdone",sch)}}catch(e){}}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start()})();
 </script>
+<script>/* 2026-10-01 14:35 使用者指示「只要是捲動，一律用這個淡化捲動」：抓牌捲動(★★ 2026-09-26 號碼淡出)、單桿長按註記捲動已經有；
+   這裡補 C式(定位/差數/合匯)與 E式「下桿拖到底繼續拖」的平滑捲動(body.c-drag-scroll)：
+   ①拖動開始時記下「空白期上緣」(畫面上第一個空白期/被佔用列的上緣)當作固定的淡出線；
+   ②拖動中每一列已開號碼依「越過淡出線的比例」調透明度(完全進入＝看不到)；往上離開空白區的列(還掛著被佔用 class)依離開的比例漸漸出現；
+   ③只動號碼(.cell-shift)的透明度，格線、底色、日期、空白期預測號(紅字)照常；放手定位 0.45 秒後全部恢復。抓牌畫面由原本的淡出處理，這裡不重複。
+   ★ 透明度寫在格子(td)的 CSS 變數 --zp-fade 與 class zp-fade 上，不寫在號碼 span：C式捲動會把格子 innerHTML 存起來再還原，寫在 span 上會被存進去、還原後永遠透明(同 2026-09-26 抓牌「透明的號碼被存起來」)。 */
+(function(){let Y=null,loop=0,settle=0,faded=new Set();
+  try{const st=document.createElement("style");st.textContent="table.road td.num.zp-fade .cell-shift{opacity:var(--zp-fade,1)!important}table.road tr.c-scroll-blanked td.num.zp-fade-show .cell-shift{visibility:visible!important;color:var(--zp-fade-col,#000)!important}";document.head.appendChild(st)}catch(e){}
+  function on(){const b=document.body.classList;return b.contains("c-drag-scroll")&&!b.contains("zhuapai-mode")&&b.contains("c-mode-active")/* cModeActive 在別的閉包裡讀不到，用 body class */}
+  function rows(){const vp=Array.prototype.slice.call(panels.querySelectorAll(".panel")).find(function(p){return p.style.display!=="none"});return vp?Array.prototype.slice.call(vp.querySelectorAll("table.road tr")).filter(function(tr){return tr.style.display!=="none"&&tr.querySelector("td.num")}):[]}
+  function measure(){Y=null;let col="";const rs=rows();for(let i=0;i<rs.length;i++){const tr=rs[i];if(tr.classList.contains("c-scroll-peek"))continue;const r=tr.getBoundingClientRect();if(r.height<=0||r.top<0)continue;
+      if(tr.classList.contains("future")||tr.classList.contains("c-scroll-blanked")){Y=r.top;break}if(!col){const sp=tr.querySelector("td.num:not(.c-ding-top3) .cell-shift");if(sp)col=getComputedStyle(sp).color}}
+    if(col)document.documentElement.style.setProperty("--zp-fade-col",col)}
+  function off(td){td.classList.remove("zp-fade","zp-fade-show");td.style.removeProperty("--zp-fade")}
+  function clear(){faded.forEach(function(td){try{off(td)}catch(e){}});faded.clear();try{panels.querySelectorAll("td.num.zp-fade").forEach(off)}catch(e){}if(loop){cancelAnimationFrame(loop);loop=0}}
+  function frame(){loop=0;if(!(on()||settle)||Y===null){clear();return}const seen=new Set();
+    rows().forEach(function(tr){if(tr.classList.contains("future"))return;const r=tr.getBoundingClientRect();if(r.height<=0||r.bottom<Y-1||r.top>Y+r.height*3)return;
+      const f=Math.max(0,Math.min(1,(r.bottom-Y)/r.height));const blanked=tr.classList.contains("c-scroll-blanked");
+      Array.prototype.forEach.call(tr.querySelectorAll("td.num"),function(td){if(td.classList.contains("c-ding-top3")||!td.querySelector(".cell-shift"))return;
+        if(blanked){if(f>=1)return;td.classList.add("zp-fade-show")/* 往上離開空白區：被佔用列的號碼依離開比例漸漸出現 */}else{if(f<=0)return;td.classList.remove("zp-fade-show")}
+        td.classList.add("zp-fade");td.style.setProperty("--zp-fade",(1-f).toFixed(3));faded.add(td);seen.add(td)})});
+    faded.forEach(function(td){if(!seen.has(td)){off(td);faded.delete(td)}});
+    loop=requestAnimationFrame(frame)}
+  let was=false;new MutationObserver(function(){const n=on();if(n===was)return;was=n;
+    if(n){if(settle){clearTimeout(settle);settle=0}else{clear();measure()}if(!loop)loop=requestAnimationFrame(frame)}
+    else if(Y!==null){if(settle)clearTimeout(settle);settle=setTimeout(function(){settle=0;clear();Y=null},450)}}).observe(document.body,{attributes:true,attributeFilter:["class"]});
+})();</script>
 </body>
 </html>
