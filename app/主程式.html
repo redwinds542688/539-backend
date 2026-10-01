@@ -44,7 +44,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 14:50";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 15:05";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -98,6 +98,8 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   ・九宮模式：桿上號碼做九宮拖牌(9 個差)＝統計1，做 414 拖牌(-14、-4、+4、+14)＝統計2；兩個統計都大於 0 的號碼次數相加，相加 ≥3 的號碼＝基礎號(calcBase)。
  成立條件(每個九宮差逐一檢查，isValidOrig)：目標號碼＝基礎號＋九宮差；
   ①第 16 期不可中任何目標號碼；②第 17、18 期都至少中 1 個，而且兩期能各挑一個「不同」的號碼；③扣掉 17/18 期開過的號碼後至少剩 1 個。
+  ★2026-10-01 15:05 使用者指示取消①②：現在長按註記/九宮(isValidOrig)＝有目標號碼就成立；舊函式 isValid 只留③。預測號照舊＝目標號碼扣掉第 17/18 期開過的。
+    單桿開著時從標定號碼上開始滑也可以捲動(格子上的標定是尋號結果，不是第三招)。
   從 -11 開始找第一個成立的；藍底九宮差欄位(單桿下一列的日期＋星期欄，藍底#1E63D0 紅字#e02020，字最大化)顯示目前九宮差，
   單擊欄位＝換下一個成立的九宮差；同一桿成立不只一個時欄位字閃爍。都不成立＝「無」。九宮模式停在「無」的期會自動跳到最近有成立的期。
  18 期標定：目前九宮差的目標號碼，畫面 18 期裡同號全部標定。
@@ -217,6 +219,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-10-01 15:05  單桿：取消「第 16 期沒中、第 17/18 期都中且中不同號」的成立限制(使用者指示)；九宮差有目標號碼就成立，預測號照舊＝目標號碼扣掉第 17/18 期開過的。
    2026-10-01 14:50  單桿九宮模式也可以捲動(使用者指示「九宮也要可以捲動，比照註記」)：單桿停在畫面原位、捲動時號碼淡出、捲動完畢以新期數重算。
    2026-10-01 14:35  捲動一律用號碼淡出(使用者指示)：C式(定位/差數/合匯)與 E式拖桿到底的平滑捲動也加上號碼淡出(抓牌、單桿捲動已有)。
    2026-10-01 14:20  單桿長按註記捲動也套用「號碼淡出」(使用者提醒「之前有一個淡化捲動」)：拖動時號碼進入第 19 格依比例變透明，跟一般抓牌捲動一樣。
@@ -8507,7 +8510,7 @@ window.__zpBorrowRows=function(on){
    if(document.body.classList.contains("zp-sanceng")||(document.body.classList.contains("zp-single-bar")&&!(typeof window.__zpSbScrollOk==="function"&&window.__zpSbScrollOk()))){__sOn=false;return}/* 2026-10-01 13:45：單桿長按註記(原算法)時可以捲動 *//* 三層開著：不捲動；2026-09-25 21:24 單桿開著也不捲動 */
    if(__sActive.size>1){__sOn=false;__sDecided=null;return}
    const inSheet=e.target&&e.target.closest&&e.target.closest("#panels");if(!inSheet){__sOn=false;return}
-   const td=e.target.closest("td.num");if(td&&td.classList.contains("num-marked")){__sOn=false;return}
+   const td=e.target.closest("td.num");if(td&&td.classList.contains("num-marked")&&!document.body.classList.contains("zp-single-bar")){__sOn=false;return}/* 2026-10-01 15:05：單桿開著時格子上的標定是單桿尋號結果(不是第三招連線)，從標定號碼上開始滑也照樣捲動 */
    __sOn=true;__sDecided=null;__sX=e.clientX;__sY=e.clientY;__sK0=cModeScrollOffset;__sLastK=cModeScrollOffset;__sRowH=__sRowHeight();__sId=e.pointerId;__sSmooth=false},true);
  document.addEventListener("pointermove",function(e){if(!__sOn||e.pointerId!==__sId)return;
    const dx=e.clientX-__sX,dy=e.clientY-__sY;
@@ -8780,7 +8783,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 2026-09-29 使用者指示「把長按註記後(原算法)的邏輯接在九宮找到前二名之後；差別只有：原算法以單桿裡的號碼為基礎號，九宮這邊以前二名為基礎號；空白期只顯示第一名」：
      九宮模式(長按定顯/全顯進入)：統計1＝桿上號碼九宮拖牌、統計2＝414 拖牌(-14、-4、+4、+14)，兩個都有的號碼次數相加；
      第 1、2 名(同次數同名次，全部都用、不限個數)＝基礎號；第 1 名(最多 5(6) 格，由小到大)＝空白期。
-     之後照原算法：基礎號加九宮差(-11 起逐一)＝目標號碼；第 16 期不中、17/18 期都中且中不同號＝成立；成立的九宮差中 17/18 期沒中的目標號碼＝預測號(按註記/長按九宮回溯記進註記欄) */
+     之後照原算法：基礎號加九宮差(-11 起逐一)＝目標號碼；第 16 期不中、17/18 期都中且中不同號＝成立(2026-10-01 15:05 這個限制已取消：有目標號碼就成立)；成立的九宮差中 17/18 期沒中的目標號碼＝預測號(按註記/長按九宮回溯記進註記欄) */
   function baseNums(){return SB.mode==="three"?(SB.base||[]):barNumsNow()}
   function calcBase(){const max=(typeof cModeMaxBall==="function")?cModeMaxBall():39;const bn=barNumsNow();const c1={},c2={};
     bn.forEach(function(n){SB_OFFS.forEach(function(o){const t=wrapNum(n,o,max);c1[t]=(c1[t]||0)+1});[-14,-4,4,14].forEach(function(o){const t=wrapNum(n,o,max);c2[t]=(c2[t]||0)+1})});
@@ -8793,15 +8796,9 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
   /* 2026-09-25 23:31 使用者更正「不是單桿的下三期，是畫面裡的 16/17/18 期皆有中號碼才算」：對照期固定＝畫面上第 16、17、18 期(最後 3 期)，不隨單桿移動 */
   function checkRows(){const g=grid();return[g.length-3,g.length-2,g.length-1].map(function(i){return i>=0?g[i]:null})}
   function isValid(oi){const tg=targetsFor(oi);if(!tg.length)return false;const rs=checkRows();
-    /* 2026-09-26 14:00 使用者指示「改成 17/18 二期都要中，且二期中的號碼不可以一樣」(原本 16/17/18 三期都要中)：
-       第 17、18 期(畫面固定位置)各至少中 1 個目標號碼，而且兩期中的號碼要能各挑一個「不同」的號碼(例：17 期只中 05、18 期也只中 05＝不成立；17 期中 05、18 期中 12＝成立；17 期中 05 和 12、18 期中 05＝成立) */
-    /* 2026-09-26 14:03 使用者指示「要 16 沒中，17/18 都有中且中不同號」：第 16 期(畫面固定位置)不可以中任何一個目標號碼 */
-    if(!rs[0])return false;if(rs[0].some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0}))return false;
-    const hit=[1,2].map(function(k){const row=rs[k];if(!row)return null;const h=[];row.forEach(function(c){if(c.v!==null&&tg.indexOf(c.v)>=0&&h.indexOf(c.v)<0)h.push(c.v)});return h});
-    if(!hit[0]||!hit[1]||!hit[0].length||!hit[1].length)return false;
-    if(!hit[0].some(function(a){return hit[1].some(function(b){return a!==b})}))return false;
-    /* 2026-09-26 02:43 使用者指示「預測號碼必須大於 0 號，否則依舊視為無效，直接跳過」：扣掉第 16/17/18 期開過的號碼後，至少要剩 1 個預測號碼才成立 */
-    const below={};rs.slice(1).forEach(function(row){if(row)row.forEach(function(c){if(c.v!==null)below[c.v]=true})});if(!tg.some(function(t){return !below[t]}))return false;/* 14:05 使用者指示「扣掉的號碼也改成只扣 17/18 期」 */
+    /* 2026-10-01 15:05 使用者指示「取消 16 沒有、17 有、18 有這限制」：原本「第 16 期不可中、第 17/18 期都要中且中不同號」(2026-09-26 14:00/14:03)取消；
+       只留 2026-09-26 02:43「預測號碼必須大於 0 號」：扣掉第 17/18 期開過的號碼後，至少要剩 1 個預測號碼才成立 */
+    const below={};rs.slice(1).forEach(function(row){if(row)row.forEach(function(c){if(c.v!==null)below[c.v]=true})});if(!tg.some(function(t){return !below[t]}))return false;
     return true}
   function findValid(from){for(let k=0;k<SB_OFFS.length;k++){const i=(from+k)%SB_OFFS.length;if(isValid(i))return i}return -1}
   /* 2026-09-28 使用者指示算法改變：「進入九宮，將單桿上的五號格子的九宮拖牌放進同一個統計表裡，把大於等於 3 的放在空白欄裡，並且在畫面上這 18 期找尋相同的標定起來；單桿的初始期設為 18」：
@@ -8873,7 +8870,7 @@ window.addEventListener("resize",function(){setTimeout(__zpBottomMask,300)});
     step()}
   window.__zpSbAutoThree=autoThree;
   window.__zpSbAuto=autoOrig;window.__zpSbAutoState=function(){return SB.oa?{next:SB.oa.next,running:SB.oa.running,paused:SB.oa.paused,done:SB.oa.done,noPause:SB.oa.noPause}:null};
-  function isValidOrig(oi){const tg=targetsFor(oi);if(!tg.length)return false;const rs=checkRows();
+  function isValidOrig(oi){const tg=targetsFor(oi);if(!tg.length)return false;return true;/* 2026-10-01 15:05 使用者指示「取消 16 沒有、17 有、18 有這限制」：有目標號碼就成立，不再對照第 16/17/18 期(以下舊條件保留不執行) */const rs=checkRows();
     if(!rs[0]||rs[0].some(function(c){return c.v!==null&&tg.indexOf(c.v)>=0}))return false;
     const hit=[1,2].map(function(k){const row=rs[k];if(!row)return [];const h=[];row.forEach(function(c){if(c.v!==null&&tg.indexOf(c.v)>=0&&h.indexOf(c.v)<0)h.push(c.v)});return h});
     if(!hit[0].length||!hit[1].length)return false;
