@@ -44,7 +44,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 <style>/* 2026-09-27 使用者指示「手機/平板直屏盡可能不捲動」：直立時抓牌/三層/單桿畫面鎖住整頁捲動(原本多出十幾 px 可以輕微捲動)；橫放(可捲動模式)不受影響 */@media (orientation:portrait){ html.is-mobile:has(body.zhuapai-mode:not(.zp-land-scroll)), html.is-mobile body.zhuapai-mode:not(.zp-land-scroll){ overflow:hidden !important; } }</style>
 <!-- 2026-08-30：charset一定要放在<head>最前面(1024位元組內)。之前放在800多行技術文件之後，Chrome會先用猜的編碼(Big5)解析，
      讀到meta才發現不對再整份重來，造成手機上開機字串亂碼/不穩定/卡死 -->
-<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 15:30";</script>
+<script>/* 程式版本(2026-09-23 起從 v1.0 開始編號)：顯示在「印」鍵選單；跟雲端(Worker)拿資料時一併送出(app＝哪個程式、v＝版本)，之後可依版本決定給不給資料 */window.APP_ID="main";window.APP_VERSION="v1.2";/* 2026-09-24 使用者指示「以後改程式要註記修改時間，才知道哪一版比較新；不用顯示，內部紀錄就好」：APP_BUILD＝最後修改時間(台灣時間，到分鐘)，只做內部紀錄，不顯示在畫面、不送給 Worker。規則：①每次修改程式(不論大小)都要更新 APP_BUILD；②交付檔名「Ai抓牌 YYYY-MM-DD HHMM.html」要跟 APP_BUILD 同一個時間；③APP_VERSION 只在大改版時才升(它會送給 Worker，Worker 可能依版本決定給不給資料)。比對兩個檔案哪個新：看 APP_BUILD，不要看檔名(檔名可能是下載/另存的時間) */window.APP_BUILD="2026-10-01 15:50";</script>
 <script>/* 2026-09-24 14:48 蘋果裝置偵測：iPhone/iPod/iPad(含 iPadOS 13 以後偽裝成 Mac 的 iPad)在 <html> 加上 class「is-ios」，只給「蘋果專屬」的 CSS 用(目前：號碼縮小 85%)。Android、電腦不會有這個 class。 */(function(){try{var ua=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(ios)document.documentElement.classList.add("is-ios");/* 2026-09-24 19:27 使用者指示「在 Google 預覽裡比照蘋果處理」：Google「檔案」/雲端硬碟點 HTML 開的預覽是 Android WebView(UA 含「; wv)」)，跟 Chrome 瀏覽器不同。偵測到就加 class「is-preview」，套用跟 iPhone 一樣的開獎單號碼 70% 與置中修正；Android 的 Chrome 瀏覽器(不含 wv)不受影響 */if(!ios&&/Android/.test(ua)&&/; wv\)/.test(ua))document.documentElement.classList.add("is-preview")}catch(e){}})();</script>
 <script>/*
 ================================================================================
@@ -213,6 +213,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
  ・註記欄會被其他程式重畫而清掉單桿結果 → watchCol 監看後補回；改註記欄時保留這個機制。
  ・特殊算法、各種回測都用「陣列相鄰＝前後期」，資料缺期就會算錯 → 資料要完整。
  ・Safari 量有 CSS zoom 的元素不含 zoom(全頁高度量錯)；蘋果放開手指的事件可能被攔 → 相關量測用實際畫面框與最後觸控時間。
+ ・內建開獎資料(EMBEDDED_*_COMPACT)：交付新版時一併用雲端資料庫(redwinds542688/Lottery-database data.json)更新到最新，並檢查格式與缺期；程式執行中由雲端同步更新手機資料庫(開獎時段每 5 分鐘、其他每小時、開程式/切回程式立即)。HTML 檔本身無法在手機上改寫自己。
  ・雲端資料庫的加州天天樂有兩種日期：舊格式＝台灣日期、新格式(MON/AUG 24, 2026，有期號)＝美國日期(少一天)，混用會同一天兩組號碼 → 同步時新格式 +1 天統一成台灣日期，且號碼已在本機最後 6 期就停止(2026-10-01 15:30)。
  ・號碼破格保護(--num-fit)的 applyStored 把 ≥1 的倍率一律當 1 清掉(只會縮小時的舊寫法)，倍率 >1(放大)時每次畫面狀態改變(拖曳開始/結束)就被清掉、量測後又放大＝捲動時字忽大忽小(宋體最明顯) → 只有接近 1 才清；另外拖曳中不量、只量已置中的格子(2026-10-01 12:40)。
  ・C式搜期選單按鍵高度跟著字走，全域按鍵最大化又依高度縮字，宋體每點一次越縮越小 → 這類選單加 data-no-btnfit，只用 maximizeCPickerText 依寬度定字級。
@@ -220,6 +221,8 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
    規則：任何「監看畫面變化(MutationObserver)後自動調整」的程式，調整時必須先判斷值有沒有變，沒變就不寫入，不能每次都改 DOM。
 ================================================================================ */</script>
 <script>/* ===== 修改紀錄（內部紀錄，不顯示在畫面）=====
+   2026-10-01 15:50  自動同步加快(使用者指示「找到資料就自動更新，時時保持最新」)：開獎時段(台灣 20:30～24:00、09:30～13:00)每 5 分鐘同步雲端資料庫一次，其他時間每小時；開程式、切回程式照舊立即同步。
+     內建資料全面檢查：四種彩券格式全部正確(日期、星期、號碼個數/範圍/重複/排序、特別號)；缺期 539 08-27/08-31/09-01、天天樂 08-19/08-21/08-27(雲端也沒有)；大樂透春節加開屬正常；六合彩間隔不固定屬正常。
    2026-10-01 15:30  內建開獎資料更新到最新(使用者指示，來源 GitHub redwinds542688/Lottery-database data.json)：539 到 09-30(360 期)、天天樂到 09-30(285 期)、大樂透到 09-29(316 期)、六合彩到 08-25(249 期，雲端資料庫只到 08-25)。
      雲端缺的期數沒有補(539：08-27、08-31、09-01；天天樂：08-19、08-21、08-27)。天天樂雲端新格式日期(MON/AUG 24, 2026)是美國日期，同步時改成台灣日期(+1 天)；同步多一道防護：號碼已在本機最後 6 期就停止，不重複、不覆蓋。
    2026-10-01 15:05  單桿：取消「第 16 期沒中、第 17/18 期都中且中不同號」的成立限制(使用者指示)；九宮差有目標號碼就成立，預測號照舊＝目標號碼扣掉第 17/18 期開過的。
@@ -9640,10 +9643,15 @@ function setupManualEntry(){const entryBtn=document.getElementById("manual-entry
 })();if(cancelBtn)cancelBtn.addEventListener("click",closeInline);confirmBtn.addEventListener("click",function(){const dateStr=selectedDateStr;if(!dateStr){showHint("請先選擇開獎日期");return}if(dateStr>todayStr()){showHint("不能選擇未來的日期");return}const cfg=getSlotConfig();if(slotValues.some(function(v){return v===null})){showHint("還有號碼欄位沒有選");return}const gameKey=currentGameKey;const existing=findExistingRecord(gameKey,dateStr);if(existing&&!pendingCorrectionConfirm){const oldNumbersStr=existing.numbers.map(function(n){return String(n).padStart(2,"0")}).join(" ")+(typeof existing.special==="number"?"　特別號 "+String(existing.special).padStart(2,"0"):"");showHint("此日期已有資料（原號碼："+oldNumbersStr+"），再按一次✓才會覆蓋更正");pendingCorrectionConfirm=true;confirmBtn.textContent="!";return}let numbers,special;if(cfg.specialIndex>=0){numbers=slotValues.slice(0,cfg.specialIndex);special=slotValues[cfg.specialIndex]}else{numbers=slotValues.slice();special=NaN}const result=manualUpsertDrawRecord(gameKey,dateStr,numbers,special);if(!result.ok){showHint(result.reason||"儲存失敗");return}closeInline()})}async function runScheduledCloudChecks(){const now=new Date;const nowMin=now.getHours()*60+now.getMinutes();const nowMs=now.getTime();const todayStr=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");const cloudGameMap=getCloudGameMap();for(const win of SCHEDULE_WINDOWS){if(nowMin<win.startMin||nowMin>=win.endMin)continue;if(hasScheduleCheckedToday(win.key,win.windowId,todayStr))continue;const attemptKey=win.key+"_"+win.windowId;const lastAttempt=scheduleLastAttemptAt[attemptKey]||0;if(nowMs-lastAttempt<RETRY_INTERVAL_MS)continue;const g=cloudGameMap.find(function(item){return item.key===win.key});if(!g)continue;scheduleLastAttemptAt[attemptKey]=nowMs;const result=await fetchSingleGameCloudLatest(g);if(result.ok){markScheduleCheckedToday(win.key,win.windowId,todayStr);if(result.update){const numbers=result.update.numbersRaw.trim().split(/\s+/).map(function(s){return parseInt(s,10)}).filter(function(n){return!isNaN(n)});const special=parseInt(result.update.specialRaw,10);manualUpsertDrawRecord(win.key,result.update.cloudDate,numbers,special)}}}}/* Railway雲端後端已棄用，原本每60秒排程檢查雲端更新的 setInterval 已移除 */
 let lastCrawlerSyncAt=Date.now();
 const CRAWLER_SYNC_INTERVAL_MS=60*60*1e3;
+/* 2026-10-01 15:50 使用者指示「程式找到資料就自動更新程式裡的資料庫，時時保持與最新資料同步」：
+   開獎時段(台灣時間 20:30～24:00：539/大樂透/六合彩開獎後；09:30～13:00：加州天天樂開獎後)每 5 分鐘同步一次雲端資料庫，其他時間每小時一次；
+   開程式、切回程式時本來就會立刻同步一次。同步到的新資料存進手機資料庫(localStorage＋IndexedDB)，開獎單立即更新。 */
+const CRAWLER_SYNC_HOT_MS=5*60*1e3;
+function __crawlerHotWindow(){const d=new Date();const m=((d.getUTCHours()+8)%24)*60+d.getUTCMinutes();/* 一律用台灣時間(UTC+8)判斷，不受手機時區設定影響 */return (m>=20*60+30)||(m>=9*60+30&&m<13*60)}
 setInterval(function(){
   if(document.hidden)return;
   const now=Date.now();
-  if(now-lastCrawlerSyncAt<CRAWLER_SYNC_INTERVAL_MS)return;
+  if(now-lastCrawlerSyncAt<(__crawlerHotWindow()?CRAWLER_SYNC_HOT_MS:CRAWLER_SYNC_INTERVAL_MS))return;
   lastCrawlerSyncAt=now;
   syncCrawlerDataFromGithub().catch(function(e){console.warn("定期同步爬蟲資料失敗（不影響其他功能）：",e)})
 },6e4);</script>
